@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>moeenu.earn</title>
+
+<!-- Monetag SDK -->
+<script src='//libtl.com/sdk.js' data-zone='10640486' data-sdk='show_10640486'></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(180deg,#0f172a,#020617);
+    color:white;
+}
+
+.header{
+    padding:18px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    background:#020617;
+    letter-spacing:1px;
+    border-bottom:1px solid #1e293b;
+}
+
+.container{
+    padding:20px;
+}
+
+.card{
+    background:#1e293b;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+}
+
+.stat{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+    font-size:14px;
+    opacity:.8;
+}
+
+.main-btn{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:14px;
+    font-size:18px;
+    font-weight:bold;
+    background:linear-gradient(135deg,#22c55e,#16a34a);
+    color:white;
+    margin-top:15px;
+}
+
+.main-btn:active{
+    transform:scale(.97);
+}
+
+.small-btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    font-size:14px;
+    background:#334155;
+    color:white;
+    margin-top:10px;
+}
+
+.footer{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#020617;
+    display:flex;
+    justify-content:space-around;
+    padding:12px 0;
+    font-size:13px;
+    border-top:1px solid #1e293b;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">moeenu.earn</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Sponsored Ads</h2>
+        <p style="opacity:.7;font-size:14px;">
+            Support our platform by viewing sponsored content.
+        </p>
+
+        <button class="main-btn" onclick="watchAd()">
+            ▶ Watch Ad Now
+        </button>
+
+        <button class="small-btn" onclick="watchAd()">
+            Watch Another Ad
+        </button>
+    </div>
+
+    <div class="card">
+        <h3>Platform Info</h3>
+        <div class="stat">
+            <span>Status</span>
+            <span>Active</span>
+        </div>
+        <div class="stat">
+            <span>Ad Provider</span>
+            <span>Monetag</span>
+        </div>
+        <div class="stat">
+            <span>Mode</span>
+            <span>Telegram Mini App</span>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <div>Home</div>
+    <div>Earn</div>
+    <div>Stats</div>
+    <div>Profile</div>
+</div>
+
+<script>
+function watchAd(){
+    if(typeof show_10640486 === "function"){
+        show_10640486();
+    } else {
+        alert("Ad is still loading. Please try again.");
+    }
+}
+</script>
+
+</body>
+</html>

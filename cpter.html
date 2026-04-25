@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Captcha Coordinate Tester</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: #fff;
+      text-align: center;
+    }
+    #canvas {
+      border: 2px solid #444;
+      margin-top: 20px;
+      cursor: crosshair;
+    }
+    .box {
+      margin-top: 15px;
+    }
+    input {
+      padding: 6px;
+      width: 80px;
+      margin: 5px;
+    }
+    button {
+      padding: 8px 12px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🧪 Captcha Coordinate Tester</h2>
+
+<input type="file" id="upload">
+
+<br>
+
+<canvas id="canvas"></canvas>
+
+<div class="box">
+  <p>Click on image to get coordinates</p>
+  X: <input id="x" readonly>
+  Y: <input id="y" readonly>
+</div>
+
+<div class="box">
+  <p>Test your bot coordinates</p>
+  Bot X: <input id="botx">
+  Bot Y: <input id="boty">
+  <br>
+  <button onclick="drawBot()">Show Bot Click</button>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let img = new Image();
+
+document.getElementById('upload').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+    img.onload = function() {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    }
+    img.src = event.target.result;
+  }
+
+  reader.readAsDataURL(file);
+});
+
+canvas.addEventListener('click', function(e) {
+  const rect = canvas.getBoundingClientRect();
+
+  const x = Math.floor(e.clientX - rect.left);
+  const y = Math.floor(e.clientY - rect.top);
+
+  document.getElementById('x').value = x;
+  document.getElementById('y').value = y;
+
+  drawPoint(x, y, "lime");
+});
+
+function drawPoint(x, y, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawBot() {
+  const x = parseInt(document.getElementById('botx').value);
+  const y = parseInt(document.getElementById('boty').value);
+
+  drawPoint(x, y, "red");
+}
+</script>
+
+</body>
+</html>

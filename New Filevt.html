@@ -1,0 +1,616 @@
+"""
+payal.py v13 - PayUp.video Auto Earner (Standalone)
+- Uses new captcha_engine.py module
+- OpenRouter Gemini Flash 2.0 vision OCR
+- Template matching with bounding box center fix
+- Editable template packages via captcha_config.json
+- Full OCR/failure logging
+Run: python payal.py
+"""
+
+import requests
+import threading
+import time
+import random
+import json
+import base64
+import hashlib
+import os
+import sys
+from datetime import datetime
+
+import captcha_engine as CE
+
+# ── CONFIG ────────────────────────────────────────────────────────────────────
+ACCOUNTS_DIR      = "/sdcard/Download/payup_accounts"
+ACCOUNTS_FILE     = f"{ACCOUNTS_DIR}/accounts.json"
+CAPTCHA_SAVE_PATH = "/sdcard/Download"
+CAPTCHA_DB_FILE   = "/sdcard/Download/captcha_db.json"
+WATCH_TIME        = 16
+SOLVE_DELAY       = 5
+
+# ── HASH DB ───────────────────────────────────────────────────────────────────
+CAPTCHA_DB = {
+    "dc98743e": {"x": 46,  "y": 86,  "name": "ig1_calendar"  },
+    "3e75fb4d": {"x": 178, "y": 62,  "name": "ig2_drill"     },
+    "6268bbc4": {"x": 28,  "y": 30,  "name": "ig3_lightbulb" },
+    "298877fa": {"x": 104, "y": 32,  "name": "ig4_musicnote" },
+    "3cdf4e5a": {"x": 168, "y": 94,  "name": "ig5_filmstrip" },
+    "23fc1067": {"x": 176, "y": 82,  "name": "ig6_shovel"    },
+    "e2932dfd": {"x": 174, "y": 46,  "name": "ig7_basket"    },
+    "eaac3eba": {"x": 46,  "y": 62,  "name": "ig8_shield"    },
+    "3b698ead": {"x": 128, "y": 26,  "name": "ig9_guitar"    },
+    "3dfe5830": {"x": 170, "y": 40,  "name": "ig10_guitar"   },
+    "e052f6c0": {"x": 136, "y": 50,  "name": "ig11_shield"   },
+    "3e6af7b6": {"x": 42,  "y": 30,  "name": "ig12_shovel"   },
+    "2106c1cc": {"x": 106, "y": 20,  "name": "ig13_footprint"},
+    "dad89fe8": {"x": 98,  "y": 44,  "name": "ig14_people"   },
+    "9545148f": {"x": 54,  "y": 72,  "name": "ig15_filmstrip"},
+    "731bb6cd": {"x": 164, "y": 74,  "name": "ig16_money"    },
+    "ca90688e": {"x": 132, "y": 98,  "name": "ig17_footprint"},
+    "da122c02": {"x": 72,  "y": 88,  "name": "ig18_basket"   },
+    "edd154e7": {"x": 184, "y": 52,  "name": "ig19_helicopter"},
+}
+
+BASE_HEADERS = {
+    "Accept"            : "application/json, text/javascript, */*; q=0.01",
+    "Accept-Encoding"   : "gzip, deflate, br",
+    "Accept-Language"   : "en-US,en;q=0.9",
+    "X-Requested-With"  : "XMLHttpRequest",
+    "Origin"            : "https://payup.video",
+    "Referer"           : "https://payup.video/tasks/videoExtYT/",
+    "Sec-Ch-Ua"         : '"Not(A:Brand";v="99", "Google Chrome";v="134", "Chromium";v="134"',
+    "Sec-Ch-Ua-Mobile"  : "?1",
+    "Sec-Ch-Ua-Platform": '"Android"',
+    "Sec-Fetch-Dest"    : "empty",
+    "Sec-Fetch-Mode"    : "cors",
+    "Sec-Fetch-Site"    : "same-origin",
+}
+
+# ── UTILS ─────────────────────────────────────────────────────────────────────
+def safe_str(text):
+    if isinstance(text, str):
+        return text.encode('utf-8', errors='replace').decode('utf-8')
+    return str(text)
+
+def fix_b64(b64):
+    return b64.replace("\u0430","a").replace("\u0441","c")
+
+def human_delay(min_s=2, max_s=6, log_fn=None, label=""):
+    delay = random.uniform(min_s, max_s)
+    if log_fn:
+        try:
+            log_fn(f"⏳ {label} delay: {delay:.2f}s")
+        except Exception:
+            pass
+    time.sleep(delay)
+    
+# ── ACCOUNTS MANAGER ──────────────────────────────────────────────────────────
+class AccountsManager:
+    def __init__(self):
+        os.makedirs(ACCOUNTS_DIR, exist_ok=True)
+        self.data = self._load()
+
+    def _load(self):
+        try:
+            if os.path.exists(ACCOUNTS_FILE):
+                with open(ACCOUNTS_FILE, encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception: pass
+        return {"accounts":[]}
+
+    def _save(self):
+        with open(ACCOUNTS_FILE,"w",encoding='utf-8') as f:
+            json.dump(self.data,f,indent=2,ensure_ascii=False)
+
+    def _parse_cookies(self,raw):
+        c={}
+        for p in raw.split(";"):
+            p=p.strip()
+            if "=" in p:
+                k,v=p.split("=",1); c[k.strip()]=v.strip()
+        return c
+
+    def list_accounts(self): return self.data.get("accounts",[])
+
+    def add_account(self):
+        print("\n"+"─"*45)
+        print("  📱 ADD NEW ACCOUNT")
+        print("─"*45)
+        print("  Paste cookies (document.cookie from browser):")
+        raw=input("  > ").strip().strip("'").strip('"')
+        print("  Paste User-Agent:")
+        ua=input("  > ").strip().strip("'").strip('"')
+        if not raw or not ua: print("  ❌ Both required!"); return None
+        account_id="acc_"+hashlib.md5(raw.encode()).hexdigest()[:6]
+        for a in self.data["accounts"]:
+            if a["account_id"]==account_id:
+                print(f"  ⚠️  Already exists: {account_id}"); return a
+        acc={
+            "id":len(self.data["accounts"])+1,
+            "account_id":account_id,"ua":ua,
+            "cookies_raw":raw,"cookies":self._parse_cookies(raw),
+            "created":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "total_earned":0.0,"total_tasks":0
+        }
+        self.data["accounts"].append(acc); self._save()
+        print(f"  ✅ Saved: {account_id}"); return acc
+
+    def remove_account(self,idx):
+        accs=self.data["accounts"]
+        for i,a in enumerate(accs):
+            if a["id"]==idx:
+                removed=accs.pop(i)
+                for j,ac in enumerate(accs): ac["id"]=j+1
+                self._save(); print(f"  ✅ Removed: {removed['account_id']}"); return True
+        print("  ❌ Not found!"); return False
+
+    def update_account(self,account_id,**kwargs):
+        for acc in self.data["accounts"]:
+            if acc["account_id"]==account_id: acc.update(kwargs); self._save(); return
+
+    def show_menu(self):
+        while True:
+            accs=self.data["accounts"]; print()
+            print("╔══════════════════════════════════════════╗")
+            print("║      PAYAL.PY v13  💰  Standalone        ║")
+            print("║  PayUp Auto Earner — No Server Needed    ║")
+            print("╚══════════════════════════════════════════╝")
+            if accs:
+                print(); print("  📱 Saved Accounts:")
+                print("  "+"─"*41)
+                for a in accs:
+                    print(f"  [{a['id']}] {a['account_id']}  Tasks:{str(a['total_tasks']):<5} ${a['total_earned']:.5f}")
+                print("  "+"─"*41)
+            else:
+                print(); print("  ⚠️  No accounts saved yet!"); print()
+            print("  [A] Add new account")
+            if accs: print("  [R] Remove account")
+            print("  [0] Exit"); print()
+            choice=input("  Choose: ").strip().upper()
+            if choice=="0": print("  👋 Bye!"); sys.exit(0)
+            elif choice=="A":
+                acc=self.add_account()
+                if acc:
+                    confirm=input(f"\n  Start with {acc['account_id']}? (y/n): ").strip().lower()
+                    if confirm=="y": return acc
+            elif choice=="R":
+                if not accs: print("  ❌ No accounts!"); continue
+                try:
+                    idx=int(input("  Remove account #: ").strip()); self.remove_account(idx)
+                except Exception: print("  ❌ Invalid!")
+            else:
+                try:
+                    idx=int(choice)
+                    for a in accs:
+                        if a["id"]==idx:
+                            print(f"\n  ✅ Selected: {a['account_id']}")
+                            confirm=input("  Start? (y/n): ").strip().lower()
+                            if confirm=="y": return a
+                            break
+                    else: print("  ❌ Invalid choice!")
+                except Exception: print("  ❌ Invalid choice!")
+
+# ── LOGGER ────────────────────────────────────────────────────────────────────
+class Logger:
+    def __init__(self,account_id):
+        os.makedirs(ACCOUNTS_DIR,exist_ok=True)
+        self.file=f"{ACCOUNTS_DIR}/{account_id}.log"
+        self._w(f"\n{'='*50}\nSession:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n{'='*50}")
+
+    def _w(self,msg):
+        try:
+            with open(self.file,"a",encoding='utf-8',errors='replace') as f:
+                f.write(safe_str(msg)+"\n")
+        except Exception: pass
+
+    def log(self,msg):
+        safe_msg=safe_str(msg)
+        ts=datetime.now().strftime("%H:%M:%S")
+        line=f"[{ts}] {safe_msg}"
+        try: print(line)
+        except UnicodeEncodeError:
+            print(line.encode('ascii',errors='replace').decode('ascii'))
+        self._w(line)
+
+# ── CAPTCHA MANAGER ───────────────────────────────────────────────────────────
+class CaptchaManager:
+    def __init__(self,log_fn):
+        self.db=dict(CAPTCHA_DB); self.new_found={}; self._log=log_fn
+        self._load_db()
+        self._log(f"📚 DB:{len(self.db)} | Templates:{len(CE.get_available_templates())}")
+
+    def _load_db(self):
+        try:
+            if os.path.exists(CAPTCHA_DB_FILE):
+                with open(CAPTCHA_DB_FILE,encoding='utf-8') as f: saved=json.load(f)
+                before=len(self.db); self.db.update(saved); added=len(self.db)-before
+                if added: self._log(f"📂 +{added} from file (total:{len(self.db)})")
+        except Exception as e: self._log(f"⚠️ DB:{e}")
+
+    def _save_db(self):
+        try:
+            with open(CAPTCHA_DB_FILE,"w",encoding='utf-8') as f:
+                json.dump(self.db,f,indent=2)
+        except Exception: pass
+
+    def get_hash(self,b64):
+        return hashlib.md5(fix_b64(b64).encode()).hexdigest()[:8]
+
+    def save_image(self,b64,name):
+        try:
+            path=f"{CAPTCHA_SAVE_PATH}/{name}.jpg"
+            if not os.path.exists(path):
+                with open(path,"wb") as wf:
+                    wf.write(base64.b64decode(fix_b64(b64)))
+                self._log(f"💾 {name}.jpg")
+        except Exception as e: self._log(f"⚠️ img:{e}")
+
+    def count_saved(self):
+        try:
+            nums=[int(f[2:-4]) for f in os.listdir(CAPTCHA_SAVE_PATH)
+                  if f.startswith("ig") and f.endswith(".jpg") and f[2:-4].isdigit()]
+            return max(nums) if nums else 0
+        except Exception: return 0
+
+    def register_new(self,b64):
+        h=self.get_hash(b64)
+        if h not in self.db and h not in self.new_found:
+            num=self.count_saved()+1; name=f"ig{num}"
+            self.new_found[h]=name; self.save_image(b64,name); return h,name
+        return h,self.new_found.get(h,self.db.get(h,{}).get("name","?"))
+
+    def add_solved(self,b64,x,y):
+        h=self.get_hash(b64); name=self.new_found.get(h,f"unk_{h}")
+        self.db[h]={"x":x,"y":y,"name":name}; self._save_db()
+        self._log(f"✅ DB+:{name} x={x} y={y}")
+
+# ── BOT ───────────────────────────────────────────────────────────────────────
+class PayUpBot:
+    def __init__(self,account,acc_mgr):
+        self.acc_mgr=acc_mgr; self.account=account
+        self.account_id=account["account_id"]
+        self.ua=account["ua"]; self.cookies=account["cookies"]
+        self.logger=Logger(self.account_id); self.log=self.logger.log
+        self.mgr=CaptchaManager(self.log); self.session=self._new_session()
+        self.total_earned=float(account.get("total_earned",0.0))
+        self.total_tasks=int(account.get("total_tasks",0))
+        self.captcha_count=0; self.running=True
+
+    def _new_session(self):
+        s=requests.Session(); h=dict(BASE_HEADERS); h["User-Agent"]=self.ua
+        s.headers.update(h)
+        for k,v in self.cookies.items(): s.cookies.set(k,v,domain="payup.video")
+        return s
+
+    def _uc(self):
+        s=requests.Session()
+        s.headers.update({
+            "User-Agent":self.ua,
+            "Accept":"application/json, text/javascript, */*; q=0.01",
+            "Origin":"https://payup.video","Referer":"https://payup.video/",
+            "Sec-Ch-Ua-Mobile":"?1","Sec-Fetch-Site":"cross-site",
+            "Sec-Fetch-Storage-Access":"active"
+        })
+        return s
+
+    def _is_otp_page(self,text):
+        return "Access confirmation" in text or "Access Confirmation" in text
+
+    def _handle_otp(self):
+        self.log("🔑 OTP REQUIRED! Check your email")
+        try: self.session.get("https://payup.video/",timeout=10); self.log("📧 OTP sent!")
+        except Exception: pass
+        while True:
+            print(); choice=input("  [1] Enter code  [2] Request new OTP  [0] Exit: ").strip()
+            if choice=="0": sys.exit(0)
+            elif choice=="2":
+                try: self.session.get("https://payup.video/",timeout=10); self.log("📧 New OTP!")
+                except Exception as e: self.log(f"❌ {e}")
+            elif choice=="1":
+                code=input("  OTP code: ").strip()
+                if not code: continue
+                try:
+                    r=self.session.post("https://payup.video/",data={"code":code,"type":"checkCode"},timeout=10)
+                    if self._is_otp_page(r.text): self.log("❌ Wrong code!")
+                    else: self.log("✅ OTP confirmed!"); return True
+                except Exception as e: self.log(f"❌ {e}")
+
+    def check_ip(self):
+        try:
+            uc=self._uc()
+            uc.post("https://uchecker.top/lock/",data={"data":""},timeout=10)
+            uc.get("https://uchecker.top/check/?set=1",timeout=10)
+        except Exception: pass
+
+    def check_ip_site(self):
+        try:
+            r=self.session.post("https://payup.video/tasks/control/checkIp.php",data={},timeout=10)
+            text=r.content.decode('utf-8',errors='replace')
+            if text.strip() and self._is_otp_page(text):
+                self.log("🔑 OTP detected!"); self._handle_otp(); return self.check_ip_site()
+            if not text.strip(): self.log("🌐 OK"); return True
+            try:
+                d=json.loads(text)
+                ok=d.get("status")=="ok" and d.get("data",{}).get("check")==True
+                self.log(f"🌐 {'OK' if ok else 'FAIL'}"); return ok
+            except Exception:
+                self.log(f"🌐 {text[:50]}"); return False
+        except Exception as e:
+            self.log(f"❌ ip:{safe_str(str(e))}"); return False
+
+    def get_task(self):
+        try:
+            r=self.session.post("https://payup.video/tasks/control/getExtYT.php",
+                data={"type":"video","mac":"0"},timeout=10)
+            d=r.json()
+            if d.get("status")=="ok":
+                t=d.get("data",{})
+                self.log(f"📺 #{t.get('id')} {t.get('ytId')} {t.get('duration')}s ${t.get('balance','?')}")
+                return t
+            msg=d.get("message",""); self.log(f"❌ task:{d}")
+           
+            if "limit" in msg.lower():
+    self.log("⏳ Hourly limit hit — entering 65 min hibernation")
+    sleep_time = 65 * 60
+    start_time = time.time()
+
+    while True:
+        elapsed = int(time.time() - start_time)
+        remaining = sleep_time - elapsed
+
+        if remaining <= 0:
+            break
+
+        mins, secs = divmod(remaining, 60)
+
+        print(f"\r🕒 Hibernating: {mins:02d}:{secs:02d} remaining", end="", flush=True)
+        time.sleep(1)
+
+    print()
+                
+        except Exception as e: self.log(f"❌ task:{safe_str(str(e))}")
+        return None
+
+    def start_task(self,task_id):
+        fp={
+            "TaskId":str(task_id),
+            "fin[videoCard][vendor]":"Qualcomm",
+            "fin[videoCard][renderer]":"Adreno (TM) 619",
+            "fin[viewPort][h]":str(random.randint(700,800)),
+            "fin[viewPort][w]":str(random.randint(400,500)),
+            "fin[viewPort][hM]":"915","fin[viewPort][wM]":"412",
+            "fin[platform]":"Linux armv8l","fin[dpr]":"2.625",
+            "fin[multi][speakers]":"1","fin[multi][micros]":"1",
+            "fin[multi][webcams]":"1","fin[multi][devices]":"3",
+            "fin[ori][alpha]":str(random.randint(0,360)),
+            "fin[ori][beta]":str(random.randint(-10,10)),
+            "fin[ori][gamma]":str(random.randint(-5,5)),
+            "fin[ori][is]":"1","fin[v]":"2.6",
+            "fin[cl][x]":str(random.randint(100,300)),
+            "fin[cl][y]":str(random.randint(30,100)),
+            "fin[webDef]":"false","fin[navName]":"Navigator",
+            "fin[touch]":"true","fin[c]":"134",
+            "fin[memory]":"4","fin[concur]":"8",
+            "fin[en][ar]":"arm","fin[en][b]":"134",
+            "fin[en][m]":"","fin[en][p]":"Android","fin[en][pv]":"13.0.0",
+            "fin[bat][charging]":random.choice(["0","1"]),
+            "fin[bat][lvl]":str(round(random.uniform(0.2,1.0),2))
+        }
+        try:
+            r=self.session.post("https://payup.video/tasks/control/start.php",data=fp,timeout=10)
+            d=r.json(); ok=d.get("status")=="ok"
+            self.log(f"▶️  {'OK' if ok else 'FAIL'}"); return ok
+        except Exception as e: self.log(f"❌ start:{safe_str(str(e))}")
+        return False
+
+    def _submit(self,x,y):
+        return self.session.post(
+            "https://payup.video/captcha/control/checkExtYT.php",
+            data={"refreshTask":"0","x":str(x),"y":str(y)},timeout=10
+        )
+
+    def _handle_captcha(self,img_b64):
+        self.captcha_count+=1; self.log(f"🔒 CAPTCHA #{self.captcha_count}")
+        self.mgr.register_new(img_b64)
+        t0=time.time()
+
+        # Solve using captcha engine
+        x,y=CE.solve_captcha(img_b64,self.mgr.db,self.log)
+
+        if x is None:
+            self.log("❌ Could not solve — retry"); return False,0.0
+
+        wait=max(0,SOLVE_DELAY-(time.time()-t0))
+        if wait>0: self.log(f"⏳ Human delay: {wait:.0f}s..."); time.sleep(wait)
+        self.log(f"🎯 Submitting: x={x} y={y}")
+
+        try:
+            r=self._submit(x,y); d=r.json()
+            self.log(f"📋 {d.get('status')} {safe_str(str(d))[:80]}")
+            if d.get("status")=="ok":
+                reward=float(d.get("data",{}).get("reward",0))
+                self.log(f"✅ SOLVED! ${reward:.7f}"); self.mgr.add_solved(img_b64,x,y)
+                return True,reward
+            elif d.get("status")=="data":
+                new_img=d.get("data","")
+                if isinstance(new_img,str) and len(new_img)>100:
+                    self.log("🔄 New captcha"); self.mgr.register_new(new_img)
+                    t2=time.time()
+                    x2,y2=CE.solve_captcha(new_img,self.mgr.db,self.log)
+                    if x2 is None: self.log("❌ 2nd captcha failed"); return False,0.0
+                    wait2=max(0,SOLVE_DELAY-(time.time()-t2))
+                    if wait2>0: self.log(f"⏳ Delay:{wait2:.0f}s..."); time.sleep(wait2)
+                    self.log(f"🎯 2nd submit: x={x2} y={y2}")
+                    r2=self._submit(x2,y2); d2=r2.json()
+                    if d2.get("status")=="ok":
+                        reward=float(d2.get("data",{}).get("reward",0))
+                        self.mgr.add_solved(new_img,x2,y2)
+                        self.log(f"✅ SOLVED! ${reward:.7f}"); return True,reward
+            elif d.get("status")=="error":
+                self.log(f"⛔ {d.get('message','')}")
+        except Exception as e: self.log(f"❌ {safe_str(str(e))}")
+        return False,0.0
+
+    def collect_reward(self):
+        try:
+            r=self.session.post("https://payup.video/captcha/control/checkExtYT.php",
+                data={"refreshTask":"0"},timeout=10)
+            d=r.json(); self.log(f"💰 {d.get('status')}")
+            if d.get("status")=="data":
+                img=d.get("data","")
+                if isinstance(img,str) and len(img)>100: return self._handle_captcha(img)
+            if d.get("status")=="ok":
+                return True,float(d.get("data",{}).get("reward",0))
+            elif "expired" in safe_str(str(d)).lower():
+                self.log("⏰ Expired!"); return False,0.0
+            else: self.log(f"❌ {safe_str(str(d))}")
+        except Exception as e: self.log(f"❌ collect:{safe_str(str(e))}")
+        return False,0.0
+
+    def do_task(self):
+        self.log(f"─── Task #{self.total_tasks+1} ───")
+
+        # small delay before starting
+        human_delay(2, 5, self.log, "before task")
+
+        self.check_ip()
+
+        # delay after IP check
+        human_delay(1, 3, self.log, "after ip check")
+
+        if not self.check_ip_site():
+            self.log("❌ IP failed")
+            human_delay(5, 10, self.log, "ip fail pause")
+            return False
+
+        # delay before getting task
+        human_delay(3, 7, self.log, "before get task")
+        task = self.get_task()
+
+        if not task:
+            self.log("⚠️  No tasks available")
+            human_delay(15, 35, self.log, "idle no task")
+            return False
+
+        # delay before starting task
+        human_delay(2, 5, self.log, "before start task")
+        if not self.start_task(task.get("id")):
+            self.log("❌ Start failed")
+            human_delay(5, 10, self.log, "start fail pause")
+            return False
+
+        # randomized watching
+        watch_time = WATCH_TIME + random.randint(-3, 5)
+        self.log(f"⏳ Watching {watch_time}s...")
+
+        for i in range(watch_time):
+            time.sleep(random.uniform(0.9, 1.4))
+            if (i+1) % 5 == 0:
+                self.log(f"   {i+1}/{watch_time}s")
+
+        # delay before collecting reward
+        human_delay(2, 6, self.log, "before collect")
+        ok, reward = self.collect_reward()
+
+        if ok:
+            self.total_earned += reward
+            self.total_tasks += 1
+
+            self.log(f"🎉 +${reward:.7f} | Total:${self.total_earned:.7f} | Tasks:{self.total_tasks}")
+
+            self.acc_mgr.update_account(
+                self.account_id,
+                total_earned=self.total_earned,
+                total_tasks=self.total_tasks
+            )
+
+            human_delay(10, 25, self.log, "after task")
+            return True
+
+        self.log("⚠️  Task failed!")
+        human_delay(8, 18, self.log, "task failed pause")
+        return False
+
+    def _stats(self):
+        self.log("="*40)
+        self.log(f"Tasks:{self.total_tasks} | Earned:${self.total_earned:.7f} | Captchas:{self.captcha_count}")
+        st=CE.get_stats()
+        total=max(st["total"],1)
+        self.log(f"Solver → DB:{st['db']} Tmpl:{st['template']} AI:{st['ai']} Fail:{st['failed']}")
+        self.log(f"Success:{(st['db']+st['template']+st['ai'])/total*100:.1f}%")
+        self.log(f"OCR log: {CE.OCR_LOG_FILE}")
+        self.log(f"Fail log: {CE.FAIL_LOG_FILE}")
+        self.log(f"Fail imgs: {CE.FAIL_IMG_DIR}/")
+        self.log("="*40)
+
+    def run(self):
+        self.log(f"🚀 payal.py v13 | {self.account_id}")
+        self.log(f"📚 DB:{len(self.mgr.db)} | Watch:{WATCH_TIME}s | Delay:{SOLVE_DELAY}s")
+        CE.print_config_summary(self.log)
+        self.log("🔐 Checking session...")
+        try:
+            r=self.session.get("https://payup.video/",timeout=10)
+            text=r.content.decode('utf-8',errors='replace')
+            if self._is_otp_page(text): self.log("🔑 OTP required!"); self._handle_otp()
+            else: self.log("✅ Session valid!")
+        except Exception as e: self.log(f"⚠️  Startup:{safe_str(str(e))}")
+        try:
+            while self.running:
+                result=self.do_task()
+                if not result: self.log("⏳ 5s before retry..."); time.sleep(5)
+        except KeyboardInterrupt: self.log("⛔ Stopped!")
+        finally: self._stats()
+
+# ── SETUP ─────────────────────────────────────────────────────────────────────
+def setup_openrouter():
+    print("  🔑 OpenRouter API key (for AI OCR, Enter to skip):")
+    print("  Get free key at: openrouter.ai")
+    key=input("  > ").strip().strip("'").strip('"')
+    if key:
+        CE.set_api_key(key)
+        # Test it
+        try:
+            r=requests.post(CE.OR_API_URL,
+                headers={"Authorization":f"Bearer {key}","Content-Type":"application/json",
+                         "HTTP-Referer":"https://payup.video"},
+                json={"model":CE.OR_MODEL,"max_tokens":5,
+                      "messages":[{"role":"user","content":"Hi"}]},timeout=10)
+            if r.status_code==200: print("  ✅ OpenRouter connected!")
+            else: print(f"  ⚠️  OpenRouter key issue ({r.status_code})")
+        except Exception as e: print(f"  ⚠️  OpenRouter unavailable: {e}")
+    else:
+        print("  ⚠️  No key — Hash DB only (template matching needs AI OCR)")
+
+def main():
+    print()
+    print("╔══════════════════════════════════════════╗")
+    print("║      PAYAL.PY v13  💰  Standalone        ║")
+    print("║  PayUp Auto Earner — No Server Needed    ║")
+    print("╠══════════════════════════════════════════╣")
+    print(f"║  Templates: {CE.TEMPLATE_DIR}")
+    print(f"║  Config:    {CE.CONFIG_FILE}")
+    print(f"║  OCR log:   {CE.OCR_LOG_FILE}")
+    print(f"║  Fail log:  {CE.FAIL_LOG_FILE}")
+    print("╚══════════════════════════════════════════╝")
+    print()
+
+    # Init dirs
+    os.makedirs(CE.TEMPLATE_DIR,exist_ok=True)
+    os.makedirs(CE.FAIL_IMG_DIR,exist_ok=True)
+
+    # Load/create config
+    CE.load_config()
+    CE.print_config_summary()
+    print()
+
+    setup_openrouter()
+    print()
+
+    acc_mgr=AccountsManager()
+    account=acc_mgr.show_menu()
+    bot=PayUpBot(account,acc_mgr)
+    bot.run()
+
+if __name__=="__main__":
+    main()

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G-ZONE ESPORTS - Google Play</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --play-green: #01875f; --text-main: #202124; --text-sec: #5f6368; --border: #dadce0; }
+        body { font-family: 'Roboto', Arial, sans-serif; margin: 0; color: var(--text-main); background: #fff; }
+        
+        /* Layout */
+        .header { padding: 20px; display: flex; gap: 20px; }
+        .app-icon { width: 72px; height: 72px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .app-meta h1 { font-size: 22px; margin: 0; font-weight: 500; }
+        .dev-name { color: var(--play-green); font-size: 14px; font-weight: 500; margin-top: 4px; display: block; text-decoration: none; }
+
+        .stats { display: flex; text-align: center; border-bottom: 1px solid var(--border); padding: 10px 0; margin: 0 20px; }
+        .stat-box { flex: 1; border-right: 1px solid var(--border); }
+        .stat-box:last-child { border: none; }
+        .stat-val { font-weight: 700; font-size: 14px; display: block; }
+        .stat-label { font-size: 11px; color: var(--text-sec); }
+
+        .install-area { padding: 20px; }
+        .btn-install { background: var(--play-green); color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: 500; cursor: pointer; }
+
+        .screenshots { display: flex; overflow-x: auto; gap: 10px; padding: 0 20px 20px; scrollbar-width: none; }
+        .screenshots img { height: 200px; border-radius: 8px; border: 1px solid var(--border); }
+
+        .section-header { display: flex; justify-content: space-between; padding: 20px; align-items: center; }
+        .section-header h2 { font-size: 18px; margin: 0; font-weight: 500; }
+
+        /* Review Styles */
+        .review-card { padding: 0 20px 20px; }
+        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .user-info img { width: 32px; height: 32px; border-radius: 50%; }
+        .stars { font-size: 10px; color: var(--play-green); margin-bottom: 5px; }
+        .review-text { font-size: 14px; color: var(--text-sec); line-height: 1.4; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; font-size: 10px; color: var(--text-sec); }
+        .nav-item.active { color: var(--play-green); }
+        .nav-item i { display: block; font-size: 18px; text-align: center; margin-bottom: 3px; }
+        
+        .skeleton { background: #eee; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img id="app-icon" src="" class="app-icon skeleton">
+        <div class="app-meta">
+            <h1 id="app-name">Loading...</h1>
+            <span class="dev-name">G-Zone Official</span>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box">
+            <span id="stat-rating" class="stat-val">--</span>
+            <span id="stat-reviews" class="stat-label">-- reviews</span>
+        </div>
+        <div class="stat-box">
+            <span id="stat-downloads" class="stat-val">--</span>
+            <span class="stat-label">Downloads</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-val"><i class="fas fa-info-circle"></i></span>
+            <span class="stat-label">Rated 12+</span>
+        </div>
+    </div>
+
+    <div class="install-area">
+        <button class="btn-install" id="installBtn">Install</button>
+    </div>
+
+    <div class="screenshots" id="screenshots-container"></div>
+
+    <div class="section-header">
+        <h2>Ratings and reviews</h2>
+        <i class="fas fa-arrow-right"></i>
+    </div>
+
+    <div id="reviews-container"></div>
+
+    <div style="height: 80px;"></div>
+
+    <div class="bottom-nav">
+        <div class="nav-item"><i class="fas fa-gamepad"></i>Games</div>
+        <div class="nav-item active"><i class="fas fa-th-large"></i>Apps</div>
+        <div class="nav-item"><i class="fas fa-search"></i>Search</div>
+    </div>
+
+    <script>
+        // REPLACE THIS WITH YOUR WORKER URL
+        const API_URL = "https://downloadpagr.moeenu001-f36.workers.dev/";
+
+        async function loadAppData() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                // Update UI
+                document.getElementById('app-name').innerText = data.app_name;
+                document.getElementById('app-icon').src = data.icon;
+                document.getElementById('stat-rating').innerHTML = data.rating + ' <i class="fas fa-star" style="font-size:10px"></i>';
+                document.getElementById('stat-reviews').innerText = data.reviews_count + ' reviews';
+                document.getElementById('stat-downloads').innerText = data.downloads;
+
+                // Load Screenshots
+                const screenBox = document.getElementById('screenshots-container');
+                data.screenshots.forEach(url => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    screenBox.appendChild(img);
+                });
+
+                // Load Reviews
+                const revBox = document.getElementById('reviews-container');
+                data.reviews.forEach(rev => {
+                    revBox.innerHTML += `
+                        <div class="review-card">
+                            <div class="user-info">
+                                <img src="${rev.img}">
+                                <span>${rev.name}</span>
+                            </div>
+                            <div class="stars">
+                                ${'<i class="fas fa-star"></i>'.repeat(rev.stars)}
+                                <span style="color:#5f6368; margin-left:10px">${rev.date}</span>
+                            </div>
+                            <div class="review-text">${rev.text}</div>
+                        </div>
+                    `;
+                });
+
+            } catch (err) {
+                console.error("Failed to load app data", err);
+            }
+        }
+
+        // PWA Install Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        document.getElementById('installBtn').addEventListener

@@ -1,0 +1,1030 @@
+// WTS Platform - Cloudflare Worker
+// Deploy: wrangler deploy
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, PATCH, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key, X-Internal-Secret",
+};
+
+// ─────────────────────────────────────────────
+// MAIN HANDLER
+// ─────────────────────────────────────────────
+
+export default {
+  async fetch(request, env) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: CORS });
+    }
+    const url  = new URL(request.url);
+    const path = url.pathname;
+
+    try {
+      // ── PUBLIC ──
+      if (path === "/register" && request.method === "POST")
+        return await handleRegister(request, env);
+      if (path === "/login" && request.method === "POST")
+        return await handleLogin(request, env);
+      if (path === "/withdrawal-methods" && request.method === "GET")
+        return await handleGetWithdrawalMethods(request, env);
+      if (path === "/app-content" && request.method === "GET")
+        return await handleGetAppContent(request, env);
+      if (path === "/rates" && request.method === "GET")
+        return await handleGetRates(request, env);
+
+      // ── INTERNAL (from Render server) ──
+      if (path === "/tg-event" && request.method === "POST")
+        return await handleTgEvent(request, env);
+
+      // ── AUTHED USER ──
+      if (path === "/user-data" && request.method === "GET")
+        return await handleUserData(request, env);
+      if (path === "/numbers" && request.method === "GET")
+        return await handleNumbers(request, env);
+      if (path === "/tasks" && request.method === "GET")
+        return await handleTasks(request, env);
+      if (path === "/withdraw-request" && request.method === "POST")
+        return await handleWithdrawRequest(request, env);
+      if (path === "/remove-number" && request.method === "DELETE")
+        return await handleRemoveNumber(request, env);
+      if (path === "/withdraw-history" && request.method === "GET")
+        return await handleWithdrawHistory(request, env);
+
+      // ── ADMIN ──
+      if (path === "/admin/users" && request.method === "GET")
+        return await handleAdminUsers(request, env);
+      if (path === "/admin/withdrawals" && request.method === "GET")
+        return await handleAdminWithdrawals(request, env);
+      if (path === "/admin/process-withdrawal" && request.method === "POST")
+        return await handleProcessWithdrawal(request, env);
+      if (path === "/admin/adjust-balance" && request.method === "POST")
+        return await handleAdjustBalance(request, env);
+      if (path === "/admin/reset-password" && request.method === "POST")
+        return await handleAdminResetPassword(request, env);
+      if (path === "/admin/config" && request.method === "GET")
+        return await handleGetConfig(request, env);
+      if (path === "/admin/config" && request.method === "POST")
+        return await handleSetConfig(request, env);
+      if (path === "/admin/stats" && request.method === "GET")
+        return await handleAdminStats(request, env);
+      if (path === "/admin/numbers" && request.method === "GET")
+        return await handleAdminNumbers(request, env);
+      if (path === "/admin/refresh-rates" && request.method === "POST")
+        return await handleAdminRefreshRates(request, env);
+
+      // ── ADMIN — WITHDRAWAL METHODS ──
+      if (path === "/admin/withdrawal-methods" && request.method === "GET")
+        return await handleAdminGetWithdrawalMethods(request, env);
+      if (path === "/admin/withdrawal-methods" && request.method === "POST")
+        return await handleAdminAddWithdrawalMethod(request, env);
+      if (path === "/admin/withdrawal-methods" && request.method === "PATCH")
+        return await handleAdminUpdateWithdrawalMethod(request, env);
+      if (path === "/admin/withdrawal-methods" && request.method === "DELETE")
+        return await handleAdminDeleteWithdrawalMethod(request, env);
+
+      // ── ADMIN — APP CONTENT (T&C etc) ──
+      if (path === "/admin/app-content" && request.method === "GET")
+        return await handleAdminGetAppContent(request, env);
+      if (path === "/admin/app-content" && request.method === "POST")
+        return await handleAdminSetAppContent(request, env);
+
+      return json({ error: "Not found" }, 404);
+    } catch (e) {
+      return json({ error: e.message }, 500);
+    }
+  },
+
+  // Cron — runs once daily at 02:00 UTC
+  // Add to wrangler.toml:
+  //   [triggers]
+  //   crons = ["0 2 * * *"]
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(Promise.all([
+      keepAlivePing(env),
+      updateExchangeRates(env),
+    ]));
+  }
+};
+
+// ─────────────────────────────────────────────
+// KEEP ALIVE
+// ─────────────────────────────────────────────
+
+async function keepAlivePing(env) {
+  const serverUrl = await getConfig(env, "server_url");
+  if (!serverUrl) return;
+  try {
+    await fetch(`${serverUrl}/health`, { method: "GET" });
+    console.log("Keep-alive ping sent to:", serverUrl);
+  } catch (e) {
+    console.log("Keep-alive ping failed:", e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// EXCHANGE RATE UPDATER
+// Source: fawazahmed0/exchange-api (no rate limits, free forever)
+// One call gets BDT + USDT + TRX all at once using USD as base
+// Falls back to Cloudflare Pages mirror if jsDelivr is down
+// ─────────────────────────────────────────────
+
+async function updateExchangeRates(env) {
+  const PRIMARY  = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
+  const FALLBACK = "https://latest.currency-api.pages.dev/v1/currencies/usd.json";
+
+  let data = null;
+
+  // Try primary
+  try {
+    const res = await fetch(PRIMARY, { cf: { cacheTtl: 0 } });
+    if (res.ok) {
+      data = await res.json();
+      console.log("Rates fetched from primary (jsDelivr)");
+    }
+  } catch (e) {
+    console.log("Primary rate fetch failed:", e.message);
+  }
+
+  // Fallback to Cloudflare Pages mirror
+  if (!data) {
+    try {
+      const res = await fetch(FALLBACK, { cf: { cacheTtl: 0 } });
+      if (res.ok) {
+        data = await res.json();
+        console.log("Rates fetched from fallback (CF Pages)");
+      }
+    } catch (e) {
+      console.log("Fallback rate fetch also failed:", e.message);
+      return; // Both failed, keep old rates in DB
+    }
+  }
+
+  if (!data || !data.usd) {
+    console.log("Rate data malformed, skipping update");
+    return;
+  }
+
+  const rates = data.usd;
+
+  // 1 USD = X of each currency
+  const bdtRate  = rates["bdt"];   // e.g. 110.25
+  const usdtRate = rates["usdt"];  // e.g. 1.0001
+  const trxRate  = rates["trx"];   // e.g. 6.847
+
+  if (!bdtRate || !usdtRate || !trxRate) {
+    console.log("One or more required rates missing from response");
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+
+  await Promise.all([
+    setConfig(env, "rate_usd_to_bdt",  String(bdtRate)),
+    setConfig(env, "rate_usd_to_usdt", String(usdtRate)),
+    setConfig(env, "rate_usd_to_trx",  String(trxRate)),
+    setConfig(env, "rates_updated_at", timestamp),
+  ]);
+
+  console.log(`Rates updated — BDT: ${bdtRate}, USDT: ${usdtRate}, TRX: ${trxRate}`);
+}
+
+// ─────────────────────────────────────────────
+// SUPABASE HELPERS
+// ─────────────────────────────────────────────
+
+async function sb(env, method, table, body = null, query = "") {
+  const url = `${env.SUPABASE_URL}/rest/v1/${table}${query}`;
+  const headers = {
+    "apikey":        env.SUPABASE_KEY,
+    "Authorization": `Bearer ${env.SUPABASE_KEY}`,
+    "Content-Type":  "application/json",
+    "Prefer":        "return=representation",
+  };
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase error: ${err}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function sbGet(env, table, query = "") {
+  return sb(env, "GET", table, null, query);
+}
+
+async function sbPost(env, table, body) {
+  return sb(env, "POST", table, body);
+}
+
+async function sbPatch(env, table, query, body) {
+  return sb(env, "PATCH", table, body, query);
+}
+
+async function sbDelete(env, table, query) {
+  return sb(env, "DELETE", table, null, query);
+}
+
+// ─────────────────────────────────────────────
+// CONFIG HELPERS
+// ─────────────────────────────────────────────
+
+async function getConfig(env, key) {
+  try {
+    const rows = await sbGet(env, "config", `?key=eq.${key}&select=value`);
+    return rows && rows[0] ? rows[0].value : null;
+  } catch { return null; }
+}
+
+async function setConfig(env, key, value) {
+  const existing = await sbGet(env, "config", `?key=eq.${key}`);
+  if (existing && existing.length > 0) {
+    await sbPatch(env, "config", `?key=eq.${key}`, { value: String(value) });
+  } else {
+    await sbPost(env, "config", { key, value: String(value) });
+  }
+}
+
+async function getAllConfig(env) {
+  const rows = await sbGet(env, "config", "?select=key,value");
+  const cfg  = {};
+  if (rows) rows.forEach(r => cfg[r.key] = r.value);
+  return cfg;
+}
+
+// ─────────────────────────────────────────────
+// JWT HELPERS
+// ─────────────────────────────────────────────
+
+async function createToken(userId, secret) {
+  const header  = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = btoa(JSON.stringify({
+    user_id: userId,
+    exp: Math.floor(Date.now() / 1000) + 86400
+  }));
+  const sig = await hmacSign(`${header}.${payload}`, secret);
+  return `${header}.${payload}.${sig}`;
+}
+
+async function verifyToken(token, secret) {
+  try {
+    const [header, payload, sig] = token.split(".");
+    const expected = await hmacSign(`${header}.${payload}`, secret);
+    if (sig !== expected) return null;
+    const data = JSON.parse(atob(payload));
+    if (data.exp < Math.floor(Date.now() / 1000)) return null;
+    return data.user_id;
+  } catch { return null; }
+}
+
+async function hmacSign(data, secret) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+// ─────────────────────────────────────────────
+// AUTH MIDDLEWARE
+// ─────────────────────────────────────────────
+
+async function getUserId(request, env) {
+  const auth  = request.headers.get("Authorization") || "";
+  const token = auth.replace("Bearer ", "").trim();
+  if (!token) return null;
+  return await verifyToken(token, env.JWT_SECRET);
+}
+
+function verifyAdmin(request, env) {
+  const key = request.headers.get("X-Admin-Key") || "";
+  return key === env.ADMIN_KEY;
+}
+
+function verifyInternal(request, env) {
+  const key = request.headers.get("X-Internal-Secret") || "";
+  return key === env.INTERNAL_SECRET;
+}
+
+// ─────────────────────────────────────────────
+// REGISTER
+// ─────────────────────────────────────────────
+
+async function handleRegister(request, env) {
+  const { username, email, password } = await request.json();
+
+  if (!username || !email || !password)
+    return json({ error: "Username, email and password are required" }, 400);
+  if (password.length < 6)
+    return json({ error: "Password must be 6+ characters" }, 400);
+  if (!email.includes("@"))
+    return json({ error: "Invalid email address" }, 400);
+
+  const existingUser = await sbGet(env, "users",
+    `?username=eq.${encodeURIComponent(username.trim())}&select=id`);
+  if (existingUser && existingUser.length > 0)
+    return json({ error: "Username already taken" }, 400);
+
+  const existingEmail = await sbGet(env, "users",
+    `?email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=id`);
+  if (existingEmail && existingEmail.length > 0)
+    return json({ error: "Email already registered" }, 400);
+
+  const users = await sbPost(env, "users", {
+    username: username.trim(),
+    email:    email.trim().toLowerCase(),
+    password: password,
+    balance:  0.0
+  });
+
+  if (!users || !users[0]) return json({ error: "Registration failed" }, 500);
+  const token = await createToken(users[0].id, env.JWT_SECRET);
+  return json({ token, user_id: users[0].id });
+}
+
+// ─────────────────────────────────────────────
+// LOGIN
+// ─────────────────────────────────────────────
+
+async function handleLogin(request, env) {
+  const { identifier, password } = await request.json();
+  if (!identifier || !password)
+    return json({ error: "Username/email and password required" }, 400);
+
+  const isEmail = identifier.includes("@");
+  const query   = isEmail
+    ? `?email=eq.${encodeURIComponent(identifier.trim().toLowerCase())}&select=*`
+    : `?username=eq.${encodeURIComponent(identifier.trim())}&select=*`;
+
+  const users = await sbGet(env, "users", query);
+  if (!users || users.length === 0)
+    return json({ error: "Invalid credentials" }, 401);
+
+  const user = users[0];
+  if (user.password !== password)
+    return json({ error: "Invalid credentials" }, 401);
+
+  const token = await createToken(user.id, env.JWT_SECRET);
+  return json({ token, user_id: user.id });
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC — RATES
+// Returns stored rates from DB for client-side math
+// currency_mode on each method tells frontend what to calculate:
+//   "bdt"  → local wallet, no conversion needed
+//   "usd"  → show USD value of BDT input
+//   "usdt" → show USD + USDT amount
+//   "trx"  → show USD + TRX amount
+// ─────────────────────────────────────────────
+
+async function handleGetRates(request, env) {
+  const [bdtRate, usdtRate, trxRate, updatedAt] = await Promise.all([
+    getConfig(env, "rate_usd_to_bdt"),
+    getConfig(env, "rate_usd_to_usdt"),
+    getConfig(env, "rate_usd_to_trx"),
+    getConfig(env, "rates_updated_at"),
+  ]);
+
+  return json({
+    usd_to_bdt:  parseFloat(bdtRate  || "0"),
+    usd_to_usdt: parseFloat(usdtRate || "1"),
+    usd_to_trx:  parseFloat(trxRate  || "0"),
+    // Convenience inverse for frontend: 1 BDT = X USD
+    bdt_to_usd:  bdtRate ? parseFloat((1 / parseFloat(bdtRate)).toFixed(8)) : 0,
+    updated_at:  updatedAt || null,
+  });
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC — WITHDRAWAL METHODS
+// ─────────────────────────────────────────────
+
+async function handleGetWithdrawalMethods(request, env) {
+  const methods = await sbGet(env, "withdrawal_methods",
+    `?is_enabled=eq.true&order=created_at.asc`);
+  return json(methods || []);
+}
+
+// ─────────────────────────────────────────────
+// PUBLIC — APP CONTENT
+// ─────────────────────────────────────────────
+
+async function handleGetAppContent(request, env) {
+  const url = new URL(request.url);
+  const key = url.searchParams.get("key");
+  if (!key) return json({ error: "key required" }, 400);
+
+  const rows = await sbGet(env, "app_content", `?key=eq.${key}`);
+  if (!rows || rows.length === 0) return json({ error: "Content not found" }, 404);
+  return json({ key: rows[0].key, value: rows[0].value });
+}
+
+// ─────────────────────────────────────────────
+// TG EVENT (from Render server)
+// ─────────────────────────────────────────────
+
+async function handleTgEvent(request, env) {
+  if (!verifyInternal(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { type, data } = await request.json();
+
+  if (type === "task_complete") {
+    const { whatsapp_number, gross_earnings, raw_message } = data;
+
+    const numbers = await sbGet(env, "numbers",
+      `?whatsapp_number=eq.${whatsapp_number}&select=*`);
+    if (!numbers || numbers.length === 0)
+      return json({ error: "Number not found" }, 404);
+    const numRow = numbers[0];
+
+    const commissionRate = parseFloat(await getConfig(env, "commission_rate") || "0.10");
+    const ownerCut       = parseFloat((gross_earnings * commissionRate).toFixed(6));
+    const userEarnings   = parseFloat((gross_earnings - ownerCut).toFixed(6));
+
+    const tasks = await sbPost(env, "tasks", {
+      number_id:       numRow.id,
+      user_id:         numRow.user_id,
+      earnings_usd:    userEarnings,
+      gross_usd:       gross_earnings,
+      commission_rate: commissionRate,
+      raw_message,
+      completed_at:    new Date().toISOString()
+    });
+
+    if (!tasks || !tasks[0]) return json({ error: "Duplicate task" }, 409);
+
+    const users = await sbGet(env, "users", `?id=eq.${numRow.user_id}&select=balance`);
+    if (users && users[0]) {
+      const newBalance = parseFloat((users[0].balance + userEarnings).toFixed(6));
+      await sbPatch(env, "users", `?id=eq.${numRow.user_id}`, { balance: newBalance });
+    }
+
+    await sbPost(env, "owner_earnings", {
+      task_id:         tasks[0].id,
+      gross:           gross_earnings,
+      commission_rate: commissionRate,
+      owner_cut:       ownerCut,
+      created_at:      new Date().toISOString()
+    });
+
+    return json({ ok: true, user_earnings: userEarnings, owner_cut: ownerCut });
+  }
+
+  if (type === "number_added") {
+    const { user_id, whatsapp_number, account_type, daily_limit } = data;
+    const existing = await sbGet(env, "numbers",
+      `?whatsapp_number=eq.${whatsapp_number}&select=id`);
+    if (existing && existing.length > 0) {
+      await sbPatch(env, "numbers", `?whatsapp_number=eq.${whatsapp_number}`, {
+        user_id, account_type, daily_limit, status: "active", is_removed: false
+      });
+    } else {
+      await sbPost(env, "numbers", {
+        user_id, whatsapp_number, account_type,
+        daily_limit, status: "active", is_removed: false
+      });
+    }
+    return json({ ok: true });
+  }
+
+  if (type === "number_removed") {
+    const { whatsapp_number } = data;
+    await sbPatch(env, "numbers", `?whatsapp_number=eq.${whatsapp_number}`, {
+      status: "failed", is_removed: true
+    });
+    return json({ ok: true });
+  }
+
+  if (type === "number_pending") {
+    const { user_id, whatsapp_number, account_type, daily_limit } = data;
+    const existing = await sbGet(env, "numbers",
+      `?whatsapp_number=eq.${whatsapp_number}&select=id`);
+    if (existing && existing.length > 0) {
+      await sbPatch(env, "numbers", `?whatsapp_number=eq.${whatsapp_number}`, {
+        user_id, account_type, daily_limit, status: "pending", is_removed: false
+      });
+    } else {
+      await sbPost(env, "numbers", {
+        user_id, whatsapp_number, account_type,
+        daily_limit, status: "pending", is_removed: false
+      });
+    }
+    return json({ ok: true });
+  }
+
+  return json({ error: "Unknown event type" }, 400);
+}
+
+// ─────────────────────────────────────────────
+// USER DATA
+// ─────────────────────────────────────────────
+
+async function handleUserData(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const users = await sbGet(env, "users",
+    `?id=eq.${userId}&select=id,username,email,balance,created_at`);
+  if (!users || users.length === 0) return json({ error: "User not found" }, 404);
+  return json(users[0]);
+}
+
+// ─────────────────────────────────────────────
+// NUMBERS
+// ─────────────────────────────────────────────
+
+async function handleNumbers(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const numbers = await sbGet(env, "numbers",
+    `?user_id=eq.${userId}&select=*&order=added_at.desc`);
+  return json(numbers || []);
+}
+
+// ─────────────────────────────────────────────
+// TASKS
+// ─────────────────────────────────────────────
+
+async function handleTasks(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const tasks = await sbGet(env, "tasks",
+    `?user_id=eq.${userId}&select=*&order=completed_at.desc&limit=50`);
+
+  const numbers = await sbGet(env, "numbers",
+    `?user_id=eq.${userId}&select=id,whatsapp_number`);
+  const numMap  = {};
+  if (numbers) numbers.forEach(n => numMap[n.id] = n.whatsapp_number);
+
+  const result = (tasks || []).map(t => ({
+    ...t,
+    whatsapp_number: numMap[t.number_id] || null
+  }));
+
+  return json(result);
+}
+
+// ─────────────────────────────────────────────
+// WITHDRAW REQUEST
+// amount is always in USD (system base currency)
+// currency_mode from the method controls what gets recorded
+// ─────────────────────────────────────────────
+
+async function handleWithdrawRequest(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const { amount, withdrawal_method_id, account_details } = await request.json();
+
+  if (!amount || !withdrawal_method_id || !account_details)
+    return json({ error: "Amount, withdrawal method and account details required" }, 400);
+
+  const methods = await sbGet(env, "withdrawal_methods",
+    `?id=eq.${withdrawal_method_id}&is_enabled=eq.true&select=*`);
+  if (!methods || methods.length === 0)
+    return json({ error: "Invalid or disabled withdrawal method" }, 400);
+  const method = methods[0];
+
+  const minForMethod = parseFloat(method.min_amount || "1.00");
+  if (parseFloat(amount) < minForMethod)
+    return json({ error: `Minimum withdrawal for ${method.name} is $${minForMethod}` }, 400);
+
+  const globalMin = parseFloat(await getConfig(env, "min_withdrawal") || "1.00");
+  if (parseFloat(amount) < globalMin)
+    return json({ error: `Minimum withdrawal is $${globalMin}` }, 400);
+
+  const users = await sbGet(env, "users", `?id=eq.${userId}&select=balance`);
+  if (!users || !users[0]) return json({ error: "User not found" }, 404);
+  if (users[0].balance < parseFloat(amount))
+    return json({ error: "Insufficient balance" }, 400);
+
+  const pending = await sbGet(env, "withdrawals",
+    `?user_id=eq.${userId}&status=eq.pending&select=id`);
+  if (pending && pending.length > 0)
+    return json({ error: "You already have a pending withdrawal request" }, 400);
+
+  // Snapshot the crypto/BDT equivalent at current rates for record keeping
+  const currencyMode = method.currency_mode || "usd";
+  let cryptoAmount   = null;
+  let bdtAmount      = null;
+
+  if (currencyMode === "usdt") {
+    const rate = parseFloat(await getConfig(env, "rate_usd_to_usdt") || "1");
+    cryptoAmount = parseFloat((parseFloat(amount) * rate).toFixed(6));
+  } else if (currencyMode === "trx") {
+    const rate = parseFloat(await getConfig(env, "rate_usd_to_trx") || "0");
+    cryptoAmount = rate > 0 ? parseFloat((parseFloat(amount) * rate).toFixed(6)) : null;
+  } else if (currencyMode === "bdt") {
+    const rate = parseFloat(await getConfig(env, "rate_usd_to_bdt") || "0");
+    bdtAmount   = rate > 0 ? parseFloat((parseFloat(amount) * rate).toFixed(2)) : null;
+  }
+
+  const newBalance = parseFloat((users[0].balance - parseFloat(amount)).toFixed(6));
+  await sbPatch(env, "users", `?id=eq.${userId}`, { balance: newBalance });
+
+  await sbPost(env, "withdrawals", {
+    user_id:              userId,
+    amount:               parseFloat(amount),
+    withdrawal_method_id,
+    currency_mode:        currencyMode,
+    network_or_label:     method.network_or_label || null,
+    account_details,
+    crypto_amount:        cryptoAmount,
+    bdt_amount:           bdtAmount,
+    crypto_address:       account_details,   // legacy compat
+    crypto_type:          method.name,       // legacy compat
+    status:               "pending",
+    requested_at:         new Date().toISOString()
+  });
+
+  return json({ ok: true, new_balance: newBalance });
+}
+
+// ─────────────────────────────────────────────
+// WITHDRAW HISTORY
+// ─────────────────────────────────────────────
+
+async function handleWithdrawHistory(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const withdrawals = await sbGet(env, "withdrawals",
+    `?user_id=eq.${userId}&select=*&order=requested_at.desc&limit=50`);
+  return json(withdrawals || []);
+}
+
+// ─────────────────────────────────────────────
+// REMOVE NUMBER
+// ─────────────────────────────────────────────
+
+async function handleRemoveNumber(request, env) {
+  const userId = await getUserId(request, env);
+  if (!userId) return json({ error: "Unauthorized" }, 401);
+
+  const url      = new URL(request.url);
+  const numberId = url.searchParams.get("id");
+  if (!numberId) return json({ error: "Number ID required" }, 400);
+
+  const numbers = await sbGet(env, "numbers",
+    `?id=eq.${numberId}&user_id=eq.${userId}&select=id`);
+  if (!numbers || numbers.length === 0) return json({ error: "Not found" }, 404);
+
+  await sbDelete(env, "numbers", `?id=eq.${numberId}`);
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — USERS
+// ─────────────────────────────────────────────
+
+async function handleAdminUsers(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const users   = await sbGet(env, "users",
+    `?select=id,username,email,balance,created_at&order=created_at.desc`);
+  const numbers = await sbGet(env, "numbers", `?select=user_id`);
+  const counts  = {};
+  if (numbers) numbers.forEach(n => counts[n.user_id] = (counts[n.user_id] || 0) + 1);
+
+  return json((users || []).map(u => ({ ...u, numbers_count: counts[u.id] || 0 })));
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — WITHDRAWALS
+// ─────────────────────────────────────────────
+
+async function handleAdminWithdrawals(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const url    = new URL(request.url);
+  const status = url.searchParams.get("status") || "pending";
+
+  const withdrawals = await sbGet(env, "withdrawals",
+    `?status=eq.${status}&select=*&order=requested_at.desc`);
+
+  const users   = await sbGet(env, "users", `?select=id,username,email`);
+  const userMap = {};
+  if (users) users.forEach(u => userMap[u.id] = { username: u.username, email: u.email });
+
+  return json((withdrawals || []).map(w => ({
+    ...w,
+    username: userMap[w.user_id]?.username || "unknown",
+    email:    userMap[w.user_id]?.email    || null
+  })));
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — PROCESS WITHDRAWAL
+// ─────────────────────────────────────────────
+
+async function handleProcessWithdrawal(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { withdrawal_id, action, tx_hash } = await request.json();
+  if (!withdrawal_id || !action)
+    return json({ error: "withdrawal_id and action required" }, 400);
+
+  const withdrawals = await sbGet(env, "withdrawals", `?id=eq.${withdrawal_id}&select=*`);
+  if (!withdrawals || withdrawals.length === 0) return json({ error: "Not found" }, 404);
+  const w = withdrawals[0];
+
+  if (action === "approve") {
+    await sbPatch(env, "withdrawals", `?id=eq.${withdrawal_id}`, {
+      status: "processed", tx_hash: tx_hash || "",
+      processed_at: new Date().toISOString()
+    });
+  } else if (action === "reject") {
+    const users = await sbGet(env, "users", `?id=eq.${w.user_id}&select=balance`);
+    if (users && users[0]) {
+      const refunded = parseFloat((users[0].balance + w.amount).toFixed(6));
+      await sbPatch(env, "users", `?id=eq.${w.user_id}`, { balance: refunded });
+    }
+    await sbPatch(env, "withdrawals", `?id=eq.${withdrawal_id}`, {
+      status: "rejected", processed_at: new Date().toISOString()
+    });
+  }
+
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — ADJUST BALANCE
+// ─────────────────────────────────────────────
+
+async function handleAdjustBalance(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { user_id, amount } = await request.json();
+  if (!user_id || amount === undefined)
+    return json({ error: "user_id and amount required" }, 400);
+
+  const users = await sbGet(env, "users", `?id=eq.${user_id}&select=balance`);
+  if (!users || users.length === 0) return json({ error: "User not found" }, 404);
+
+  const newBalance = parseFloat((users[0].balance + parseFloat(amount)).toFixed(6));
+  if (newBalance < 0) return json({ error: "Balance cannot go negative" }, 400);
+
+  await sbPatch(env, "users", `?id=eq.${user_id}`, { balance: newBalance });
+  return json({ ok: true, new_balance: newBalance });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — RESET PASSWORD
+// ─────────────────────────────────────────────
+
+async function handleAdminResetPassword(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { user_id, new_password } = await request.json();
+  if (!user_id || !new_password)
+    return json({ error: "user_id and new_password required" }, 400);
+  if (new_password.length < 6)
+    return json({ error: "Password must be 6+ characters" }, 400);
+
+  await sbPatch(env, "users", `?id=eq.${user_id}`, { password: new_password });
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — GET CONFIG
+// ─────────────────────────────────────────────
+
+async function handleGetConfig(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+  return json(await getAllConfig(env));
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — SET CONFIG
+// ─────────────────────────────────────────────
+
+async function handleSetConfig(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const updates = await request.json();
+  for (const [key, value] of Object.entries(updates)) {
+    await setConfig(env, key, value);
+  }
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — STATS
+// ─────────────────────────────────────────────
+
+async function handleAdminStats(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const [users, numbers, tasks, withdrawals, ownerEarnings] = await Promise.all([
+    sbGet(env, "users",          `?select=id,balance`),
+    sbGet(env, "numbers",        `?select=id,status`),
+    sbGet(env, "tasks",          `?select=earnings_usd,gross_usd`),
+    sbGet(env, "withdrawals",    `?select=amount,status`),
+    sbGet(env, "owner_earnings", `?select=owner_cut`)
+  ]);
+
+  const totalUsers         = users?.length || 0;
+  const totalBalance       = (users || []).reduce((s, u) => s + u.balance, 0);
+  const activeNumbers      = (numbers || []).filter(n => n.status === "active").length;
+  const totalNumbers       = numbers?.length || 0;
+  const totalTasks         = tasks?.length || 0;
+  const totalGross         = (tasks || []).reduce((s, t) => s + (t.gross_usd || 0), 0);
+  const totalUserPaid      = (tasks || []).reduce((s, t) => s + (t.earnings_usd || 0), 0);
+  const totalOwnerEarnings = (ownerEarnings || []).reduce((s, e) => s + e.owner_cut, 0);
+  const pendingW           = (withdrawals || []).filter(w => w.status === "pending");
+  const pendingAmount      = pendingW.reduce((s, w) => s + w.amount, 0);
+
+  return json({
+    total_users:               totalUsers,
+    total_balance_owed:        totalBalance.toFixed(6),
+    active_numbers:            activeNumbers,
+    total_numbers:             totalNumbers,
+    total_tasks:               totalTasks,
+    total_gross:               totalGross.toFixed(6),
+    total_user_paid:           totalUserPaid.toFixed(6),
+    total_owner_earnings:      totalOwnerEarnings.toFixed(6),
+    pending_withdrawals:       pendingW.length,
+    pending_withdrawal_amount: pendingAmount.toFixed(6)
+  });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — NUMBERS
+// ─────────────────────────────────────────────
+
+async function handleAdminNumbers(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+  return json(await sbGet(env, "numbers", `?select=*&order=added_at.desc`) || []);
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — MANUAL RATE REFRESH
+// Lets admin force update without waiting for the daily cron
+// ─────────────────────────────────────────────
+
+async function handleAdminRefreshRates(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+  try {
+    await updateExchangeRates(env);
+    const [bdt, usdt, trx, updatedAt] = await Promise.all([
+      getConfig(env, "rate_usd_to_bdt"),
+      getConfig(env, "rate_usd_to_usdt"),
+      getConfig(env, "rate_usd_to_trx"),
+      getConfig(env, "rates_updated_at"),
+    ]);
+    return json({
+      ok: true,
+      rates: {
+        usd_to_bdt:  parseFloat(bdt  || "0"),
+        usd_to_usdt: parseFloat(usdt || "1"),
+        usd_to_trx:  parseFloat(trx  || "0"),
+      },
+      updated_at: updatedAt
+    });
+  } catch (e) {
+    return json({ error: "Rate refresh failed: " + e.message }, 500);
+  }
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — WITHDRAWAL METHODS
+//
+// currency_mode tells the system AND frontend what type this method is:
+//   "bdt"  → local wallet (bKash, Nagad, Rocket, Bank)
+//            user enters BDT amount — no conversion shown
+//   "usd"  → USD-based crypto or method
+//            user enters BDT — frontend shows USD equivalent
+//   "usdt" → USDT crypto (TRC20, ERC20 etc)
+//            user enters BDT — frontend shows USD + USDT amount
+//   "trx"  → TRX (Tron) crypto
+//            user enters BDT — frontend shows USD + TRX amount
+//
+// type is still "crypto" or "local" for display/grouping purposes
+// ─────────────────────────────────────────────
+
+async function handleAdminGetWithdrawalMethods(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+  return json(await sbGet(env, "withdrawal_methods", `?order=created_at.asc`) || []);
+}
+
+async function handleAdminAddWithdrawalMethod(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { type, name, network_or_label, placeholder, min_amount, currency_mode } = await request.json();
+
+  if (!type || !name)
+    return json({ error: "type and name are required" }, 400);
+  if (!["crypto", "local"].includes(type))
+    return json({ error: "type must be crypto or local" }, 400);
+
+  const validModes = ["bdt", "usd", "usdt", "trx"];
+  // Default: local → bdt, crypto → must be specified
+  const mode = currency_mode || (type === "local" ? "bdt" : null);
+
+  if (!mode || !validModes.includes(mode))
+    return json({ error: `currency_mode required. Must be one of: ${validModes.join(", ")}` }, 400);
+
+  // Enforce logical consistency
+  if (type === "local" && mode !== "bdt")
+    return json({ error: "Local methods must use currency_mode: bdt" }, 400);
+  if (type === "crypto" && mode === "bdt")
+    return json({ error: "Crypto methods cannot use currency_mode: bdt" }, 400);
+
+  const method = await sbPost(env, "withdrawal_methods", {
+    type,
+    name:             name.trim(),
+    network_or_label: network_or_label?.trim() || null,
+    placeholder:      placeholder?.trim()      || null,
+    min_amount:       parseFloat(min_amount    || "1.00"),
+    currency_mode:    mode,
+    is_enabled:       true,
+    created_at:       new Date().toISOString()
+  });
+
+  return json(method?.[0] || { ok: true });
+}
+
+async function handleAdminUpdateWithdrawalMethod(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const url = new URL(request.url);
+  const id  = url.searchParams.get("id");
+  if (!id) return json({ error: "id required" }, 400);
+
+  const body    = await request.json();
+  const allowed = ["type", "name", "network_or_label", "placeholder", "min_amount", "is_enabled", "currency_mode"];
+  const updates = {};
+  for (const key of allowed) {
+    if (body[key] !== undefined) updates[key] = body[key];
+  }
+
+  if (Object.keys(updates).length === 0)
+    return json({ error: "No valid fields to update" }, 400);
+
+  await sbPatch(env, "withdrawal_methods", `?id=eq.${id}`, updates);
+  return json({ ok: true });
+}
+
+async function handleAdminDeleteWithdrawalMethod(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const url = new URL(request.url);
+  const id  = url.searchParams.get("id");
+  if (!id) return json({ error: "id required" }, 400);
+
+  await sbDelete(env, "withdrawal_methods", `?id=eq.${id}`);
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// ADMIN — APP CONTENT
+// ─────────────────────────────────────────────
+
+async function handleAdminGetAppContent(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const url = new URL(request.url);
+  const key = url.searchParams.get("key") || "terms";
+
+  const rows = await sbGet(env, "app_content", `?key=eq.${key}`);
+  if (!rows || rows.length === 0) return json({ key, value: "" });
+  return json({ key: rows[0].key, value: rows[0].value });
+}
+
+async function handleAdminSetAppContent(request, env) {
+  if (!verifyAdmin(request, env)) return json({ error: "Unauthorized" }, 403);
+
+  const { key, value } = await request.json();
+  if (!key || !value) return json({ error: "key and value required" }, 400);
+
+  const existing = await sbGet(env, "app_content", `?key=eq.${key}`);
+  if (existing && existing.length > 0) {
+    await sbPatch(env, "app_content", `?key=eq.${key}`, {
+      value, updated_at: new Date().toISOString()
+    });
+  } else {
+    await sbPost(env, "app_content", { key, value, updated_at: new Date().toISOString() });
+  }
+
+  return json({ ok: true });
+}
+
+// ─────────────────────────────────────────────
+// RESPONSE HELPER
+// ─────────────────────────────────────────────
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" }
+  });
+}

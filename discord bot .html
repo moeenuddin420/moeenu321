@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-Zone Backend Tester</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
+        h2 { color: #333; margin-top: 0; border-bottom: 2px solid #4361ee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #4361ee; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #3a56d4; }
+        #status { margin-top: 20px; padding: 15px; border-radius: 6px; display: none; font-family: monospace; font-size: 13px; overflow-x: auto; }
+        .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; display: block !important; }
+        .error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; display: block !important; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Universal Dispatcher</h2>
+    
+    <form id="uploadForm">
+        <div class="form-group">
+            <label>1. Select File (Audio/Video)</label>
+            <input type="file" name="file" id="fileInput">
+        </div>
+
+        <div class="form-group">
+            <label>2. Target UIDs</label>
+            <input type="text" name="uids" placeholder="e.g. all or 12345, 67890" value="all" required>
+        </div>
+
+        <div class="form-group">
+            <label>3. Push Notification Title</label>
+            <input type="text" name="title" placeholder="Enter title" value="G-Zone Alert">
+        </div>
+
+        <div class="form-group">
+            <label>4. Push Notification Body</label>
+            <textarea name="body" rows="2" placeholder="Enter message..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>5. Message Type</label>
+            <select name="type">
+                <option value="VOICE_ALARM">VOICE_ALARM (Auto Play Audio)</option>
+                <option value="VIDEO_UPDATE">VIDEO_UPDATE (Watch Video)</option>
+                <option value="TEXT">TEXT (Standard Alert)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>6. YouTube ID (Optional)</label>
+            <input type="text" name="youtube_id" placeholder="e.g. dQw4w9WgXcQ">
+        </div>
+
+        <button type="submit" id="submitBtn">Dispatch To Users</button>
+    </form>
+
+    <pre id="status"></pre>
+</div>
+
+<script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+    const btn = document.getElementById('submitBtn');
+    const WORKER_URL = "https://voicedepartment.moeenu321.workers.dev/";
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        btn.disabled = true;
+        btn.innerText = "Processing & Sending...";
+        status.className = "";
+        status.innerText = "Connecting to Worker...";
+        status.style.display = "block";
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                status.className = "success";
+                status.innerText = "SUCCESS:\n" + JSON.stringify(result, null, 2);
+            } else {
+                status.className = "error";
+                status.innerText = "SERVER ERROR:\n" + JSON.stringify(result, null, 2);
+            }
+        } catch (err) {
+            status.className = "error";
+            status.innerText = "NETWORK ERROR:\n" + err.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Dispatch To Users";
+        }
+    };
+</script>
+
+</body>
+</html>

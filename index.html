@@ -1,0 +1,3358 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G-ZONE ESPORTS</title>
+    
+    <!-- PWA MANIFEST -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- PROFESSIONAL THEME VARIABLES --- */
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --primary: #06b6d4; --primary-glow: rgba(6, 182, 212, 0.4); --secondary: #6366f1; --accent: #ec4899; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --glass-bg: rgba(30, 41, 59, 0.7); --glass-border: rgba(255, 255, 255, 0.08); --text-main: #f8fafc; --text-muted: #94a3b8; --font-main: 'Outfit', sans-serif; --font-bn: 'Hind Siliguri', sans-serif; --font-gaming: 'Rajdhani', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        body { background-color: var(--bg-dark); background-image: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 40%); background-attachment: fixed; color: var(--text-main); font-family: var(--font-bn); min-height: 100vh; overflow-x: hidden; padding-bottom: 30px; }
+        .hidden { display: none !important; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.1s, opacity 0.2s; font-family: var(--font-bn); } .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--glass-border); } .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+        .btn-success { background: var(--success); color: #fff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); } .btn-danger { background: var(--danger); color: #fff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .input-group { position: relative; margin-bottom: 15px; } .input-group i { position: absolute; top: 50%; left: 16px; transform: translateY(-50%); color: var(--primary); font-size: 1.1rem; z-index: 2; } .input-group input { width: 100%; padding: 14px 14px 14px 45px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 12px; color: #fff; font-size: 1rem; transition: border-color 0.3s; font-family: var(--font-bn); } .input-group input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.9); }
+        header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 0 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--glass-border); height: 65px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .header-left { display: flex; align-items: center; gap: 15px; } .logo { font-family: var(--font-gaming); font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: 1px; } .logo span { color: var(--primary); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .nav-balance { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); padding: 6px 14px; border-radius: 50px; display: flex; align-items: center; gap: 8px; cursor: pointer; } .nav-balance span { font-family: var(--font-gaming); font-weight: 700; color: var(--primary); font-size: 1.05rem; } .nav-balance i { color: var(--primary); font-size: 0.9rem; }
+        .notif-icon-box { position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; border: 1px solid var(--glass-border); } .notification-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
+        .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 998; display: none; } .drawer { position: fixed; top: 0; left: 0; width: 280px; height: 100%; background: #0f172a; z-index: 999; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; box-shadow: 10px 0 40px rgba(0,0,0,0.5); } .drawer.open { transform: translateX(0); }
+        .drawer-header { padding: 25px 20px; background: linear-gradient(to bottom, #1e293b, #0f172a); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 15px; flex-shrink: 0; } .d-user-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); background: #1e293b; } .d-user-info h3 { color: #fff; font-size: 1.1rem; margin: 0; font-family: var(--font-gaming); letter-spacing: 0.5px; } .d-user-info span { color: var(--text-muted); font-size: 0.8rem; font-family: monospace; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; }
+        .drawer-items { padding: 15px 15px 80px 15px; flex: 1; overflow-y: auto; background: linear-gradient(#0f172a 30%, rgba(15,23,42,0)), linear-gradient(rgba(15,23,42,0), #0f172a 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.4), rgba(0,0,0,0)), radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.4), rgba(0,0,0,0)) 0 100%; background-repeat: no-repeat; background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px; background-attachment: local, local, scroll, scroll; }
+        .menu-group-label { font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 20px 0 8px 10px; opacity: 0.8; } .menu-group-label:first-child { margin-top: 5px; }
+        .d-item { padding: 12px 16px; margin-bottom: 4px; border-radius: 8px; color: var(--text-muted); font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 15px; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; } .d-item:hover { background: rgba(255,255,255,0.03); color: #fff; } .d-item:active { transform: scale(0.98); } .d-item i { width: 22px; text-align: center; color: var(--text-muted); transition: 0.2s; } .d-item:hover i { color: var(--primary); }
+        .drawer-footer { padding: 20px; border-top: 1px solid var(--glass-border); background: #0f172a; flex-shrink: 0; } .btn-logout { width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s; } .btn-logout:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+        .page-section { display: none; padding-top: 15px; animation: fadeIn 0.3s ease-out; } .page-section.active { display: block; } @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 16px; } .q-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 16px; border-radius: 14px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; color: var(--text-main); font-weight: 600; font-size: 0.95rem; transition: 0.2s; } .q-btn:active { background: rgba(255,255,255,0.06); transform: scale(0.98); } .q-add i { color: var(--success); } .q-wd i { color: var(--warning); }
+        #banner-slider { display: flex; gap: 12px; overflow-x: auto; margin: 0 16px 25px; scroll-snap-type: x mandatory; padding-bottom: 5px; scroll-behavior: smooth; } .slide { flex: 0 0 100%; width: 100%; height: 160px; border-radius: 16px; object-fit: cover; scroll-snap-align: center; border: 1px solid var(--glass-border); background: #1e293b; }
+        .section-header { display: flex; align-items: center; gap: 8px; margin: 0 16px 12px; font-size: 1.1rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; } .section-header i { color: var(--primary); }
+        .home-tabs { display: flex; margin: 0 16px 16px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 12px; border: 1px solid var(--glass-border); } .home-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: var(--text-muted); border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; } .home-tab.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .t-card { background: var(--bg-card); border: 1px solid var(--glass-border); margin: 0 16px 20px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; } .t-img-wrap { position: relative; height: 150px; overflow: hidden; } .t-img { width: 100%; height: 100%; object-fit: cover; } .t-type-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid var(--primary); backdrop-filter: blur(4px); } .t-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, #1e293b, transparent); padding: 30px 15px 10px; } .t-title { color: #fff; font-size: 1.15rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5); font-family: var(--font-bn); }
+        .t-body { padding: 15px; } .t-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); } .t-stat { text-align: center; } .t-stat small { display: block; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; } .t-stat b { display: block; font-size: 1rem; color: var(--primary); font-family: var(--font-gaming); font-weight: 600; }
+        .progress-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; margin-bottom: 15px; overflow: hidden; } .progress-fill { height: 100%; background: var(--success); border-radius: 3px; } .t-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.2s; } .modal:not(.hidden) { opacity: 1; pointer-events: auto; } .modal-content { background: #1e293b; width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; position: relative; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: scale(0.95); transition: 0.2s; } .modal:not(.hidden) .modal-content { transform: scale(1); }
+        
+        /* ✅ ADDED: SQUAD TAB STYLING */
+        .sq-tabs { display: flex; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--glass-border); }
+        .sq-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: var(--text-muted); border-radius: 8px; font-weight: 600; font-size: 0.85rem; transition: 0.3s; }
+        .sq-tab.active { background: var(--primary); color: #fff; }
+
+        .cred-panel { background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 15px; margin-top: 15px; } .cred-box { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; } .cred-value { font-family: monospace; font-size: 1.1rem; letter-spacing: 1px; color: #fff; }
+        .method-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; } .method-card { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; } .method-card:active { transform: scale(0.98); } .method-card.active { border-color: var(--primary); background: rgba(6, 182, 212, 0.05); } .method-card img { width: 40px; height: 40px; object-fit: contain; } .m-name { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); } .method-card.active .m-name { color: #fff; } .method-card input { display: none; }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: rgba(255,255,255,0.02); border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--glass-border); } .rank-pos { font-family: var(--font-gaming); font-weight: 700; font-size: 1.1rem; width: 30px; color: var(--text-muted); } .rank-item.top-1 { border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.05); } .rank-item.top-2 { border-color: rgba(192, 192, 192, 0.3); background: rgba(192, 192, 192, 0.05); } .rank-item.top-3 { border-color: rgba(205, 127, 50, 0.3); background: rgba(205, 127, 50, 0.05); }
+        
+  /* ===============================
+   G-ZONE FULL LOADING BLOCK
+   =============================== */
+
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    #1e293b 0%,
+    #0f172a 75%
+  );
+  z-index: 99999;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ROTATING RINGS */
+.loader {
+  width: 88px;
+  height: 88px;
+  position: relative;
+  border-radius: 50%;
+
+  border-top: 4px solid #06b6d4;
+  animation: spin 1.4s linear infinite;
+
+  filter: drop-shadow(0 0 18px rgba(6,182,212,0.4));
+}
+
+/* SECOND RING */
+.loader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border-top: 4px solid #6366f1;
+  transform: rotate(120deg);
+  filter: drop-shadow(0 0 14px rgba(99,102,241,0.6));
+}
+
+/* THIRD RING */
+.loader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border-top: 4px solid #ec4899;
+  transform: rotate(240deg);
+  filter: drop-shadow(0 0 14px rgba(236,72,153,0.6));
+}
+
+/* CENTER BRAND (STAYS STILL) */
+.loader span {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  font-weight: 800;
+
+  color: #f8fafc;
+  text-shadow:
+    0 0 6px rgba(255,255,255,0.6),
+    0 0 12px rgba(6,182,212,0.4);
+
+  animation: counter-spin 1.4s linear infinite;
+}
+
+/* LOADING TEXT */
+.loading-text {
+  margin-top: 26px;
+
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+
+  color: #94a3b8;
+  text-shadow: 0 0 10px rgba(6,182,212,0.4);
+
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* DOTS ANIMATION */
+.loading-text::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: loadingDots 1.6s steps(4, end) infinite;
+}
+
+/* ===============================
+   ANIMATIONS
+   =============================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Cancels rotation so text stays still */
+@keyframes counter-spin {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes loadingDots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ===============================
+   GLOBAL TOAST / ALERT SYSTEM
+   =============================== */
+
+#toast-box {
+  position: fixed;
+  bottom: 90px;              /* ⬅ appears above navbar */
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+
+  color: #f8fafc;
+  padding: 14px 20px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+
+  z-index: 30000;
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* SHOW STATE */
+#toast-box.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+        /* ✅ PWA NOTIFICATION POPUP (FULL SCREEN BLOCKER) */
+        #notification-popup {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); z-index: 20000;
+            flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(8px); padding: 20px;
+        }
+        .notif-block-content {
+            background: #1e293b; border: 1px solid var(--primary); border-radius: 20px;
+            padding: 30px; text-align: center; max-width: 350px; width: 100%;
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.2); animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
+        .notif-icon-large { font-size: 3rem; color: var(--primary); margin-bottom: 15px; animation: ring 2s infinite; }
+        @keyframes ring { 0%{transform:rotate(0)} 10%{transform:rotate(15deg)} 20%{transform:rotate(-15deg)} 30%{transform:rotate(10deg)} 40%{transform:rotate(-10deg)} 50%{transform:rotate(0)} 100%{transform:rotate(0)} }
+        .notif-title { font-family: var(--font-gaming); font-size: 1.5rem; margin-bottom: 10px; color: #fff; font-weight: 700; }
+        .notif-desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; }
+        .btn-deny { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); margin-top: 10px; }
+        .btn-deny:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ✅ DOWNLOAD SITE STYLES */
+        #install-view { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #0f172a; z-index: 10000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            padding: 20px; text-align: center;
+            background-image: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.15) 0%, transparent 60%);
+        }
+        .install-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3); }
+        .install-title { font-family: var(--font-gaming); font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 10px; }
+        .install-desc { color: var(--text-muted); font-size: 1rem; margin-bottom: 30px; max-width: 300px; line-height: 1.5; }
+        .btn-install { 
+            background: var(--primary); color: #000; font-weight: 800; 
+            padding: 15px 40px; border-radius: 50px; font-size: 1.1rem; 
+            box-shadow: 0 0 20px var(--primary-glow);
+            animation: pulseBtn 2s infinite; border: none; cursor: pointer;
+        }
+        @keyframes pulseBtn { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(6, 182, 212, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); } }
+        .install-footer { position: absolute; bottom: 30px; color: var(--text-muted); font-size: 0.8rem; }
+/* --- SMART POPUP STYLING & ANIMATIONS --- */
+        @keyframes sp-bell-ring {
+            0%, 100% { transform: rotate(0); }
+            10%, 30% { transform: rotate(15deg); }
+            20%, 40% { transform: rotate(-15deg); }
+            50% { transform: rotate(0); }
+        }
+        #smart-popup-modal.show { display: flex !important; animation: spFadeIn 0.4s forwards; }
+        #smart-popup-modal.show #smart-popup-content { transform: scale(1); }
+        @keyframes spFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .sp-btn { width: 100%; padding: 15px; border-radius: 14px; font-weight: 800; border: none; cursor: pointer; font-family: var(--font-bn); transition: 0.3s; font-size: 1rem; }
+        .sp-btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; box-shadow: 0 5px 15px var(--primary-glow); }
+        .sp-btn-primary:active { transform: scale(0.96); }
+        .sp-btn-outline { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border); }
+        .sp-btn-outline:active { background: rgba(255,255,255,0.1); }
+    
+/* --- ADVANCED LEADERBOARD DESIGN --- */
+.leaderboard-container { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
+.l-card { 
+    background: rgba(30, 41, 59, 0.7); 
+    border: 1px solid var(--glass-border); 
+    border-radius: 16px; 
+    padding: 12px 15px; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    transition: 0.3s;
+}
+.l-rank { 
+    font-family: var(--font-gaming); 
+    font-size: 1.2rem; 
+    font-weight: 800; 
+    width: 30px; 
+    text-align: center; 
+    color: var(--text-muted);
+}
+.l-avatar { 
+    width: 45px; 
+    height: 45px; 
+    border-radius: 50%; 
+    border: 2px solid var(--glass-border); 
+    object-fit: cover;
+}
+.l-info { flex: 1; }
+.l-name { color: #fff; font-weight: 700; font-size: 0.95rem; display: block; }
+.l-subtext { color: var(--text-muted); font-size: 0.75rem; }
+.l-value { 
+    font-family: var(--font-gaming); 
+    font-weight: 700; 
+    color: var(--primary); 
+    font-size: 1.1rem;
+    text-align: right;
+}
+
+/* Rank Specific Glows */
+.rank-1 { border-color: #fbbf24; background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent); }
+.rank-1 .l-rank { color: #fbbf24; }
+.rank-1 .l-avatar { border-color: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+
+.rank-2 { border-color: #94a3b8; background: linear-gradient(90deg, rgba(148, 163, 184, 0.1), transparent); }
+.rank-2 .l-rank { color: #94a3b8; }
+
+.rank-3 { border-color: #92400e; background: linear-gradient(90deg, rgba(146, 64, 14, 0.1), transparent); }
+.rank-3 .l-rank { color: #92400e; }
+/* ✅ অফলাইন পেজের জন্য প্রফেশনাল এনিমেশন */
+@keyframes pulseOffline {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { transform: scale(1.08); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.shake-anim {
+    animation: shake 0.4s ease-in-out;
+}
+/* ========== MODERN POPUP GLOBAL DESIGN ========== */
+.modal-overlay { 
+  background: rgba(0,0,0,0.65) !important; 
+  backdrop-filter: blur(6px) !important; 
+  -webkit-backdrop-filter: blur(6px) !important; 
+}
+
+.modal-card {
+  width: 90%; max-width: 380px; padding: 24px; border-radius: 20px;
+  background: linear-gradient(180deg, #0f172a, #020617) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6) !important;
+  animation: modalPopIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.m-cyan-title { text-align: center; font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
+.m-content-box { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; color: #e5e7eb; font-size: 14px; line-height: 1.5; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.02); }
+
+.m-action-btn { width: 100%; height: 50px; border: none; border-radius: 14px; background: var(--primary); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.m-action-btn:active { transform: scale(0.96); opacity: 0.8; }
+
+@keyframes modalPopIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+/* --- UPDATED TOURNAMENT DETAILS MODAL --- */
+#info-modal.modal {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+#info-modal:not(.hidden) {
+  display: flex !important;
+}
+
+.details-card {
+  width: 90%;
+  max-width: 380px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #0f172a, #020617);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+  animation: detailsPopIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.details-title {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #22d3ee;
+  margin-bottom: 15px;
+  font-family: var(--font-gaming);
+  letter-spacing: 1px;
+}
+
+.details-content-box {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 16px;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 22px;
+  white-space: pre-wrap;
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.details-btn {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 14px;
+  background: #06b6d4;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-bn);
+  transition: 0.2s;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+.details-btn:active { transform: scale(0.97); background: #0891b2; }
+
+@keyframes detailsPopIn { 
+    from { opacity: 0; transform: scale(0.9) translateY(20px); } 
+    to { opacity: 1; transform: scale(1) translateY(0); } 
+}
+</style>
+</head>
+<body>
+    
+ 
+    <!-- ✅ UPDATED LOADING SCREEN HTML -->
+    <div id="loading-overlay">
+  <div class="loader">
+    <span>G-ZONE</span>
+  </div>
+
+  <p class="loading-text">System Loading…</p>
+</div>
+
+    <div id="toast-box"><i class="fas fa-info-circle" style="color:var(--primary)"></i> <span id="toast-msg"></span></div>
+
+    <!-- ✅ FULL SCREEN NOTIFICATION PERMISSION POPUP -->
+<div id="notification-popup" class="modal-overlay">
+    <div class="modal-card">
+        <i class="fas fa-bell" style="font-size: 3rem; color: var(--primary); display: block; text-align: center; margin-bottom: 15px;"></i>
+        <div class="m-cyan-title">নোটিফিকেশন চালু করুন</div>
+        <div class="m-content-box" style="text-align:center;">
+            ম্যাচ আপডেট, আইডি-পাসওয়ার্ড এবং পেমেন্ট নোটিশ পেতে পারমিশন দেওয়া বাধ্যতামূলক।
+        </div>
+        <button class="m-action-btn" onclick="enableNotifications()">ALLOW NOTIFICATION</button>
+        <button id="btn-deny-notif" class="btn btn-deny" style="margin-top:12px; background:transparent; border:none; color:gray;" onclick="denyNotifications()" disabled>Deny (8s)</button>
+    </div>
+</div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-container" class="hidden" style="display:flex;flex-direction:column;justify-content:center;padding:30px;min-height:100vh;text-align:center;">
+        <h1 class="logo" style="font-size:3rem; margin-bottom:10px;">G-ZONE <span>ESPORTS</span></h1>
+        <p style="color:var(--text-muted); margin-bottom:30px;">Play & Earn Money</p>
+        
+        <div id="login-form">
+            <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="l-email" placeholder="ইমেইল"></div>
+            <div class="input-group"><i class="fas fa-lock"></i><input type="room_password" id="l-pass" placeholder="পাসওয়ার্ড"></div>
+            <button class="btn btn-primary" onclick="login()">লগইন করুন</button>
+            <p style="margin-top:20px;color:var(--text-muted);cursor:pointer;font-size:0.9rem;" onclick="toggleAuth()">নতুন একাউন্ট খুলুন</p>
+        </div>
+
+        <div id="signup-form" class="hidden">
+            <div class="input-group"><i class="fas fa-user"></i><input type="text" id="r-user" placeholder="পুরো নাম (Full Name)"></div>
+            <div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="r-email" placeholder="ইমেইল"></div>
+            <div class="input-group"><i class="fas fa-lock"></i><input type="room_password" id="r-pass" placeholder="পাসওয়ার্ড"></div>
+            <div class="input-group"><i class="fas fa-gift"></i><input type="text" id="r-refer" placeholder="রেফার কোড (Optional)"></div>
+            <button class="btn btn-primary" onclick="register()">রেজিস্ট্রেশন</button>
+            <p style="margin-top:20px;color:var(--text-muted);cursor:pointer;font-size:0.9rem;" onclick="toggleAuth()">লগইন করুন</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div id="app-container" class="hidden">
+        
+        <!-- HEADER -->
+        <header>
+            <div class="header-left">
+                <i class="fas fa-bars fa-lg" onclick="toggleDrawer()" style="cursor:pointer; color:#fff;"></i>
+                <div class="logo">G-ZONE</div>
+            </div>
+            
+            <div class="header-right">
+                <div class="nav-balance" onclick="nav('page-withdraw')">
+                    <i class="fas fa-wallet"></i>
+                    <span>৳<span id="header-bal">0</span></span>
+                </div>
+                
+                <div class="notif-icon-box" onclick="openNotifications()">
+                    <i class="far fa-bell" style="color:#fff;"></i>
+                    <div id="header-badge" class="notification-dot"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PAGE: HOME -->
+        <div id="page-home" class="page-section active">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="q-btn q-add" onclick="nav('page-add-money')"><i class="fas fa-plus-circle"></i> এড মানি</div>
+                <div class="q-btn q-wd" onclick="nav('page-withdraw')"><i class="fas fa-arrow-circle-down"></i> উইথড্র</div>
+            </div>
+
+            <!-- Banner Slider -->
+            <div id="banner-slider"></div>
+
+            <!-- Tournament Section -->
+            <div class="section-header"><i class="fas fa-fire"></i> চলমান টুর্নামেন্ট</div>
+            
+            <div class="home-tabs">
+                <div class="home-tab active" id="ht-BR" onclick="switchHomeTab('BR')">Battle Royale</div>
+                <div class="home-tab" id="ht-CS" onclick="switchHomeTab('CS')">Clash Squad</div>
+                <!-- ✅ ADDED LONE WOLF TAB (UPDATES) -->
+                <div class="home-tab hidden" id="ht-LW" onclick="switchHomeTab('LW')">Lone Wolf</div>
+            </div>
+
+            <div id="tournament-list"></div>
+        </div>
+
+        <!-- PAGE: LEADERBOARD -->
+      <div id="page-leaderboard" class="page-section">
+    <div class="section-header"><i class="fas fa-crown"></i> সেরা ১০ ধনী</div>
+    <div class="t-card"><div class="t-body"><div id="balance-leaderboard"></div></div></div>
+</div>
+
+        <!-- PAGE: REFER -->
+        <div id="page-refer" class="page-section">
+            <div class="section-header"><i class="fas fa-user-plus"></i> রেফার করুন</div>
+            <div class="t-card">
+                <div class="t-body" style="text-align:center;">
+                    <p style="color:var(--text-muted); font-size:0.9rem;">আপনার রেফার কোড</p>
+                    <div class="cred-panel" style="margin:15px 0;">
+                        <div class="cred-box" style="justify-content:center; gap:15px; border:none; background:transparent; padding:0;">
+                            <span id="my-refer-code" class="cred-value" style="font-size:1.8rem; color:var(--success);">...</span>
+                            <i class="fas fa-copy" onclick="copyReferCode()" style="cursor:pointer; color:var(--text-muted)"></i>
+                        </div>
+                    </div>
+                    <p style="font-size:0.9rem; color:#aaa; margin-bottom:20px; line-height:1.5;">বন্ধুদের ইনভাইট করুন। তারা যখন প্রথম সোলো ম্যাচে জয়েন করবে, আপনি পাবেন <span style="color:var(--success)">৳5</span> বোনাস!</p>
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid var(--glass-border);">
+                        <div><small style="color:var(--text-muted)">মোট রেফার</small><h3 id="total-refers" style="color:#fff;">0</h3></div>
+                        <div style="text-align:right;"><small style="color:var(--text-muted)">মোট আয়</small><h3 id="total-refer-earn" style="color:var(--success);">৳0</h3></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-header"><i class="fas fa-medal"></i> টপ রেফারার</div>
+            <div id="referral-leaderboard" style="margin: 0 16px 20px;"></div>
+        </div>
+
+        <!-- PAGE: FREE SHOP (RECREATED) -->
+<div id="page-free-shop" class="page-section">
+    <div class="section-header"><i class="fas fa-store"></i> জি-জোন ফ্রি শপ (Free Shop)</div>
+    
+    <div class="t-card" style="border: none; background: transparent;">
+        <div class="t-body" style="padding: 0 16px;">
+            
+            <!-- 1. Token Balance Display -->
+            <div id="token-balance-card" style="background: linear-gradient(135deg, #06b6d4, #6366f1); padding: 25px; border-radius: 24px; margin-bottom: 20px; text-align: center; box-shadow: 0 15px 30px rgba(6, 182, 212, 0.3);">
+                <small style="color: rgba(255,255,255,0.8); text-transform: uppercase; font-weight: 800; letter-spacing: 2px; font-size: 0.75rem;">আপনার বর্তমান শপ টোকেন</small>
+                <div style="font-size: 3.5rem; color: white; font-weight: 800; font-family: var(--font-gaming); margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <i class="fas fa-ticket-alt" style="font-size: 2.2rem; opacity: 0.9;"></i>
+                    <span id="shop-token-bal">0</span>
+                </div>
+            </div>
+
+            <!-- 2. Detailed Guidelines (Bengali) -->
+            <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 18px; border-radius: 18px; margin-bottom: 25px;">
+                <h4 style="color: var(--primary); font-size: 0.95rem; margin-bottom: 10px;"><i class="fas fa-book-open"></i> শপ গাইডলাইন (নির্দেশনাবলী):</h4>
+                <div style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.6;">
+                    <p style="margin-bottom: 8px;">• <b>টোকেন ইনকাম:</b> প্রতিবার <b>পেইড (Paid)</b> ম্যাচে জয়েন করলে অটোমেটিক ১টি শপ টোকেন আপনার একাউন্টে যোগ হবে।</p>
+                    <p style="margin-bottom: 8px;">• <b>ফ্রি ম্যাচ:</b> ফ্রি টুর্নামেন্ট বা ম্যাচে জয়েন করলে কোনো টোকেন পাওয়া যাবে না।</p>
+                    <p style="margin-bottom: 8px;">• <b>ডায়মন্ড রিডিম:</b> পর্যাপ্ত টোকেন জমলে নিচের প্যাকেজ থেকে পছন্দমতো ডায়মন্ড আপনার গেমে নিতে পারবেন।</p>
+                    <p>• <b>ডেলিভারি:</b> রিডিম করার পর ২৪ ঘণ্টার মধ্যে অ্যাডমিন আপনার গেমে ডায়মন্ড পাঠিয়ে দিবে।</p>
+                </div>
+            </div>
+            
+            <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 15px; font-family: var(--font-gaming); letter-spacing: 1px;">DIAMOND PACKAGES</h3>
+            
+            <!-- 3. Diamond Packages Grid -->
+            <div id="diamond-packages-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                <!-- JS will inject cards here -->
+            </div>
+
+            <!-- 4. Redemption History Section -->
+            <div class="section-header" style="margin-left: 0;"><i class="fas fa-history"></i> রিডেম্পশন ইতিহাস (History)</div>
+            <div id="shop-history-list" style="margin-bottom: 30px;">
+                <p style="text-align:center; color: gray; font-size: 0.85rem; padding: 20px;">কোন ইতিহাস পাওয়া যায়নি</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REDEEM MODAL (RECREATED) -->
+<div id="redeem-modal" class="hidden modal">
+    <div class="modal-content" style="border-radius: 28px; padding: 35px; border: 1px solid var(--primary);">
+        <h3 style="text-align:center; color:#fff; font-family: var(--font-gaming); font-size: 1.5rem;">CONFIRM ORDER</h3>
+        <div id="redeem-details" style="background: rgba(6, 182, 212, 0.05); border: 1px dashed var(--primary); padding: 20px; border-radius: 20px; margin: 20px 0; text-align: center;">
+            <!-- Content via JS -->
+        </div>
+        <div class="input-group">
+            <i class="fas fa-id-card"></i>
+            <input type="number" id="redeem-ff-uid" placeholder="গেম ইউআইডি (Player UID) দিন">
+        </div>
+        <button class="btn btn-primary" id="btn-confirm-redeem" style="height: 58px; font-size: 1.1rem; border-radius: 15px;">রিডিম রিকোয়েস্ট পাঠান</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('redeem-modal').classList.add('hidden')" style="margin-top:15px; border:none; color: #94a3b8;">ফিরে যান</button>
+    </div>
+</div>
+
+        <!-- PAGE: MATCHES -->
+        <div id="page-matches" class="page-section">
+            <div class="section-header"><i class="fas fa-gamepad"></i> আমার ম্যাচ</div>
+            <div id="my-matches-list"></div>
+        </div>
+
+        <!-- PAGE: PROFILE -->
+        <div id="page-profile" class="page-section">
+            <div class="section-header"><i class="fas fa-user-circle"></i> প্রোফাইল</div>
+            <div class="t-card">
+                <div class="t-body" style="text-align:center; padding:30px 20px;">
+                    <div class="profile-img-container"><img id="p-pic" src="" class="profile-pic" onerror="this.src='https://via.placeholder.com/100'"></div>
+                    <h2 style="color:#fff; margin-bottom:5px; font-size:1.4rem;"><span id="p-name">...</span></h2>
+                    
+                    <div style="background:rgba(0,0,0,0.3); padding:8px 15px; border-radius:20px; display:inline-flex; align-items:center; gap:10px; margin:10px 0; border:1px solid var(--glass-border);">
+                        <span style="color:#aaa; font-size:0.85rem;">UID:</span>
+                        <span id="p-custom-id" style="font-family:monospace; font-weight:bold; letter-spacing:1px; color:var(--primary);">...</span>
+                        <i class="fas fa-copy" onclick="copyCustomId()" style="cursor:pointer; color:var(--text-muted);"></i>
+                    </div>
+
+                    <div style="margin-top:30px; text-align:left;">
+                        <label style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px; display:block;">প্রোফাইল ছবি পরিবর্তন</label>
+                        <div class="input-group" style="margin-bottom:10px;"><i class="fas fa-link"></i><input type="text" id="new-pic-url" placeholder="ছবির URL লিঙ্ক"></div>
+                        <button class="btn btn-secondary" onclick="updateProfilePic()">আপডেট করুন</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: TRANSFER -->
+        <div id="page-transfer" class="page-section">
+            <div class="section-header"><i class="fas fa-exchange-alt"></i> টাকা ট্রান্সফার</div>
+            <div class="t-card">
+                <div class="t-body">
+                    <p style="color:var(--text-muted); margin-bottom:15px; font-size:0.9rem;">অন্য ইউজারকে টাকা পাঠান:</p>
+                    <div class="input-group"><i class="fas fa-id-card"></i><input type="number" id="tf-id" placeholder="রিসিভারের ইউজার আইডি (১১ সংখ্যা)"></div>
+                    <div class="input-group"><i class="fas fa-coins"></i><input type="number" id="tf-amount" placeholder="টাকার পরিমাণ"></div>
+                    <button class="btn btn-primary" id="btn-transfer" onclick="sendMoney()">টাকা পাঠান</button>
+                </div>
+            </div>
+            <div style="margin:20px; font-size:0.8rem; color:#aaa; text-align:center; padding:0 20px;">
+                <i class="fas fa-info-circle"></i> ভুল আইডিতে টাকা পাঠালে ফেরত পাওয়া যাবে না। আইডি চেক করে নিন।
+            </div>
+        </div>
+
+  <!-- PAGE: WITHDRAW (DYNAMIC SYSTEM) -->
+        <div id="page-withdraw" class="page-section">
+            <div class="section-header"><i class="fas fa-money-bill-wave"></i> টাকা উত্তোলন (Withdraw)</div>
+            
+            <div class="t-card">
+                <div class="t-body">
+                    <p style="color:var(--text-muted); margin-bottom:12px; font-size:0.9rem;">পেমেন্ট মেথড সিলেক্ট করুন:</p>
+                    
+                    <!-- DYNAMIC GRID -->
+                    <div class="method-grid" id="user-method-grid">
+                        <p style="grid-column: 1/-1; text-align:center; padding:20px; color:gray;">লোডিং হচ্ছে...</p>
+                    </div>
+                    
+                    <!-- CONVERSION DISPLAY -->
+                    <div id="dynamic-calc-box" style="display:none; background:rgba(6, 182, 212, 0.1); border:1px dashed var(--primary); padding:12px; border-radius:12px; margin-bottom:15px; text-align:center;">
+                        <small id="dyn-rate-label" style="color:var(--text-muted); font-size:0.75rem;"></small><br>
+                        <b id="dyn-receive-amount" style="color:var(--primary); font-size:1.1rem;"></b>
+                    </div>
+                    
+                    <!-- INPUTS -->
+                    <div class="input-group">
+                        <i class="fas fa-coins"></i>
+                        <input type="number" id="uw-amount" placeholder="টাকার পরিমাণ লিখুন" oninput="calculateDynamicWithdraw()">
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-id-card"></i>
+                        <input type="text" id="uw-account-info" placeholder="একাউন্ট তথ্য দিন">
+                    </div>
+
+                    <p id="uw-limit-display" style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;"></p>
+                    
+                    <button class="btn btn-primary" id="btn-withdraw-submit" onclick="submitDynamicWithdraw()">
+                        রিকুয়েস্ট পাঠান
+                    </button>
+                </div>
+            </div>
+
+            <div class="section-header"><i class="fas fa-history"></i> ইতিহাস</div>
+            <div id="withdraw-history" style="margin: 0 16px 20px;"></div>
+        </div>
+
+        <!-- PAGE: ADD MONEY -->
+        <div id="page-add-money" class="page-section">
+            <div class="section-header"><i class="fas fa-wallet"></i> অ্যাড মানি</div>
+            <div class="t-card"><div class="t-body" style="text-align:center; padding:50px 20px;">
+                <i class="fab fa-telegram fa-4x" style="color:#0088cc; margin-bottom:20px;"></i>
+                <h3 style="margin-bottom:10px;">টেলিগ্রাম সাপোর্ট</h3>
+                <p style="color:var(--text-muted); margin-bottom:25px; font-size:0.9rem;">টাকা এড করতে অ্যাডমিনের সাথে যোগাযোগ করুন।</p>
+                <a id="btn-admin-support" href="#" target="_blank" class="btn btn-primary" style="background:#0088cc;">
+                    <i class="fab fa-telegram-plane"></i> মেসেজ পাঠান
+                </a>
+            </div></div>
+        </div>
+        
+        <!-- PAGE: BROADCAST -->
+        <div id="page-broadcast" class="page-section">
+            <div class="section-header"><i class="fas fa-video"></i> লার্নিং জোন</div>
+            <div id="video-list" style="margin:0 16px;"></div>
+        </div>
+
+        <!-- PAGE: NOTIFICATION -->
+        <div id="page-notifications" class="page-section">
+            <div class="section-header"><i class="fas fa-bell"></i> নোটিফিকেশন</div>
+            <div id="n-list" style="padding-bottom:20px; margin:0 16px;"></div>
+        </div>
+
+        <!-- PAGE: COUPON -->
+        <div id="page-coupon" class="page-section">
+             <div class="section-header"><i class="fas fa-ticket-alt"></i> কুপন</div>
+             <div class="t-card"><div class="t-body">
+                <div class="input-group"><i class="fas fa-gift"></i><input type="text" id="coupon-code" placeholder="কোড লিখুন"></div>
+                <button class="btn btn-primary" onclick="redeemCoupon()">রিডিম করুন</button>
+             </div></div>
+             <h4 style="margin:25px 20px 15px; color:var(--text-main); font-size:1rem;">পাবলিক কুপন</h4>
+             <div id="public-coupons" style="margin: 0 16px;"></div>
+        </div>
+    </div>
+
+    <!-- DRAWER MENU (NEW UX) -->
+    <div class="drawer-overlay" onclick="toggleDrawer()"></div>
+    <div class="drawer">
+        
+        <!-- HEADER: Shows User Info -->
+        <div class="drawer-header">
+            <img id="d-pic" src="https://via.placeholder.com/100" class="d-user-img">
+            <div class="d-user-info">
+                <h3 id="d-name">Loading...</h3>
+                <span id="d-uid">ID: ...</span>
+            </div>
+        </div>
+
+        <!-- SCROLLABLE ITEMS -->
+        <div class="drawer-items">
+            
+            <!-- Section 1: Main -->
+            <div class="menu-group-label">Gaming Zone</div>
+            <div class="d-item" onclick="nav('page-home')"><i class="fas fa-home"></i> হোম</div>
+            <div class="d-item" onclick="nav('page-matches')"><i class="fas fa-gamepad"></i> আমার ম্যাচ</div>
+            <div class="d-item" onclick="nav('page-leaderboard')"><i class="fas fa-crown"></i> লিডারবোর্ড</div>
+
+            <!-- Section 2: Finance -->
+            <div class="menu-group-label">Finance</div>
+            <div class="d-item" onclick="nav('page-withdraw')"><i class="fas fa-wallet"></i> উইথড্র</div>
+            <div class="d-item" onclick="nav('page-add-money')"><i class="fas fa-plus-circle"></i> অ্যাড মানি</div>
+            <div class="d-item" onclick="nav('page-transfer')"><i class="fas fa-exchange-alt"></i> ট্রান্সফার</div>
+            <div class="d-item" onclick="nav('page-coupon')"><i class="fas fa-ticket-alt"></i> কুপন</div>
+
+            <!-- Section 3: Account -->
+            <div class="menu-group-label">Account & Fun</div>
+            <div class="d-item" onclick="nav('page-profile')"><i class="fas fa-user-circle"></i> প্রোফাইল</div>
+            <div class="d-item" onclick="nav('page-refer')"><i class="fas fa-user-plus"></i> রেফার</div>
+<div id="nav-free-shop-item" class="d-item" onclick="nav('page-free-shop')">
+    <i class="fas fa-store"></i> ফ্রি শপ (Free Shop)
+</div>
+            <div class="d-item" onclick="nav('page-broadcast')"><i class="fas fa-video"></i> লার্নিং জোন</div>
+        </div>
+
+        <!-- FOOTER: Pinned Logout -->
+        <div class="drawer-footer">
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> লগআউট
+            </button>
+        </div>
+    </div>
+<!-- ✅ অফলাইন অ্যালার্ট পেজ -->
+<div id="offline-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; z-index:1000000; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px;">
+    <div style="background:rgba(239, 68, 68, 0.1); width:120px; height:120px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:25px; border:2px solid #ef4444; animation: pulseOffline 2s infinite;">
+        <i class="fas fa-wifi-slash" style="font-size:3.5rem; color:#ef4444;"></i>
+    </div>
+    <h1 style="font-family:'Rajdhani', sans-serif; color:#fff; font-size:2rem; margin-bottom:10px; letter-spacing:1px;">ইন্টারনেট কানেকশন নেই!</h1>
+    <p style="color:#94a3b8; font-size:1rem; line-height:1.6; max-width:280px; margin-bottom:35px;">অনুগ্রহ করে আপনার মোবাইল ডাটা বা ওয়াইফাই সংযোগ চেক করে আবার চেষ্টা করুন।</p>
+    <button onclick="checkConnectivity()" class="btn btn-primary" style="width:200px; height:55px; border-radius:50px; font-weight:800; font-size:1.1rem; box-shadow:0 0 20px rgba(6, 182, 212, 0.4);">RETRY</button>
+</div>
+
+    <!-- MODALS -->
+    <div id="modal-area" class="hidden modal"><div class="modal-content" id="modal-content"></div></div>
+    
+    <!-- JOIN MODAL -->
+    <div id="join-modal" class="hidden modal">
+        <div class="modal-content">
+            <h3 style="text-align:center; color:#fff; margin-bottom:5px;">টুর্নামেন্ট জয়েন</h3>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">সঠিক তথ্য দিন</p>
+            
+            <div id="squad-tabs" class="sq-tabs hidden">
+                <div class="sq-tab active" id="tab-create" onclick="switchTab('create')">স্কোয়াড/ডুও কিনুন</div>
+                <div class="sq-tab" id="tab-join" onclick="switchTab('join')">টিমে জয়েন করুন</div>
+            </div>
+            
+            <div id="view-create">
+                <div style="text-align:center; margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px;">
+                    <span style="color:#aaa;">এন্ট্রি ফি:</span> <b style="color:var(--warning); font-size:1.1rem;" id="j-fee">0</b>
+                </div>
+                <div class="input-group"><i class="fas fa-gamepad"></i><input type="text" id="j-uid" placeholder="গেম ইউআইডি (UID)"></div>
+                <!-- ✅ ADDED GAME USERNAME INPUT -->
+                <div class="input-group"><i class="fas fa-user-tag"></i><input type="text" id="j-game-uname" placeholder="গেম ইউজারনেম (Name)"></div>
+                
+                <div id="squad-inputs" class="hidden">
+                    <div class="input-group"><i class="fas fa-profiles"></i><input type="text" id="j-team" placeholder="টিমের নাম"></div>
+                </div>
+                <button class="btn btn-primary" id="btn-conf" onclick="confirmJoin()">কনফার্ম ও পেমেন্ট</button>
+            </div>
+            
+            <div id="view-join" class="hidden">
+                <p style="text-align:center; color:#aaa; font-size:0.9rem; margin-bottom:10px;">লিডারের দেওয়া কোড দিন</p>
+                <div class="input-group"><i class="fas fa-key"></i><input type="text" id="m-code" placeholder="টিম কোড"></div>
+                <div class="input-group"><i class="fas fa-gamepad"></i><input type="text" id="m-uid" placeholder="আপনার গেম ইউআইডি (UID)"></div>
+                <!-- ✅ ADDED GAME USERNAME INPUT FOR MEMBER -->
+                <div class="input-group"><i class="fas fa-user-tag"></i><input type="text" id="m-game-uname" placeholder="আপনার গেম ইউজারনেম (Name)"></div>
+                
+                <button class="btn btn-success" id="btn-m-join" onclick="joinTeamMember()">টিমে জয়েন করুন</button>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="closeJoin()" style="margin-top:10px;">বাতিল করুন</button>
+        </div>
+    </div>
+    
+    <!-- TEAM CODE MODAL -->
+    <div id="team-code-modal" class="hidden modal">
+        <div class="modal-content" style="text-align:center;">
+            <i class="fas fa-check-circle fa-3x" style="color:var(--success); margin-bottom:15px;"></i>
+            <h3 style="color:#fff;">সফলভাবে তৈরি হয়েছে!</h3>
+            <p style="color:#aaa; margin-top:5px; font-size:0.9rem;">নিচের কোডটি আপনার টিমমেটদের দিন:</p>
+            <div class="cred-panel" style="margin:20px 0;">
+                <div class="cred-box" style="justify-content:center; gap:10px; background:transparent; border:none; padding:0;">
+                    <span id="gen-team-code" class="cred-value" style="font-size:1.6rem; color:var(--success);">...</span>
+                    <i class="fas fa-copy" onclick="copyGenCode()" style="cursor:pointer; color:#fff;"></i>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="closeTeamCodeModal()">ঠিক আছে</button>
+        </div>
+    </div>
+    
+<!-- INFO MODAL (MODERNIZED) -->
+<div id="info-modal" class="hidden modal">
+    <div class="details-card">
+        <div class="details-title">টুর্নামেন্ট ডিটেইলস</div>
+        
+        <div id="info-text" class="details-content-box">
+            <!-- Content will be injected by JS -->
+        </div>
+
+        <button class="details-btn" onclick="document.getElementById('info-modal').classList.add('hidden')">
+            ঠিক আছে
+        </button>
+    </div>
+</div>
+
+    <!-- PROOF MODAL -->
+    <div id="proof-modal" class="hidden modal">
+        <div class="modal-content" style="text-align:center;">
+            <h3 style="color:var(--primary); margin-bottom:10px;">প্রুফ জমা দিন</h3>
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:25px;">আপনার তথ্য কপি হয়েছে। টেলিগ্রাম বটে গিয়ে পেস্ট করুন এবং স্ক্রিনশট দিন।</p>
+            
+            <a id="btn-proof-link" href="#" target="_blank" class="btn btn-primary" style="background:#0088cc; margin-bottom:12px;">
+                <i class="fab fa-telegram-plane"></i> প্রুফ পাঠান (Telegram)
+            </a>
+            
+            <button class="btn btn-secondary" onclick="document.getElementById('proof-modal').classList.add('hidden')">বন্ধ করুন</button>
+        </div>
+    </div>
+<!-- ✅ SMART POPUP MODAL -->
+    <div id="smart-popup-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.9); z-index:50000; display:none; align-items:center; justify-content:center; backdrop-filter:blur(10px); padding:20px;">
+        <div id="smart-popup-content" style="background:#1e293b; width:100%; max-width:340px; border-radius:28px; border:1px solid rgba(6, 182, 212, 0.3); padding:30px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.6); transform:scale(0.8); transition:0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div id="sp-icon-box" style="margin-bottom:20px;">
+                <i class="fas fa-bell" style="font-size:3.5rem; color:var(--primary); filter: drop-shadow(0 0 10px var(--primary-glow)); animation: sp-bell-ring 2s infinite;"></i>
+            </div>
+            <h2 id="sp-title" style="font-family:var(--font-gaming); font-size:1.6rem; color:#fff; margin-bottom:12px; letter-spacing:1px;">Update!</h2>
+            <p id="sp-body" style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; margin-bottom:25px; font-family: var(--font-bn);">আপনার জন্য একটি নতুন বার্তা আছে। বিস্তারিত জানতে নিচের বাটনে ক্লিক করুন।</p>
+            <div id="sp-buttons" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Buttons will be injected here via JS -->
+            </div>
+            <button onclick="closeSmartPopup()" style="margin-top:20px; background:transparent; border:none; color:#94a3b8; font-size:0.85rem; font-weight:600; text-decoration:underline; cursor:pointer; font-family: var(--font-bn);">বন্ধ করুন</button>
+        </div>
+    </div>
+    <!-- JS LOGIC -->
+ <script type="module">
+  /* ---------- IMPORTS (ALL FIRST) ---------- */
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import {
+    getMessaging,
+    getToken,
+    onMessage
+  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js";
+
+  /* ---------- SUPABASE ---------- */
+  const SUPABASE_URL = "https://hjzwndttkhhicvlookhb.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqenduZHR0a2hoaWN2bG9va2hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NDY1NzgsImV4cCI6MjA4NDMyMjU3OH0.5SUDbHahV1NEKe9NAWe4Al4lGBjEwXJzixQY9SEWfew";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const KV_URL = "https://dbkv.moeenu321.workers.dev";
+const TOURNAMENT_MIRROR_URL = "https://dbsharding.moeenu321.workers.dev/get_tournaments";
+const WORKER_STATE_URL = "https://email.moeenu321.workers.dev/get-state";
+let globalKVState = null; // এটি সব ডাটা ক্যাশ করে রাখবে
+// ইউআরএল থেকে রেফার কোড ডিটেক্ট করে সেশন মেমোরিতে রাখা
+const params = new URLSearchParams(window.location.search);
+const ref = params.get('ref');
+if (ref) {
+    sessionStorage.setItem('pending_ref', ref);
+    console.log("Referral cached:", ref);
+}
+  /* ---------- FIREBASE ---------- */
+  /* ---------- FIREBASE CONFIG (EXTRACTED FROM OLD CODE) ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyAafXkJwyZ5F7Xuax0VktZ9cpqWD4oCvxU",
+  authDomain: "tournament-97743.firebaseapp.com",
+  projectId: "tournament-97743",
+  messagingSenderId: "584797187828",
+  appId: "1:584797187828:web:4c643f83dfd9b700adb8a1"
+};
+
+/* ---------- INIT ---------- */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+  let messaging;
+try {
+    // সুরক্ষিত পরিবেশ এবং ব্রাউজার সাপোর্ট চেক করা হচ্ছে
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
+        messaging = getMessaging(app);
+    } else {
+        console.warn("FCM: Secure context (HTTPS) or browser support missing. Messaging skipped.");
+    }
+} catch (e) {
+    console.error("FCM Initialization failed:", e);
+}
+
+        const defaultAvatars = ["https://i.pinimg.com/736x/5c/84/42/5c84428d983d26ce85a84f946e4ce8ab.jpg","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyAcF57Bqp8agckepgWzFwV0xBxe2gDcbChteoaL41YzUUL62kxx3hvsU&s=10","https://w0.peakpx.com/wallpaper/264/475/HD-wallpaper-profile-pic-girl-profile-thumbnail.jpg","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSy3WjPE0K2GQYxbNrMNm83QolhuPiom4owlQkhi7f66XXxnAHXBatc3JY&s=10","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7TR-91MtVx3Zyg4mVGvbMchzouv9ajRiXeYEKWDmhRobPcNmPsT3Dhu8&s=10","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToqJSrJs571Mn_CaYsV0M6pYVz3p5ygUPbEsR5wuZojA&s=10","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQy8-AqEVRQZDvyiWLka_22hAn2tyosADPj3o1gHV2_aQ&s=10","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSysX8k1gABg8LHF0QSukobgjnwgnxqX1Pqjcxx6AafbTLSGRq8560Mz8I&s=10"];
+/* =========================
+   USER IP CAPTURE HELPER
+   ========================= */
+
+/* --- SECURITY DNA ENGINE --- */
+async function getSecurityDNA() {
+    // ১. Device ID (ব্রাউজারে স্থায়ী আইডি)
+    let deviceId = localStorage.getItem('gzone_dev_id');
+    if (!deviceId) {
+        deviceId = 'id-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+        localStorage.setItem('gzone_dev_id', deviceId);
+    }
+
+    // ২. Fingerprint (ডিভাইসের ইউনিক সিগনেচার)
+    const fpData = [navigator.userAgent, navigator.language, screen.width + "x" + screen.height, new Date().getTimezoneOffset()].join('|');
+    let hash = 0;
+    for (let i = 0; i < fpData.length; i++) {
+        hash = ((hash << 5) - hash) + fpData.charCodeAt(i);
+        hash |= 0;
+    }
+
+    // ৩. বর্তমান আইপি
+    let currentIp = "0.0.0.0";
+    try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        currentIp = data.ip;
+    } catch (e) {}
+
+    return { deviceId, fingerprint: Math.abs(hash).toString(16), currentIp };
+}
+/* --- G-ZONE EMAIL ENGINE --- */
+async function triggerEmailAlert(payload) {
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzS3e7sDMgX8jy7r56JVsPGd5-AL_7yDigkS9AEGFrTId1yaBEAlTDHPpb9EhfGju_7mw/exec";
+    
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors", // গুগল স্ক্রিপ্টের জন্য এটি প্রয়োজন
+        body: JSON.stringify(payload)
+    }).catch(e => console.warn("Email alert could not be sent"));
+}
+async function captureUserIP(uid) {
+  try {
+    const dna = await getSecurityDNA();
+    await supabase
+      .from('profiles')
+      .update({
+        last_ip: dna.currentIp,
+        deviceId: dna.deviceId,
+        fingerprint: dna.fingerprint,
+        lastLoginAt: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('firebase_uid', uid);
+  } catch (err) {
+    console.warn("Security Sync Failed");
+  }
+}
+/* ========================= */
+       
+ // ✅ SOUND SYSTEM INITIALIZATION
+        // 🔒 HARD GATE: Prevent sounds outside app
+function isAppVisible() {
+    const app = document.getElementById('app-container');
+    return app && !app.classList.contains('hidden');
+}
+
+// Override play to enforce app-only sound
+const safePlay = (audio) => {
+    if (!isAppVisible()) {
+        audio.pause();
+        audio.currentTime = 0;
+        return;
+    }
+    audio.play().catch(()=>{});
+};
+
+
+// Patch theme music logic
+
+const sounds = {
+            alert: new Audio("https://raw.githubusercontent.com/moeenuddin420/Upgrade-08/main/alert.mp3"),
+            redeem: new Audio("https://raw.githubusercontent.com/moeenuddin420/Upgrade-08/main/redeem.mp3"),
+            theme1: new Audio("https://raw.githubusercontent.com/moeenuddin420/Upgrade-08/main/theme1.mp3"),
+            theme2: new Audio("https://raw.githubusercontent.com/moeenuddin420/Upgrade-08/main/theme2.mp3"),
+            success: new Audio("https://raw.githubusercontent.com/moeenuddin420/Upgrade-08/main/success.mp3"),
+        };
+
+        let currentTheme = null;
+        let soundSettings = {
+            themeEnabled: true,
+            effectsEnabled: true,
+            activeTheme: "1",
+            themeVol: 0.5,
+            effectVol: 0.7
+        };
+
+        function playEffect(type) {
+            if (soundSettings.effectsEnabled && sounds[type]) {
+                sounds[type].volume = soundSettings.effectVol;
+                sounds[type].currentTime = 0;
+                sounds[type].play().catch(e => {});
+            }
+        };
+
+        function updateThemeMusic() {
+            // Theme music plays only in app-container, not in login/signup
+            const isAuthVisible = !document.getElementById('auth-container').classList.contains('hidden');
+            const isAppVisible = !document.getElementById('app-container').classList.contains('hidden');
+
+            if (!soundSettings.themeEnabled || isAuthVisible || !isAppVisible) {
+                if (currentTheme) { currentTheme.pause(); currentTheme.currentTime = 0; }
+                return;
+            }
+
+            const targetTheme = soundSettings.activeTheme === "1" ? sounds.theme1 : sounds.theme2;
+
+            if (currentTheme !== targetTheme) {
+                if (currentTheme) { currentTheme.pause(); currentTheme.currentTime = 0; }
+                currentTheme = targetTheme;
+                currentTheme.volume = soundSettings.themeVol;
+                
+                // Handle Loop with 3s delay
+                currentTheme.onended = () => {
+                    setTimeout(() => {
+                        if (currentTheme === targetTheme && soundSettings.themeEnabled) {
+                            currentTheme.play().catch(e => {});
+                        }
+                    }, 3000);
+                };
+            }
+
+            if (currentTheme.paused) {
+                currentTheme.play().catch(e => {
+                    // Browser policy: Music starts after first user interaction
+                    window.addEventListener('click', () => { currentTheme.play().catch(e=>{}); }, { once: true });
+                });
+            }
+        };
+const originalUpdateThemeMusic = updateThemeMusic;
+window.updateThemeMusic = () => {
+    if (!isAppVisible()) {
+        if (currentTheme) {
+            currentTheme.pause();
+            currentTheme.currentTime = 0;
+        }
+        return;
+    }
+    originalUpdateThemeMusic();
+};
+
+        // ✅ ADDED GLOBAL PROCESSING FLAG
+       
+       
+       // ✅ গ্লোবাল ভেরিয়েবল সেকশন (সবগুলো একবার করে থাকবে)
+        // ✅ গ্লোবাল ভেরিয়েবল সেকশন
+        let lastKnownBalance = parseFloat(localStorage.getItem('last_saved_bal')) || 0;
+
+        // --- 🛡️ SECURITY MONITORING AGENT ---
+        async function sendSecurityLog(eventType, userData) {
+  try {
+    const ipRes = await fetch("https://api.ipify.org?format=json");
+    const ipData = await ipRes.json();
+
+    await supabase.from('security_logs').insert([{
+      uid: auth.currentUser ? auth.currentUser.uid : "Unknown",
+      email: userData.email || "N/A",
+      customId: userData.customId || "N/A",
+      username: userData.fullName || userData.username || "Gamer",
+      balance: userData.balance || 0,
+      ip: ipData.ip,
+      event: eventType,
+      created_at: new Date().toISOString()
+    }]);
+
+  } catch (e) {
+    console.warn("Security log skipped:", e.message);
+  }
+}
+        let currentUserData = null;
+        let isLeaderboardLoaded = false;
+        let isActionProcessing = false; 
+        let isRegistering = false; // এই লাইনটি যোগ করুন
+        let sliderInterval = null;
+        let isFirstLoad = true; 
+        let proofBotUrl = "";
+        let selMatch = null;
+        let allTournaments = [];
+        let lastHomeLoad = 0; // টুর্নামেন্ট ডাটা রিফ্রেশ ট্র্যাকার
+        let joinedMatchIds = new Set();
+        let spinProcessing = false;
+        let currentRotation = 0;
+        let lastBackPress = 0;
+        let currentHomeTab = 'BR';
+        let deferredPrompt; 
+
+        // --- SECURITY AGENT END ---
+
+        // এর নিচে আপনার বাকি অরিজিনাল কোড (যেমন window.showToast) চলতে থাকবে...
+
+        window.showToast = (msg) => { 
+            const t = document.getElementById('toast-box'); 
+            if(t) { 
+                t.innerHTML = `<i class="fas fa-info-circle"></i> ${msg}`; 
+                t.classList.add('show'); 
+                setTimeout(() => t.classList.remove('show'), 3000); 
+            } else { alert(msg); } 
+        };
+// প্রোফাইল ডাটা দিয়ে UI আপডেট করার মেইন হেল্পার
+function updateAppUI(d) {
+    if(!d) return;
+    const balEl = document.getElementById('header-bal'); if (balEl) balEl.innerText = d.balance || 0;
+    const nameEl = document.getElementById('p-name'); if (nameEl) nameEl.innerText = d.fullName || d.username || "Gamer";
+    const idEl = document.getElementById('p-custom-id'); if (idEl) idEl.innerText = d.customId || "";
+    
+    // --- র‍্যান্ডম প্রোফাইল পিকচার লজিক ---
+    const dPic = document.getElementById('d-pic');
+    const imgEl = document.getElementById('p-pic');
+    let finalPic = "https://via.placeholder.com/100";
+
+    // যদি KV থেকে র‍্যান্ডম ছবি লোড হয়ে থাকে তবে সেখান থেকে ১টি নাও
+    if(globalKVState && globalKVState.avatars && globalKVState.avatars.length > 0) {
+        const list = globalKVState.avatars;
+        finalPic = list[Math.floor(Math.random() * list.length)];
+    } else if (d.photoURL) {
+        // যদি KV কাজ না করে তবে ডাটাবেসের ছবি দেখাও
+        finalPic = d.photoURL;
+    }
+
+    if (dPic) dPic.src = finalPic;
+    if (imgEl) imgEl.src = finalPic;
+    // -----------------------------------
+
+    const dName = document.getElementById('d-name'); if (dName) dName.innerText = d.fullName || "Gamer";
+    const dUid = document.getElementById('d-uid'); if (dUid) dUid.innerText = "ID: " + (d.customId || "");
+    
+    // রেফার সেকশন আপডেট
+    const refCodeEl = document.getElementById('my-refer-code'); if (refCodeEl) refCodeEl.innerText = d.referralCode || "...";
+    const totalRefEl = document.getElementById('total-refers'); if (totalRefEl) totalRefEl.innerText = d.totalRefers || 0;
+    const refEarnEl = document.getElementById('total-refer-earn'); if (refEarnEl) refEarnEl.innerText = `৳${d.referEarn || 0}`;
+}
+
+        window.nav = (pid) => { 
+    // ১. ব্যানার স্লাইডার বন্ধ করা (হোম পেজ থেকে বের হলে)
+    if(typeof sliderInterval !== 'undefined' && sliderInterval && pid !== 'page-home') { 
+        clearInterval(sliderInterval); 
+        sliderInterval = null; 
+    }
+    if(pid === 'page-home' && typeof loadHomeData === 'function') loadHomeData(false); 
+
+    // ✅ ২. ফ্রি শপ স্পেসিফিক লজিক (টাকা হাইড হবে না)
+    if (pid === 'page-free-shop') {
+        if (typeof renderShopPackages === 'function') renderShopPackages(); 
+        if (typeof loadShopHistory === 'function') loadShopHistory(); 
+        
+        // টোকেন ব্যালেন্স সিঙ্ক (UI আপডেট)
+        if(currentUserData) {
+            const tkEl = document.getElementById('shop-token-bal');
+            if(tkEl) tkEl.innerText = currentUserData.shopTokens || 0;
+        }
+    }
+
+    // ৩. টার্গেট পেজ খুঁজে বের করা
+    const target = document.getElementById(pid); 
+    if(!target) {
+        console.error("CRITICAL ERROR: The section with ID '" + pid + "' is missing from your HTML!");
+        showToast("Error: Page not found!");
+        return; 
+    }
+
+    // ৪. অন্য সব সেকশন লুকানো এবং টার্গেট সেকশন দেখানো
+    document.querySelectorAll('.page-section').forEach(e => {
+        e.classList.remove('active');
+    });
+    target.classList.add('active');
+ // শুধুমাত্র ক্লিক করলেই লোড হবে এবং রি-ফেচিং বন্ধ করবে
+if (pid === 'page-matches') loadMyMatches(auth.currentUser.uid, true);
+if (pid === 'page-leaderboard' && !globalKVState) {
+    // যদি একবারও KV ডাটা লোড না হয় তবেই কল করবে
+    loadBalanceLeaderboard(); 
+}
+if (pid === 'page-withdraw') loadWithdrawHistory(auth.currentUser.uid);
+
+    // ৫. ড্রয়ার খোলা থাকলে বন্ধ করা
+    const drawer = document.querySelector('.drawer');
+    if(drawer && drawer.style.transform === 'translateX(0px)') {
+        window.toggleDrawer();
+    }
+    
+    window.scrollTo(0,0); 
+    if(typeof updateThemeMusic === 'function') updateThemeMusic(); 
+};
+        
+        window.toggleDrawer = () => { const d=document.querySelector('.drawer'), o=document.querySelector('.drawer-overlay'); if(d.style.transform==='translateX(0px)'){d.style.transform='translateX(-100%)';o.style.display='none';}else{d.style.transform='translateX(0px)';o.style.display='block';} };
+        window.closeModal = () => document.getElementById('modal-area').classList.add('hidden');
+        window.closeJoin = () => document.getElementById('join-modal').classList.add('hidden');
+window.copyToClipboard = (t) => { 
+    // সফট ভাইব্রেশন (৪০ মিলিসেকেন্ড)
+    if (navigator.vibrate) navigator.vibrate(40); 
+
+    if(navigator.clipboard && window.isSecureContext) { 
+        navigator.clipboard.writeText(t).then(()=>showToast("কপি করা হয়েছে!")).catch(err=>console.error(err)); 
+    } else { 
+        let textArea = document.createElement("textarea"); 
+        textArea.value = t; 
+        document.body.appendChild(textArea); 
+        textArea.select(); 
+        document.execCommand("Copy"); 
+        textArea.remove(); 
+        showToast("কপি করা হয়েছে!"); 
+    } 
+};
+
+window.copyGenCode = () => { const code = document.getElementById('gen-team-code').innerText; window.copyToClipboard(code); }
+
+window.copyCustomId = () => { if(currentUserData && currentUserData.customId) { window.copyToClipboard(currentUserData.customId); } }
+
+window.copyReferCode = () => { if(currentUserData && currentUserData.referralCode) { window.copyToClipboard(currentUserData.referralCode); } }
+        window.closeTeamCodeModal = () => { document.getElementById('team-code-modal').classList.add('hidden'); nav('page-matches'); }
+
+        window.addEventListener('load', () => { 
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    } else {
+        document.getElementById('install-view').classList.remove('hidden');
+        document.getElementById('auth-container').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+    history.pushState({page: 'home'}, '', ''); 
+});
+window.shareReferLink = async () => {
+    // ১. ক্লাউডফ্লেয়ার সেটিংস থেকে আপনার ডাউনলোড লিঙ্কটি নিবে (যা আপনি Admin-এ সেট করেছেন)
+    // d.download_url টি আপনার fetch(`${KV_URL}/app_settings`) থেকে আসবে
+    const res = await fetch(`${KV_URL}/app_settings`);
+    const d = await res.json();
+    const baseUrl = d.download_url;
+    const myCode = currentUserData.referralCode;
+
+    if (!baseUrl) return showToast("ডাউনলোড লিঙ্ক পাওয়া যায়নি!");
+
+    const fullLink = `${baseUrl}?ref=${myCode}`;
+
+    if (navigator.vibrate) navigator.vibrate(100);
+
+    if (navigator.share) {
+        navigator.share({ title: 'G-ZONE ESPORTS', text: 'আমার লিঙ্কে জয়েন করে বোনাস নিন!', url: fullLink });
+    } else {
+        window.copyToClipboard(fullLink);
+    }
+};
+        window.addEventListener('popstate', (event) => { const activeSection = document.querySelector('.page-section.active'); if (activeSection && activeSection.id !== 'page-home') { nav('page-home'); } else { const now = new Date().getTime(); if (now - lastBackPress < 2000) { if(confirm("আপনি কি অ্যাপটি বন্ধ করতে চান?")) { history.back(); } else { history.pushState({page: 'home'}, '', '#home'); } } else { lastBackPress = now; showToast("বাহির হতে আবার ব্যাক চাপুন"); history.pushState({page: 'home'}, '', '#home'); } } });
+
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; if (!window.matchMedia('(display-mode: standalone)').matches) { document.getElementById('install-view').classList.remove('hidden'); document.getElementById('auth-container').classList.add('hidden'); } });
+        const installBtn = document.getElementById('btn-install-app');
+        if(installBtn) { installBtn.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; } else { alert("To install: Tap the Share button (Safari) or Menu (Chrome) and select 'Add to Home Screen'."); } }); }
+
+        let swRegistration = null;
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('firebase-messaging-sw.js').then((reg) => { swRegistration = reg; }).catch((err) => {}); }
+
+        // ✅ LOGICAL NOTIFICATION POPUP FIX: SHOWS ONLY IF PERMISSION IS MISSING
+        function checkNotificationPermission(uid) { 
+            if (!("Notification" in window)) return;
+
+            // ১. যদি অলরেডি পারমিশন থাকে, তবে সাথে সাথে টোকেন আপডেট করবে (কোন ডিলে নেই)
+            if (Notification.permission === "granted") { 
+                generateToken(uid);
+                const popup = document.getElementById('notification-popup');
+                if(popup) popup.style.display = 'none';
+            } 
+            // ২. যদি পারমিশন চাওয়া না হয়ে থাকে, তবে ২ সেকেন্ড পর পপআপ আসবে
+            else if (Notification.permission === "default") { 
+                setTimeout(() => {
+                    const popup = document.getElementById('notification-popup');
+                    if(popup) {
+                        popup.style.display = 'flex';
+                        startDenyCountdown(); // কাউন্টডাউন শুরু
+                    }
+                }, 2000); // 👈 ২ সেকেন্ডের সেফ ডিলে (Delay)
+            }
+        }
+
+        // অস্বীকার (Deny) বাটনের জন্য আলাদা হেল্পার ফাংশন
+        function startDenyCountdown() {
+            let count = 8;
+            const btn = document.getElementById('btn-deny-notif');
+            if(!btn) return;
+
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.innerText = `অস্বীকার করুন (${count})`;
+
+            const timer = setInterval(() => {
+                count--;
+                if(count <= 0) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.innerText = "অস্বীকার করুন (Deny)";
+                } else {
+                    btn.innerText = `অস্বীকার করুন (${count})`;
+                }
+            }, 1000);
+        }
+        window.enableNotifications = async () => { 
+            const permission = await Notification.requestPermission(); 
+            if (permission === 'granted') { 
+                document.getElementById('notification-popup').style.display = 'none'; 
+                showToast("Notifications Enabled!"); 
+                if (auth.currentUser) { generateToken(auth.currentUser.uid); } 
+            } else { 
+                document.getElementById('notification-popup').style.display = 'none'; 
+            } 
+        };
+        // ❌ User denied notification popup
+window.denyNotifications = () => {
+    const popup = document.getElementById('notification-popup');
+    if (popup) popup.style.display = 'none';
+};
+
+// ✅ Generate & save FCM token (Supabase version)
+async function generateToken(uid) {
+    // 🔒 Safety: Messaging not available (HTTP / unsupported browser)
+    if (!messaging) {
+        console.warn("FCM messaging not initialized. Skipping token generation.");
+        return;
+    }
+
+    try {
+        const currentToken = await getToken(messaging, {
+            vapidKey: 'BKVqRDof4xyE2oZWEvMO3CSEsCQ9QPkbiT59bnJHQLWJ0ngm5I1pirwwTsNQ94AVR3fuWNeV6WPwhi5f5hsUFyQ',
+            serviceWorkerRegistration: swRegistration
+        });
+
+        if (!currentToken) return;
+
+        // ✅ SAVE TOKEN TO SUPABASE (profiles table)
+        const { error } = await supabase
+            .from('profiles')
+            .update({ fcmToken: currentToken }) // ✅ Admin Standard: fcmToken
+            .eq('firebase_uid', uid);
+
+        if (error) {
+            console.error("FCM token save failed:", error.message);
+        }
+
+    } catch (err) {
+        // 🔁 Retry only on registration race-condition
+        if (err?.message?.includes('registration')) {
+            setTimeout(() => generateToken(uid), 2000);
+        } else {
+            console.error("FCM token generation failed:", err);
+        }
+    }
+}
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // --- ১. লোকাল ক্যাশ লোড (লগআউট প্রোটেকশন) ---
+        const cachedProfile = localStorage.getItem('gzone_user_profile');
+        if (cachedProfile) {
+            currentUserData = JSON.parse(cachedProfile);
+            updateAppUI(currentUserData); // UI আপডেট হেল্পার ফাংশন
+        }
+
+        // --- ২. অফলাইন ব্লকার চেক ---
+        if (!navigator.onLine) {
+            const offScreen = document.getElementById('offline-screen');
+            if (offScreen) offScreen.style.display = 'flex';
+        }
+
+        if (navigator.onLine) {
+            const offScreen = document.getElementById('offline-screen');
+            if (offScreen) offScreen.style.display = 'none';
+
+            // ৩. আইপি এবং অ্যাপ ইনভেন্টর সিঙ্ক
+            captureUserIP(user.uid);
+            if (window.AppInventor) { window.AppInventor.setWebViewString(user.uid); }
+
+            // 🟢 ৪. সুপাবেস থেকে প্রোফাইল ডাটা আনা
+            const { data: profile, error } = await supabase
+                .from('profiles')
+.select('balance,fullName,photoURL,customId,referralCode,totalRefers,referEarn,shopTokens,isBlocked,referBonusPending')
+.eq('firebase_uid', user.uid)
+                .single();
+
+            if (error) {
+                // 🛑 প্রোটেকশন: শুধুমাত্র যদি আগে ক্যাশ থাকে (পুরানো ইউজার) কিন্তু এখন DB তে নেই, তখনই লগআউট করবে
+                if (error.code === 'PGRST116' && !isRegistering && cachedProfile) {
+                    alert("আপনার একাউন্টটি ডাটাবেসে খুঁজে পাওয়া যায়নি।");
+                    await signOut(auth);
+                    localStorage.removeItem('gzone_user_profile');
+                    window.location.reload();
+                    return;
+                }
+                // নতুন ইউজার বা নেটওয়ার্ক ইস্যু হলে সেশন ধরে রাখবে
+                console.log("Profile sync update...");
+            }
+
+            if (profile) {
+                // ৫. ডাটা নরমালাইজেশন (আপনার অরিজিনাল লজিক)
+                const normalized = {
+                    ...profile,
+                    referEarn: profile.refer_earn,
+                    referralBonusUsed: profile.referral_bonus_used,
+                    referBonusPending: profile.refer_bonus_pending,
+                    shopTokens: profile.shopTokens || 0
+                };
+
+                currentUserData = normalized;
+                // লোকাল মেমোরিতে সেভ
+                localStorage.setItem('gzone_user_profile', JSON.stringify(normalized));
+                updateAppUI(normalized);
+
+                // --- 🛡️ ৬. সিকিউরিটি মনিটরিং (আপনার অরিジナル লজিক) ---
+                const currentBalance = currentUserData.balance || 0;
+                if (isFirstLoad) {
+                    lastKnownBalance = currentBalance;
+                    localStorage.setItem('last_saved_bal', currentBalance);
+                    if (!window.sessionStorage.getItem('reported_now')) {
+                        sendSecurityLog("APP_OPEN", currentUserData);
+                        const dna = await getSecurityDNA();
+                        triggerEmailAlert({
+                            email: profile.email,
+                            type: "login",
+                            details: {
+                                name: profile.fullName || "ইউজার",
+                                uid: profile.customId,
+                                username: profile.username,
+                                ip: dna.currentIp,
+                                device_name: navigator.userAgent.split(')')[0].split('(')[1] || "Mobile Device"
+                            }
+                        });
+                        window.sessionStorage.setItem('reported_now', 'true');
+                    }
+                    isFirstLoad = false;
+                } else if (currentBalance > lastKnownBalance) {
+                    sendSecurityLog("BALANCE_INCREASED", currentUserData);
+                    lastKnownBalance = currentBalance;
+                    localStorage.setItem('last_saved_bal', currentBalance);
+                }
+
+                // ৭. একাউন্ট ব্লক চেক
+                if (currentUserData.isBlocked === true) {
+                    alert("আপনার একাউন্টটি এডমিন দ্বারা ব্লক করা হয়েছে।");
+                    await signOut(auth);
+                    localStorage.removeItem('gzone_user_profile');
+                    window.location.reload();
+                    return;
+                }
+
+                // --- ৮. অটো-জেনারেশন লজিক (আপনার অরিজিনাল লজিক) ---
+                const updates = {};
+                if (!currentUserData.photoURL) {
+                    const rand = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+                    updates.photoURL = rand;
+                }
+                if (!currentUserData.referralCode) {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    updates.referralCode = Array(4).fill(0).map(() => chars[Math.floor(Math.random() * chars.length)]).join('') + Math.floor(100 + Math.random() * 900);
+                }
+                if (!currentUserData.customId) {
+                    updates.customId = Math.floor(10000000000 + Math.random() * 90000000000).toString();
+                }
+                if (currentUserData.shopTokens === undefined) updates.shopTokens = 0;
+
+                if (Object.keys(updates).length > 0) {
+                    await supabase.from('profiles').update(updates).eq('firebase_uid', user.uid);
+                }
+            }
+        }
+
+// লোডিং স্ক্রিন সরানোর স্মার্ট ফাংশন ✅
+const clearFlash = () => {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const appContainer = document.getElementById('app-container');
+    const authContainer = document.getElementById('auth-container');
+
+    // Show App, Hide Auth and Loading
+    authContainer.classList.add('hidden');
+    appContainer.classList.remove('hidden');
+    
+    // Smooth fade out for the loader
+    loadingOverlay.style.opacity = '0';
+    setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+    }, 500);
+};
+
+        // যদি ক্যাশ ডাটা থাকে তবে সাথে সাথে দেখাবে, না থাকলে প্রোফাইল আসা পর্যন্ত অপেক্ষা করবে
+
+
+// ১০. অপ্টিমাইজড বুট লজিক (ব্যান্ডউইথ সেভার)
+        if (navigator.onLine) {
+            // 🚀 স্পিড ও ব্যান্ডউইথ অপ্টিমাইজেশন: ৩টি দরকারি সোর্স থেকে ডাটা একসাথে আনা হচ্ছে
+            Promise.all([
+                fetch(WORKER_STATE_URL).then(res => res.json()), // KV State (Avatar, Leaderboard)
+                loadHomeData(true),           // টুর্নামেন্ট লিস্ট (Mirror)
+                loadMyMatches(user.uid, true) // জয়েন স্ট্যাটাস সিঙ্ক (Supabase)
+            ]).then(([state]) => {
+                globalKVState = state;
+                if(currentUserData) updateAppUI(currentUserData);
+                console.log("Startup Data Synced");
+            }).catch(e => console.error("Startup Sync Error:", e));
+
+            // ২. ব্যাকগ্রাউন্ড ফিচার এবং ইউটিলিটি সেটআপ
+            checkNotificationPermission(user.uid);
+            initSmartPopupListener();
+            updateThemeMusic();
+            loadSlidersOnce();
+            loadNotifications(currentUserData.firebase_uid);
+            
+            window.loadPublicCoupons();
+            loadConfig();
+            initWithdrawMethods();
+
+            // লোডিং স্ক্রিন সরানোর জন্য সামান্য ডিলে (স্মুথ ট্রানজিশন)
+            setTimeout(clearFlash, 400); 
+        }
+
+    } else {
+        // লগআউট সেশন
+        currentUserData = null;
+        localStorage.removeItem('gzone_user_profile');
+        document.getElementById('app-container').classList.add('hidden');
+        document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('loading-overlay').classList.add('hidden');
+        joinedMatchIds.clear(); 
+       // যদি সাইন-আপ ফর্ম ওপেন হয় এবং মেমোরিতে রেফার কোড থাকে তবে তা ইনপুট বক্সে বসাবে
+    if (!document.getElementById('signup-form').classList.contains('hidden')) {
+        const savedRef = sessionStorage.getItem('pending_ref');
+        if (savedRef) {
+            const referInput = document.getElementById('r-refer');
+            if (referInput) referInput.value = savedRef;
+        }
+    }
+         updateThemeMusic(); 
+    }
+});
+window.toggleAuth = () => { 
+            document.getElementById('login-form').classList.toggle('hidden'); 
+            document.getElementById('signup-form').classList.toggle('hidden'); 
+            updateThemeMusic(); 
+        };
+        
+        window.login = async () => {
+  try {
+    // 1️⃣ Firebase Auth login
+    await signInWithEmailAndPassword(
+      auth,
+      document.getElementById('l-email').value,
+      document.getElementById('l-pass').value
+    );
+
+    playEffect('success');
+
+    // 2️⃣ Fetch user profile from Supabase (NOT Firestore)
+    const { data: userData, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('firebase_uid', auth.currentUser.uid)
+      .single();
+
+    // 3️⃣ Send login security log (same logic, new source)
+    if (!error && userData) {
+      sendSecurityLog("USER_LOGIN", userData);
+    }
+
+  } catch (e) {
+    playEffect('alert');
+    showToast("Invalid Credentials");
+  }
+};
+        
+        window.register = async () => {
+    if (isActionProcessing) return;
+    
+    const fullName = document.getElementById('r-user').value.trim();
+    const email = document.getElementById('r-email').value.trim();
+    const pass = document.getElementById('r-pass').value.trim();
+    const referByCode = document.getElementById('r-refer').value.trim();
+
+    if (!fullName || !email || !pass) return showToast("সব তথ্য দিন");
+
+    isActionProcessing = true;
+    isRegistering = true; // Auth listener-কে সিগন্যাল দেওয়া হচ্ছে
+
+    try {
+        // ১. আগে রেফারার চেক করা (এই অংশটি আপনার কোডে অসম্পূর্ণ ছিল)
+        let referrerUid = null;
+        let refIp = null;
+        if (referByCode) {
+            const { data: refUser } = await supabase
+                .from('profiles')
+                .select('firebase_uid, last_ip')
+                .eq('referralCode', referByCode)
+                .maybeSingle();
+            
+            if (refUser) {
+                referrerUid = refUser.firebase_uid;
+                refIp = refUser.last_ip;
+            }
+        }
+
+        // ২. আইডি এবং অন্যান্য ডাটা জেনারেট করা
+        const dna = await getSecurityDNA();
+        const generatedId = Math.floor(10000000000 + Math.random() * 90000000000).toString();
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const myReferCode = Array(4).fill(0).map(() => chars[Math.floor(Math.random() * chars.length)]).join('') + Math.floor(100 + Math.random() * 900);
+        const randomPic = defaultAvatars[Math.floor(Math.random() * defaultAvatars.length)];
+
+        // ৩. Firebase ইউজার তৈরি (এটি ডাটাবেস ইনসার্ট এর আগে হতে হবে)
+        const c = await createUserWithEmailAndPassword(auth, email, pass);
+
+        // ৪. প্রোফাইল ডাটা সাজানো
+        const userData = {
+            firebase_uid: c.user.uid,
+            email: email,
+            fullName: fullName,
+            username: fullName,
+            customId: generatedId,
+            balance: 0,
+            photoURL: randomPic,
+            referralCode: myReferCode,
+            totalRefers: 0,
+            referEarn: 0,
+            isBlocked: false,
+            referredBy: referrerUid, // রেফারারের আইডি
+            referBonusPending: !!referrerUid,
+            deviceId: dna.deviceId,
+            fingerprint: dna.fingerprint,
+            regIp: dna.currentIp,
+            referrerIp: refIp, // রেফারারের আইপি (Audit এর জন্য)
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+
+        // ৫. সুপাবেসে ইনসার্ট করা
+        const { error: dbError } = await supabase.from('profiles').insert([userData]);
+        if (dbError) throw dbError;
+
+        // ৬. ইমেইল অ্যালার্ট ট্রিগার (Welcome Email)
+        if (typeof triggerEmailAlert === 'function') {
+            triggerEmailAlert({
+                email: email,
+                type: "welcome",
+                details: {
+                    name: fullName,
+                    uid: generatedId,
+                    username: fullName
+                }
+            });
+        }
+
+        showToast("রেজিস্ট্রেশন সফল!");
+        playEffect('success');
+        
+        // সিঙ্কিং এর জন্য ১.৫ সেকেন্ড পর রিলোড
+        setTimeout(() => window.location.reload(), 1500);
+
+    } catch (e) {
+        isRegistering = false;
+        isActionProcessing = false;
+        playEffect('alert');
+        showToast(e.message);
+    }
+};
+
+window.logout = () => { 
+    // ক্যাশ ডাটা রিসেট (ব্যান্ডউইথ অপ্টিমাইজেশনের জন্য)
+    window.isWithdrawLoaded = false; 
+    window.isShopHistoryLoaded = false; 
+globalKVState = null;
+window.isLeaderboardLoaded = false;
+    window.isLeaderboardLoaded = false;
+
+    window.lastMatchLoad = 0;
+    if(joinedMatchIds) joinedMatchIds.clear();
+
+    if (window.AppInventor) { window.AppInventor.setWebViewString("LOGOUT"); } 
+    signOut(auth); 
+};
+
+        async function loadConfig() {
+  try {
+    // 1. Fetch data from Cloudflare KV instead of Supabase
+    const res = await fetch(`${KV_URL}/app_settings`);
+    const d = await res.json();
+    
+    if (!d || Object.keys(d).length === 0) return;
+
+    // 2. Sound config (names match Admin KV)
+    soundSettings = {
+      themeEnabled: d.theme_enabled !== false,
+      effectsEnabled: d.effects_enabled !== false,
+      activeTheme: d.active_theme || "1",
+      themeVol: d.theme_vol ?? 0.5,
+      effectVol: d.effect_vol ?? 0.7
+    };
+    updateThemeMusic();
+
+    // 3. Spin Wheel toggle (Admin KV name: method_spinwheel)
+    const spinItem = document.getElementById('nav-spin-item');
+    if (spinItem) {
+      const isSpinActive = d.method_spinwheel !== false;
+      spinItem.style.display = isSpinActive ? 'flex' : 'none';
+      
+      // If user is on spin page and it gets disabled, kick to home
+      if (!isSpinActive && document.getElementById('page-spin')?.classList.contains('active')) {
+        nav('page-home');
+      }
+    }
+
+    // 4. Telegram support (Admin KV name: tg_support)
+    const adminBtn = document.getElementById('btn-admin-support');
+    if (adminBtn && d.tg_support) {
+      adminBtn.href = d.tg_support;
+      adminBtn.classList.remove('hidden');
+    }
+
+    // 5. Proof bot (Admin KV name: tg_proof)
+    const proofBtn = document.getElementById('btn-proof-link');
+    if (proofBtn && d.tg_proof) {
+      proofBtn.href = d.tg_proof;
+    }
+
+    console.log("App Configuration loaded from Cloudflare KV");
+
+  } catch (e) {
+    console.error("KV Config Load Failed:", e);
+  }
+  
+  // NOTE: Real-time Supabase channel code is removed because KV is static.
+  // Settings will refresh whenever the app is re-opened.
+}
+        
+        window.sendMoney = async () => {
+  if (isActionProcessing) return;
+
+  const targetId = document.getElementById('tf-id').value.trim();
+  const amount = Number(document.getElementById('tf-amount').value);
+
+  // ১. প্রাথমিক যাচাইকরণ
+  if (!targetId || !amount || amount <= 0) {
+    playEffect('alert');
+    return showToast("সঠিক তথ্য দিন");
+  }
+
+  if (amount > currentUserData.balance) {
+    playEffect('alert');
+    return showToast("ব্যালেন্স নেই");
+  }
+
+  if (targetId === currentUserData.customId) {
+    playEffect('alert');
+    return showToast("নিজেকে পাঠানো যাবে না");
+  }
+
+  isActionProcessing = true;
+  const btn = document.getElementById('btn-transfer');
+  btn.disabled = true;
+  btn.innerText = "প্রসেসিং...";
+
+  try {
+    /* 🔍 ২. রিসিভারকে খুঁজে বের করা (অ্যাডমিন স্ট্যান্ডার্ড কলাম customId ব্যবহার করে) */
+    const { data: receiver, error: rErr } = await supabase
+      .from('profiles')
+      .select('firebase_uid, fullName')
+      .eq('customId', targetId)
+      .maybeSingle();
+
+    if (rErr || !receiver) {
+      throw new Error("ইউজার পাওয়া যায়নি (ভুল আইডি)");
+    }
+
+    /* 💸 ৩. ব্যালেন্স ট্রান্সফার করা (RPC Call - এটি সেন্ডারের টাকা কাটবে ও রিসিভারকে দিবে) */
+    const { error: txErr } = await supabase.rpc('transfer_balance', {
+      p_sender_uid: auth.currentUser.uid,
+      p_target_custom_id: targetId,
+      p_amount: amount
+    });
+
+    if (txErr) throw txErr;
+
+    /* 🔔 ৪. নোটিফিকেশন সেভ করা (সেন্ডার এবং রিসিভার উভয়ের জন্য) */
+    await supabase.from('notifications').insert([
+      {
+        user_id: auth.currentUser.uid,
+        title: "Sent Money",
+        body: `Sent ৳${amount} to ${receiver.fullName} (${targetId})`,
+        is_read: false,
+        created_at: new Date().toISOString()
+      },
+      {
+        user_id: receiver.firebase_uid,
+        title: "Received Money",
+        body: `Received ৳${amount} from ${currentUserData.fullName} (${currentUserData.customId})`,
+        is_read: false,
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+    /* ✅ ৫. সফল হলে UI আপডেট */
+    playEffect('success');
+    showToast("টাকা সফলভাবে পাঠানো হয়েছে!");
+    
+    // ইনপুট বক্স খালি করা
+    document.getElementById('tf-id').value = '';
+    document.getElementById('tf-amount').value = '';
+    
+    // হোম পেজে নিয়ে যাওয়া
+    nav('page-home');
+
+  } catch (e) {
+    playEffect('alert');
+    showToast(e.message || "Transfer failed");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "টাকা পাঠান";
+    isActionProcessing = false;
+  }
+};
+
+        window.switchHomeTab = (tab) => {
+            currentHomeTab = tab;
+            document.querySelectorAll('.home-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`ht-${tab}`).classList.add('active');
+            renderHomeTournaments();
+        }
+
+        function renderHomeTournaments() {
+    if (!Array.isArray(allTournaments)) return;
+
+    // LW tab visibility
+    const hasLW = allTournaments.some(
+        t => t.category === 'LW' && t.status !== 'completed'
+    );
+
+    const lwTab = document.getElementById('ht-LW');
+    if (lwTab) {
+        if (hasLW) lwTab.classList.remove('hidden');
+        else {
+            lwTab.classList.add('hidden');
+            if (currentHomeTab === 'LW') switchHomeTab('BR');
+        }
+    }
+
+    const list = document.getElementById('tournament-list');
+    list.innerHTML = '';
+
+    const filtered = allTournaments.filter(t => {
+        const cat = t.category || 'BR';
+        return cat === currentHomeTab;
+    });
+
+    if (filtered.length === 0) {
+        list.innerHTML =
+          "<p style='text-align:center;color:#aaa;margin-top:20px;'>কোন ম্যাচ নেই</p>";
+        return;
+    }
+
+    filtered.forEach(t => {
+        const isJoined = joinedMatchIds.has(t.id);
+        const percent = Math.min((t.joined_count / t.total_slots) * 100, 100);
+
+        let btn;
+        if (isJoined) {
+            btn = `<button class="btn btn-success" onclick="nav('page-matches')">আইডি পাস</button>`;
+        } else if (t.joined_count >= t.total_slots) {
+            btn = `<button class="btn btn-secondary" disabled>FULL</button>`;
+        } else {
+            btn = `<button class="btn btn-primary"
+                    onclick="openJoin('${t.id}','${t.type}',${t.fee})">
+                    জয়েন (${t.type})
+                   </button>`;
+        }
+
+        list.innerHTML += `
+        <div class="t-card">
+          <div class="t-img-wrap">
+            <img src="${t.image_url}" class="t-img" loading="lazy">
+            <div class="t-type-badge">${t.type}</div>
+            <div class="t-overlay">
+              <div class="t-title">${t.title}</div>
+            </div>
+          </div>
+
+          <div class="t-body">
+            <div class="t-stats-grid">
+              <div class="t-stat"><small>এন্ট্রি ফি</small><b>৳${t.fee}</b></div>
+              <div class="t-stat"><small>বাকি আছে</small><b>${t.total_slots - t.joined_count}</b></div>
+              <div class="t-stat"><small>সময়</small><b>${t.match_date}</b></div>
+            </div>
+
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${percent}%"></div>
+            </div>
+
+            <div class="t-actions">
+              ${btn}
+              <button class="btn btn-secondary"
+                onclick="showInfo('${(t.extra_details || '')
+                  .replace(/'/g,"\\'")
+                  .replace(/\n/g,'<br>')}')">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>`;
+    });
+}
+
+async function loadSlidersOnce() {
+  try {
+    // 1. Fetch sliders from Cloudflare KV
+    const res = await fetch(`${KV_URL}/sliders`);
+    const data = await res.json();
+
+    const c = document.getElementById('banner-slider');
+    if (!c || !data || data.length === 0) {
+        console.warn("No sliders found in KV.");
+        return;
+    }
+
+    // 2. Map the data to HTML (Expects [{url: "..."}])
+    c.innerHTML = data.map(d => `<img src="${d.url}" class="slide" loading="lazy">`).join('');
+
+    // 3. Auto-scroll logic (Same as original)
+    if (sliderInterval) clearInterval(sliderInterval);
+    if (data.length > 1) {
+      sliderInterval = setInterval(() => {
+        if (c.scrollLeft + c.offsetWidth >= c.scrollWidth - 10) {
+          c.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          c.scrollBy({ left: c.offsetWidth + 12, behavior: 'smooth' });
+        }
+      }, 4000);
+    }
+    
+    console.log("Sliders loaded from Cloudflare KV");
+
+  } catch (e) {
+    console.warn("Slider KV Error:", e);
+  }
+}
+async function loadHomeData(force = false) {
+// যদি ২ মিনিটের কম সময় হয় এবং জোরপূর্বক (force) রিফ্রেশ না চাওয়া হয়, তবে রিটার্ন করবে
+  if (!force && allTournaments.length > 0 && (Date.now() - lastHomeLoad < 120000)) return;
+  const TOURNAMENT_MIRROR_URL = "https://dbsharding.moeenu321.workers.dev/get_tournaments";
+
+  try {
+    // ১. সুপাবেসের বদলে ক্লাউডফ্লেয়ার মিরর থেকে ডাটা ফেচ করা হচ্ছে
+    const res = await fetch(TOURNAMENT_MIRROR_URL);
+    const data = await res.json();
+
+    if (data && Array.isArray(data)) {
+      // ২. অল টুর্নামেন্ট ভেরিয়েবলে ডাটা সেট করা (আপনার ফিল্টার সিস্টেম এটিই ব্যবহার করে)
+      allTournaments = data;
+      
+      // ৩. রেন্ডার ফাংশন কল করা (যাতে স্ক্রিনে টুর্নামেন্ট দেখা যায়)
+      renderHomeTournaments();
+      
+      console.log("Tournaments loaded from Cloudflare KV2 Mirror (Zero DB Read Cost)");
+    } else {
+      throw new Error("Invalid mirror data");
+    }
+  } catch (e) {
+    console.warn("Mirror Sync Error, falling back to Supabase:", e);
+    
+    // ৪. ব্যাকআপ লজিক: যদি কোনো কারণে ক্লাউডফ্লেয়ার ফেইল করে, তবে সরাসরি DB থেকে ডাটা নিবে
+    const { data: fallbackData, error } = await supabase // ✅ Fixed
+      .from('tournaments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+if (data && Array.isArray(data)) {
+      allTournaments = data;
+      lastHomeLoad = Date.now(); // সময় রেকর্ড করে রাখা হলো
+      renderHomeTournaments();
+    }
+  }
+}
+
+async function loadBalanceLeaderboard() {
+  const l = document.getElementById('balance-leaderboard');
+  if (!l || !globalKVState) return; // ডাটা না থাকলে ফেরত যাবে
+
+  const users = globalKVState.balanceLeaderboard;
+  l.innerHTML = `<div class="leaderboard-container">` + users.map((u, i) => `
+    <div class="l-card ${i < 3 ? 'rank-' + (i + 1) : ''}">
+      <div class="l-rank">${i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1)}</div>
+      <img src="${u.img}" class="l-avatar">
+      <div class="l-info"><span class="l-name">${u.name}</span></div>
+      <div class="l-value">৳${u.balance}</div>
+    </div>`).join('') + `</div>`;
+}
+        
+async function loadReferralLeaderboard() {
+  const l = document.getElementById('referral-leaderboard');
+  if (!l || !globalKVState) return;
+
+  const users = globalKVState.referLeaderboard;
+  l.innerHTML = `<div class="leaderboard-container">` + users.map((u, i) => `
+    <div class="l-card ${i < 3 ? 'rank-' + (i + 1) : ''}">
+      <div class="l-rank">${i === 0 ? '🔥' : '#' + (i + 1)}</div>
+      <img src="${u.img}" class="l-avatar">
+      <div class="l-info"><span class="l-name">${u.name}</span></div>
+      <div class="l-value" style="color:var(--warning)">${u.refers} <small>INVITES</small></div>
+    </div>`).join('') + `</div>`;
+}
+
+        window.spinWheel = async () => {
+  if (spinProcessing) return;
+
+  const amtInput = document.getElementById('spin-amt');
+  const amt = parseInt(amtInput.value);
+  const wheel = document.getElementById('spin-wheel');
+
+  if (!amt || amt < 1) {
+    playEffect('alert');
+    return showToast("সঠিক পরিমাণ লিখুন");
+  }
+
+  if (amt > currentUserData.balance) {
+    playEffect('alert');
+    return showToast("ব্যালেন্স নেই");
+  }
+
+  spinProcessing = true;
+  document.getElementById('spin-btn').disabled = true;
+
+  try {
+    const newBalance = currentUserData.balance - amt;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ balance: newBalance })
+      .eq('firebase_uid', auth.currentUser.uid);
+
+    if (error) throw error;
+
+    currentUserData.balance = newBalance;
+
+  } catch (e) {
+    showToast("Server Error");
+    spinProcessing = false;
+    document.getElementById('spin-btn').disabled = false;
+    return;
+  }
+
+  // 🎡 WHEEL ANIMATION (UNCHANGED)
+  const durationSec = 5 + Math.random() * 5;
+  const durationMs = durationSec * 1000;
+
+  wheel.style.transition =
+    `transform ${durationSec}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
+
+  const spins = 8;
+  const degreesPerSpin = 360;
+
+  let targetAngleFromTop = 10 + Math.random() * 70;
+  const finalAngleRelToCircle = 360 - targetAngleFromTop;
+
+  let currentMod = currentRotation % 360;
+  if (currentMod < 0) currentMod += 360;
+
+  let addedRotation =
+    spins * degreesPerSpin + (finalAngleRelToCircle - currentMod);
+
+  if (addedRotation < degreesPerSpin)
+    addedRotation += degreesPerSpin;
+
+  currentRotation += addedRotation;
+  wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+  setTimeout(() => {
+    playEffect('alert');
+    showToast(`দুঃখিত! আপনি ${amt} টাকা হেরেছেন।`);
+    spinProcessing = false;
+    document.getElementById('spin-btn').disabled = false;
+  }, durationMs + 100);
+};
+
+        window.openJoin = (id, type, fee) => {
+            selMatch = {id, type, fee};
+            document.getElementById('join-modal').classList.remove('hidden');
+            document.getElementById('j-fee').innerText = `৳${fee}`;
+            if(type==='Squad' || type === 'Duo') { document.getElementById('squad-tabs').classList.remove('hidden'); document.getElementById('squad-inputs').classList.remove('hidden'); switchTab('create'); } else { document.getElementById('squad-tabs').classList.add('hidden'); document.getElementById('squad-inputs').classList.add('hidden'); document.getElementById('view-create').classList.remove('hidden'); document.getElementById('view-join').classList.add('hidden'); }
+        }
+        
+        // ✅ FIXED: TAB SWITCH LOGIC
+        window.switchTab = (t) => { 
+            document.querySelectorAll('.sq-tab').forEach(e=>e.classList.remove('active')); 
+            document.getElementById('tab-'+t).classList.add('active'); 
+            if(t==='create'){
+                document.getElementById('view-create').classList.remove('hidden'); 
+                document.getElementById('view-join').classList.add('hidden');
+            } else {
+                document.getElementById('view-create').classList.add('hidden'); 
+                document.getElementById('view-join').classList.remove('hidden');
+            } 
+        }
+
+        window.confirmJoin = async () => {
+  if (isActionProcessing) return;
+
+  const gameUid = document.getElementById('j-uid').value.trim();
+  const gameUsername = document.getElementById('j-game-uname').value.trim();
+
+  if (!gameUid || !gameUsername) {
+    playEffect('alert');
+    return showToast("Enter UID and Name");
+  }
+
+  isActionProcessing = true;
+  const btn = document.getElementById('btn-conf');
+  btn.disabled = true;
+  btn.innerText = "Processing...";
+
+  try {
+// ✅ RE-FETCH FROM SUPABASE IMMEDIATELY
+await loadMyMatches(auth.currentUser.uid, true); 
+
+
+    /* 1️⃣ Already joined check - অ্যাপের লজিক অনুযায়ী */
+    const { data: joined } = await supabase
+      .from('user_matches')
+      .select('id')
+      .eq('user_id', auth.currentUser.uid)
+      .eq('tourney_id', selMatch.id)
+      .maybeSingle();
+
+    if (joined) throw new Error("Already Joined!");
+
+    /* 2️⃣ Fetch user & tournament - অ্যাডমিন স্ট্যান্ডার্ড কলাম অনুযায়ী */
+    const [{ data: user }, { data: tourney }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('firebase_uid', auth.currentUser.uid).single(),
+      supabase.from('tournaments').select('*').eq('id', selMatch.id).single()
+    ]);
+
+    if (!user || user.balance < selMatch.fee) throw new Error("Insufficient Balance");
+    if (tourney.joined_count >= tourney.total_slots) throw new Error("Match Full!");
+
+    /* 3️⃣ Deduct balance & increment joined via RPC (আপনার অরিজিনাল লজিক) */
+    const { error: rpcErr } = await supabase.rpc('join_tournament', {
+      p_uid: auth.currentUser.uid,
+      p_tourney_id: selMatch.id,
+      p_fee: selMatch.fee
+    });
+    if (rpcErr) throw rpcErr;
+
+    /* 4️⃣ Referral bonus logic - আপনার অরিজিনাল লজিক */
+    if (
+      selMatch.type === 'Solo' &&
+      user.refer_bonus_pending &&
+      user.referred_by &&
+      user.referral_bonus_used !== true
+    ) {
+      await supabase.rpc('apply_referral_bonus', {
+        referrer_uid: user.referred_by,
+        new_user_uid: user.uid,
+        new_user_name: user.fullName
+      });
+    }
+
+    /* 5️⃣ Team / Solo handling - অ্যাডমিন সিঙ্ক লজিকসহ */
+  console.log("CRITICAL CHECK - Match ID being used:", selMatch.id);
+console.log("ID Type:", typeof selMatch.id);
+
+
+  const baseParticipant = {
+        tournament_id: selMatch.id,
+        user_id: auth.currentUser.uid,
+        username: user.username || user.fullName,
+        ff_username: gameUsername, // অ্যাডমিন প্যানেলের জন্য
+        ff_uid: gameUid,           // অ্যাডমিন প্যানেলের জন্য
+        created_at: new Date().toISOString()
+  
+  };
+
+
+    // --- USER APP: LEADER JOIN FIX ---
+if (selMatch.type === 'Squad' || selMatch.type === 'Duo') {
+    const teamName = document.getElementById('j-team').value;
+    if (!teamName) throw new Error("Enter Team Name");
+
+    const joinCode = teamName.replace(/\s+/g, '') + Math.floor(10000 + Math.random() * 90000);
+
+    // 1. Create Team
+    const { data: team, error: teamErr } = await supabase
+        .from('tournament_teams')
+        .insert({
+            tournament_id: selMatch.id,
+            team_name: teamName,
+            join_code: joinCode,
+            leader_id: auth.currentUser.uid
+        })
+        .select().single();
+    
+    if (teamErr) throw teamErr;
+
+    // 2. Insert into team_members (The Fix: Correct Table & Column)
+    const { error: memberErr } = await supabase.from('team_members').insert({
+        team_id: team.id,
+        user_id: auth.currentUser.uid,
+        username: currentUserData.fullName || currentUserData.username,
+        ff_username: gameUsername,
+        ff_uid: gameUid,
+        is_leader: true // Correct Column
+    });
+    
+    if (memberErr) throw memberErr;
+
+    // 3. Track Match
+    await supabase.from('user_matches').insert({
+        user_id: auth.currentUser.uid,
+        tourney_id: selMatch.id,
+        type: selMatch.type.toLowerCase(),
+        team_id: team.id
+    });
+    
+    playEffect('success');
+    closeJoin();
+    document.getElementById('gen-team-code').innerText = joinCode;
+    document.getElementById('team-code-modal').classList.remove('hidden');
+
+    } else {
+      /* SOLO MATCH */
+      // (A) পার্টিসিপেন্ট টেবিলে এন্ট্রি (অ্যাডমিন সিঙ্ক)
+      await supabase.from('participants').insert([baseParticipant]);
+
+      // (B) ইউজারের জয়েন লিস্ট ট্র্যাক করা (My Matches সেকশন)
+      await supabase.from('user_matches').insert({
+        user_id: auth.currentUser.uid,
+        tourney_id: selMatch.id,
+        type: 'solo'
+      });
+
+await loadMyMatches(auth.currentUser.uid, true); 
+playEffect('success');
+showToast("Joined Successfully!");
+closeJoin();
+    }
+
+    // জয়েন লিস্ট রিফ্রেশ করা
+    
+
+  } catch (e) {
+    playEffect('alert');
+    showToast(e.message || "Joining failed");
+    btn.disabled = false;
+    btn.innerText = "Confirm";
+  } finally {
+    isActionProcessing = false;
+  }
+};
+        window.joinTeamMember = async () => {
+  if (isActionProcessing) return;
+
+  const joinCode = document.getElementById('m-code').value.trim();
+  const gameUid = document.getElementById('m-uid').value.trim();
+  const gameUsername = document.getElementById('m-game-uname').value.trim();
+
+  if (!joinCode || !gameUid || !gameUsername) {
+    playEffect('alert');
+    return showToast("Fill all fields");
+  }
+
+  isActionProcessing = true;
+  const btn = document.getElementById('btn-m-join');
+  btn.disabled = true;
+
+  try {
+    /* 1️⃣ Logic: Check if user is already in this specific match */
+    const { data: alreadyJoined } = await supabase
+      .from('user_matches')
+      .select('id')
+      .eq('user_id', auth.currentUser.uid)
+      .eq('tourney_id', selMatch.id)
+      .maybeSingle();
+
+    if (alreadyJoined) throw new Error("Already Joined!");
+
+    /* 2️⃣ Logic: Find the team using the join code for this tournament */
+    const { data: team, error: tErr } = await supabase
+      .from('tournament_teams')
+      .select('*')
+      .eq('tournament_id', selMatch.id)
+      .eq('join_code', joinCode)
+      .single();
+
+    if (tErr || !team) throw new Error("Invalid Team Code");
+
+    /* 3️⃣ Logic: Check if the team has space (Duo=2, Squad=4) */
+    // Changed table from 'participants' to 'team_members'
+    const { count, error: cErr } = await supabase
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('team_id', team.id);
+
+    const limit = selMatch.type === 'Duo' ? 2 : 4;
+    if (count >= limit) throw new Error("Team Full");
+
+    /* 4️⃣ Logic: Fetch user profile data for the insert */
+    const { data: user } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('firebase_uid', auth.currentUser.uid)
+      .single();
+
+    if (!user) throw new Error("User profile not found");
+
+    /* 5️⃣ Logic: Write data to team_members (Replacing the old RPC) */
+    // This ensures data is written to your specific columns
+    const { error: insErr } = await supabase
+      .from('team_members')
+      .insert([{
+        team_id: team.id,
+        user_id: auth.currentUser.uid,
+        username: user.fullName || user.username,
+        ff_username: gameUsername,
+        ff_uid: gameUid,
+        is_leader: false, // Logic: Joining via code means they are a member, not leader
+        created_at: new Date().toISOString()
+      }]);
+
+    if (insErr) throw insErr;
+
+    /* 6️⃣ Logic: Update user_matches so the user sees this in "My Matches" */
+    await supabase.from('user_matches').insert([{
+      user_id: auth.currentUser.uid,
+      tourney_id: team.tournament_id,
+      type: selMatch.type.toLowerCase(),
+      team_id: team.id
+    }]);
+
+    /* 7️⃣ Logic: Increment the joined_count on the tournament card */
+    
+
+    playEffect('success');
+    showToast("Joined!");
+    closeJoin();
+    nav('page-matches');
+
+  } catch (e) {
+    playEffect('alert');
+    showToast(e.message);
+    btn.disabled = false;
+  } finally {
+    isActionProcessing = false;
+  }
+};
+        
+        // ✅ NEW: KICK MEMBER LOGIC
+// ✅ সংশোধিত কিক মেম্বার লজিক
+window.kickMember = async (tourneyId, teamId, targetUid, targetName) => {
+    if (!confirm(`${targetName} কে কি আপনার টিম থেকে বের করে দিতে চান?`)) return;
+
+    try {
+        // ১. যাকে সরানো হচ্ছে সে কি লিডার নাকি সাধারণ মেম্বার তা চেক করা
+        const { data: memberInfo } = await supabase
+            .from("team_members")
+            .select("is_leader")
+            .eq("team_id", teamId)
+            .eq("user_id", targetUid)
+            .single();
+
+        // ২. ডাটাবেসের সঠিক টেবিল (team_members) থেকে ডিলিট করা
+        const { error: tmErr } = await supabase
+            .from('team_members')
+            .delete()
+            .eq('team_id', teamId)
+            .eq('user_id', targetUid);
+        if (tmErr) throw tmErr;
+
+        // ৩. ইউজারের ম্যাচ ট্র্যাকিং টেবিল থেকে ডিলিট করা
+        const { error: umErr } = await supabase
+            .from('user_matches')
+            .delete()
+            .eq('user_id', targetUid)
+            .eq('tourney_id', tourneyId);
+        if (umErr) throw umErr;
+
+        // ৪. লজিক: যদি লিডারকে রিমুভ করা হয় তবেই শুধু স্লট কমবে
+        if (memberInfo && memberInfo.is_leader) {
+            await supabase.rpc('decrement_joined', { p_tourney_id: tourneyId });
+            showToast("লিডারকে রিমুভ করা হয়েছে এবং স্লট খালি হয়েছে");
+        } else {
+            showToast("প্লেয়ারকে সফলভাবে রিমুভ করা হয়েছে");
+        }
+
+        playEffect('success');
+        if (typeof loadMyMatches === 'function') loadMyMatches(auth.currentUser.uid);
+
+    } catch (e) {
+        console.error("Kick Error:", e);
+        playEffect('alert');
+        showToast("Error: " + (e.message || "প্লেয়ার সরানো যায়নি"));
+    }
+};
+
+// ✅ সংশোধিত লিভ (Leave) লজিক
+window.leave = async (tourneyId, teamId) => {
+    if (!confirm("আপনি কি এই টুর্নামেন্ট থেকে লিভ নিতে চান?")) return;
+
+    try {
+        const uid = auth.currentUser.uid;
+
+        // ১. আগে নিজের স্ট্যাটাস (লিডার কি না) চেক করা
+        const { data: myStatus } = await supabase
+            .from("team_members")
+            .select("is_leader")
+            .eq("team_id", teamId)
+            .eq("user_id", uid)
+            .single();
+
+        // ২. টিম মেম্বার লিস্ট থেকে নিজেকে সরানো
+        await supabase.from('team_members').delete().eq('team_id', teamId).eq('user_id', uid);
+
+        // ৩. নিজের ম্যাচ লিস্ট থেকে সরানো
+        await supabase.from('user_matches').delete().eq('user_id', uid).eq('tourney_id', tourneyId);
+
+        // ৪. যদি লিডার লিভ নেয় তবেই স্লট সংখ্যা কমবে (অন্যদের জন্য না)
+        if (myStatus && myStatus.is_leader) {
+            await supabase.rpc('decrement_joined', { p_tourney_id: tourneyId });
+        }
+
+        showToast("আপনি ম্যাচ থেকে বের হয়েছেন");
+        playEffect('success');
+        nav('page-home');
+
+    } catch (e) {
+        console.error("Leave Error:", e);
+        playEffect('alert');
+        showToast("Error: লিভ নেওয়া সম্ভব হয়নি");
+    }
+};
+        
+        // ✅ রিলায়েবল এবং রিয়েল-টাইম সিঙ্কড ম্যাচ লোডার
+// ১. এই ভেরিয়েবলটি ফাংশনের একদম উপরে দিন (যাতে লিসেনার ডুপ্লিকেট না হয়) ✅
+let matchListenerActive = false;
+
+// ✅ রিলায়েবল এবং ডিজাইন-ফ্রেন্ডলি ম্যাচ লোডার
+async function loadMyMatches(uid, force = false) {
+    const l = document.getElementById('my-matches-list');
+    if (!l) return;
+
+    // ৩০ সেকেন্ডের টাইমার (অ্যাপ রিলোড বা জয়েন করার সময় force=true দিলে এটি কাজ করবে না)
+    if (!force && window.lastMatchLoad && Date.now() - window.lastMatchLoad < 15000) return;
+    window.lastMatchLoad = Date.now();
+
+    try {
+        // ১. Supabase থেকে ইউজারের ম্যাচ লিস্ট আনা
+        const { data: rows, error } = await supabase
+            .from('user_matches')
+            .select('tourney_id, type, team_id')
+            .eq('user_id', uid);
+
+        if (error) throw error;
+
+        // ২. হোমসকিনের বাটন সিঙ্ক করা (JOIN বাটন যেন ID-PASS হয়ে যায়)
+        joinedMatchIds.clear();
+        if (rows) {
+            rows.forEach(r => joinedMatchIds.add(r.tourney_id));
+        }
+        if (typeof renderHomeTournaments === 'function') renderHomeTournaments();
+
+        // যদি কোন ম্যাচ না থাকে
+        if (!rows || rows.length === 0) {
+            l.innerHTML = "<p style='text-align:center;color:#aaa;padding:30px;'>আপনি এখনো কোন ম্যাচে জয়েন করেননি</p>";
+            return;
+        }
+// ✅ অপ্টিমাইজেশন: ইউজার যদি "আমার ম্যাচ" পেজে না থাকে, তবে ভারী ডাটা ফেচ করবে না।
+        if (!document.getElementById('page-matches').classList.contains('active')) return;
+        // ৩. প্রয়োজনীয় সব তথ্য একবারে আনা (Bulk Fetching)
+        const tIds = rows.map(r => r.tourney_id);
+        const teamIds = rows.filter(r => r.team_id).map(r => r.team_id);
+
+        const [tRes, teamRes, memberRes] = await Promise.all([
+            supabase.from('tournaments').select('id, title, status, room_id, room_password').in('id', tIds),
+            supabase.from('tournament_teams').select('id, team_name, join_code, leader_id').in('id', teamIds),
+            supabase.from('team_members').select('team_id, user_id, username, is_leader').in('team_id', teamIds)
+        ]);
+
+        const tList = tRes.data || [];
+        const allTeams = teamRes.data || [];
+        const allMembers = memberRes.data || [];
+
+        // ৪. স্ট্যাটাস অনুযায়ী সর্টিং
+        const matchesData = rows.map(m => ({
+            m,
+            t: tList.find(x => x.id === m.tourney_id)
+        })).sort((a, b) => {
+            const order = { 'ongoing': 1, 'active': 2, 'completed': 3 };
+            return (order[a.t?.status] || 4) - (order[b.t?.status] || 4);
+        });
+
+        l.innerHTML = ''; // আগের লিস্ট পরিষ্কার করা
+
+        // ৫. ম্যাচ কার্ড রেন্ডারিং লুপ
+        for (const item of matchesData) {
+            if (!item.t) continue;
+            const t = item.t; 
+            const m = item.m;
+            const matchCard = document.createElement('div');
+            matchCard.className = 't-card';
+
+            let teamHtml = '';
+            
+            // টিম মেম্বার এবং লিডার লজিক
+            if ((m.type === 'squad' || m.type === 'duo') && m.team_id) {
+                const team = allTeams.find(x => x.id === m.team_id);
+                const teamMembers = allMembers.filter(x => x.team_id === m.team_id);
+
+                if (team) {
+                    const isUserLeader = (team.leader_id === auth.currentUser.uid);
+                    if (isUserLeader) {
+                        const memberList = teamMembers.map(mem => {
+                            const isTargetMe = (mem.user_id === auth.currentUser.uid);
+                            return `
+                            <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; margin-bottom:6px; border:1px solid rgba(255,255,255,0.05);">
+                                <span>${mem.is_leader ? '👑' : '👤'} ${mem.username}</span>
+                                ${!isTargetMe ? `<i class="fas fa-user-minus" style="color:var(--danger); cursor:pointer;" onclick="kickMember('${t.id}','${team.id}','${mem.user_id}','${mem.username}')"></i>` : ''}
+                            </div>`;
+                        }).join('');
+
+                        teamHtml = `<div style="margin-top:12px; border-top: 1px solid var(--glass-border); padding-top: 12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <small style="color:var(--primary); font-weight:bold;">টিম: ${team.team_name}</small>
+                                <div style="background:var(--success); color:#000; padding:4px 10px; border-radius:8px; font-weight:800; font-size:0.85rem; cursor:pointer;" onclick="copyToClipboard('${team.join_code}')">CODE: ${team.join_code} <i class="fas fa-copy"></i></div>
+                            </div>${memberList}</div>`;
+                    } else {
+                        const leader = teamMembers.find(x => x.is_leader === true);
+                        teamHtml = `<div style="margin-top:12px; border-top: 1px solid var(--glass-border); padding-top: 15px; text-align:center;">
+                            <small style="color:var(--text-muted)">টিম: ${team.team_name}</small>
+                            <b style="color:#fff; font-size:1.1rem; display:block; margin-top:5px;">টিম লিডার: ${leader ? leader.username : '...'}</b>
+                        </div>`;
+                    }
+                }
+            }
+
+            // রুম ডিটেইলস সেকশন
+            let creds = `<div style="padding:12px;text-align:center;color:#aaa;border:1px dashed var(--glass-border);margin-top:10px;border-radius:8px;font-size:0.8rem;">রুম আইডি এবং পাসওয়ার্ড এর জন্য অপেক্ষা করুন</div>`;
+            if (t.room_id && t.room_password) {
+                creds = `<div class="cred-panel" style="margin-top:10px;">
+                          <div class="cred-box">ID: ${t.room_id} <i class="fas fa-copy" onclick="copyToClipboard('${t.room_id}')"></i></div>
+                          <div class="cred-box">PASS: ${t.room_password} <i class="fas fa-copy" onclick="copyToClipboard('${t.room_password}')"></i></div>
+                        </div>`;
+            }
+
+            matchCard.innerHTML = `<div class="t-body">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                   <h3 style="color:var(--primary); font-size:1.1rem;">${t.title}</h3>
+                   <span class="status-badge ${t.status === 'ongoing' ? 'badge-paid' : 'badge-pending'}">${t.status.toUpperCase()}</span>
+                </div>
+                ${teamHtml}${creds}
+                <button class="btn btn-primary" style="margin-top:12px; height:45px;" onclick="handleProof('${currentUserData.customId}','${t.id}')">প্রুফ দিন</button>
+            </div>`;
+            l.appendChild(matchCard);
+        }
+    } catch (e) {
+        console.error("Match load error:", e);
+    }
+}
+
+  // প্রথমবার ডাটা লোড করা
+  
+        
+        window.handleProof = (userId, tourneyId) => {
+            const textToCopy = `User ID: ${userId}\nTournament ID: ${tourneyId}`;
+            window.copyToClipboard(textToCopy);
+            document.getElementById('proof-modal').classList.remove('hidden');
+        };
+
+        
+        document.addEventListener('change', (e) => { if(e.target.name === 'w_method') window.calculateDynamicWithdraw(); });
+  // ✅ টিম লিডার যেন মেম্বার কিক করতে পারে তার লজিক
+
+async function loadWithdrawHistory(uid) {
+  const box = document.getElementById('withdraw-history');
+  if (!box) return;
+if (window.isWithdrawLoaded) return; // একবার লোড হলে আর করবে না
+window.isWithdrawLoaded = true;
+  const { data: rows, error } = await supabase
+    .from('withdrawals')          // ✅ YOUR TABLE
+.select('amount,method,status,created_at')
+
+    .eq('user_id', uid)
+    .order('created_at', { ascending: false });
+
+  if (error || !rows || rows.length === 0) {
+    box.innerHTML = "<p style='text-align:center;color:#aaa'>No history</p>";
+    return;
+  }
+
+  box.innerHTML = rows.map(w => {
+    const color =
+      w.status === 'pending'
+        ? 'var(--warning)'
+        : w.status === 'paid'
+        ? 'var(--success)'
+        : 'var(--danger)';
+
+    return `
+      <div class="t-card" style="padding:15px;display:flex;justify-content:space-between;">
+        <b>৳${w.amount} (${w.method})</b>
+        <span style="color:${color};font-weight:bold;">${w.status}</span>
+      </div>
+    `;
+  }).join('');
+}
+        
+        async function loadNotifications(uid) {
+  const badge = document.getElementById('header-badge');
+  const nList = document.getElementById('n-list');
+
+  // CHANGE: Only select notifications where is_read is false
+  const { data: rows, error } = await supabase
+    .from('notifications')
+    .select('id, title, body, created_at') // Optimized: only fetch needed columns
+    .eq('user_id', uid)
+    .eq('is_read', false) 
+    .order('created_at', { ascending: false });
+
+  if (error || !rows || rows.length === 0) {
+    if (badge) badge.style.display = 'none';
+    // If opening the page and no NEW ones, show a message
+    if (nList && nList.innerHTML === "") {
+        nList.innerHTML = "<p style='text-align:center;color:#aaa;padding:20px;'>নতুন কোন নোটিফিকেশন নেই</p>";
+    }
+    return;
+  }
+
+  if (badge) badge.style.display = 'block';
+
+  // Render the new notifications
+  if (nList) {
+    nList.innerHTML = rows.map(n => `
+      <div class="t-card" style="padding:15px; border-left: 3px solid var(--primary); margin-bottom:12px;">
+        <b style="color:var(--primary)">${n.title}</b>
+        <p style="font-size:0.9rem; color:#ddd; margin-top:5px;">${n.body}</p>
+        <small style="color:#555; font-size:0.7rem;">${new Date(n.created_at).toLocaleString('bn-BD')}</small>
+      </div>
+    `).join('');
+  }
+}
+
+
+// এটি চালু করতে onAuthStateChanged এর ভেতর loadNotifications(user.uid) এর নিচে এটি লিখুন:
+
+window.openNotifications = async () => {
+  nav('page-notifications');
+
+  const badge = document.getElementById('header-badge');
+  if (badge) badge.style.display = 'none';
+
+  try {
+    // CHANGE: Instead of UPDATE, we DELETE everything for this user that was marked as read or unread
+    // This keeps the table size at near-zero.
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', auth.currentUser.uid);
+
+    if (error) throw error;
+    
+    console.log("Notifications purged from DB to save bandwidth.");
+
+  } catch (e) {
+    console.error("Purge failed:", e.message);
+  }
+};
+window.loadPublicCoupons = async function () {
+  const box = document.getElementById('public-coupons');
+  if (!box) return;
+
+  const { data: rows, error } = await supabase
+    .from('coupons')            // ✅ your table
+    .select('code, bonus, used, max')
+    .eq('type', 'public')
+    .order('created_at', { ascending: false });
+
+  if (error || !rows || rows.length === 0) {
+    box.innerHTML = "<p style='text-align:center;color:#aaa'>None</p>";
+    return;
+  }
+
+  box.innerHTML = rows.map(c => {
+    const p = Math.min((c.used / c.max) * 100, 100);
+
+    return `
+      <div class="t-card" style="padding:15px; border-left:3px solid var(--success);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+          <b style="font-family:monospace;font-size:1.3rem;letter-spacing:1px;">
+            ${c.code}
+          </b>
+          <span style="color:var(--success);font-weight:bold;font-size:1.1rem;">
+            +৳${c.bonus}
+          </span>
+        </div>
+
+        <div style="height:6px;background:rgba(255,255,255,0.1);
+                    border-radius:3px;margin-bottom:5px;">
+          <div style="height:100%;width:${p}%;
+                      background:var(--success);border-radius:3px;">
+          </div>
+        </div>
+
+        <small style="color:var(--text-muted)">
+          ${c.used}/${c.max} used
+        </small>
+      </div>
+    `;
+  }).join('');
+};
+        
+        window.redeemCoupon = async () => {
+  const code = document.getElementById('coupon-code').value.trim();
+  if (!code) {
+    playEffect('alert');
+    return showToast("Enter Code");
+  }
+
+  try {
+    // 1️⃣ Get coupon by code
+    const { data: coupon, error: cErr } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', code)
+      .single();
+
+    if (cErr || !coupon) throw "Invalid Code";
+
+    // 2️⃣ Check limit
+    if (coupon.used >= coupon.max) throw "Limit Reached";
+
+    // 3️⃣ Check if user already redeemed
+    const { data: used } = await supabase
+      .from('coupon_redemptions')
+      .select('id')
+      .eq('coupon_id', coupon.id)
+      .eq('user_id', auth.currentUser.uid)
+      .maybeSingle();
+
+    if (used) throw "Already Used";
+
+    // 4️⃣ Update coupon used count
+    await supabase
+      .from('coupons')
+      .update({ used: coupon.used + 1 })
+      .eq('id', coupon.id);
+
+    // 5️⃣ Insert redemption record
+    await supabase
+      .from('coupon_redemptions')
+      .insert({
+        coupon_id: coupon.id,
+        user_id: auth.currentUser.uid,
+        redeemed_at: new Date().toISOString()
+      });
+
+    // 6️⃣ Update user balance
+    await supabase
+      .from('profiles')
+      .update({ balance: currentUserData.balance + coupon.bonus })
+      .eq('firebase_uid', auth.currentUser.uid);
+
+    // 7️⃣ Notification
+    await supabase
+  .from('notifications')
+  .insert({
+    user_id: auth.currentUser.uid,
+    title: "Redeemed",
+    body: `You got ${coupon.bonus} TK`,
+    is_read: false,
+    created_at: new Date().toISOString()
+  });
+
+    // 8️⃣ UI
+    playEffect('redeem');
+    showToast("Success!");
+
+  } catch (e) {
+    playEffect('alert');
+    showToast(e.message || e);
+  }
+};
+
+        window.showInfo = (d) => { document.getElementById('info-modal').classList.remove('hidden'); document.getElementById('info-text').innerText=d.replace(/<br>/g,'\n'); };
+
+        window.copyUsername=()=>copyToClipboard(currentUserData.username);
+async function loadBroadcasts() {
+  const box = document.getElementById('video-list');
+  if (!box) return;
+
+  try {
+    // 1. Fetch videos from Cloudflare KV
+    const res = await fetch(`${KV_URL}/videos`);
+    const rows = await res.json();
+
+    if (!rows || rows.length === 0) {
+      box.innerHTML = "<p style='text-align:center;color:#aaa;padding:20px;'>কোন ভিডিও পাওয়া যায়নি</p>";
+      return;
+    }
+
+    // 2. Render videos (names match the objects saved by your Admin)
+    box.innerHTML = rows.map(v => `
+      <div class="video-card" style="margin-bottom:20px; background:var(--bg-card); border-radius:16px; overflow:hidden; border:1px solid var(--glass-border);">
+        <iframe src="${v.link}"
+                style="width:100%;height:200px;border:none;"
+                allowfullscreen>
+        </iframe>
+        <div class="video-title" style="padding:15px; color:#fff; font-weight:600; font-size:0.95rem;">${v.title}</div>
+      </div>
+    `).join('');
+
+    console.log("Videos loaded from Cloudflare KV");
+
+  } catch (e) {
+    console.warn("Video KV Error:", e);
+    box.innerHTML = "<p style='text-align:center;color:red;'>ভিডিও লোড করতে সমস্যা হয়েছে</p>";
+  }
+}
+    // ==========================================
+      // ==========================================
+        // ✅ SMART POPUP SYSTEM (FINAL PWA SYNCED)
+        // ==========================================
+        let activePopupId = null;
+
+        // ১. ব্রডকাস্ট চ্যানেল: অ্যাপ খোলা থাকলে নোটিফিকেশন রিসিভ রেকর্ড করা
+        const popupChannel = new BroadcastChannel('smart_popup_receipts');
+        popupChannel.onmessage = (event) => {
+            if (event.data.type === 'RECEIPT') {
+                localStorage.setItem(`push_received_${event.data.msgId}`, 'true');
+            }
+        };
+
+        // ২. স্মার্ট লিসেনার ফাংশন (Strict logic সহ)
+        async function initSmartPopupListener() {
+
+  // 🔹 Shared processor (keeps logic identical)
+  const processPopup = async (data) => {
+    if (!data) return;
+
+    const msgId = data.id;
+    const now = Date.now();
+
+    // ক) এক্সপায়ারি চেক
+    if (now > data.expiry) return;
+
+    // খ) টার্গেটিং: স্পেসিফিক ইউজার চেক
+    if (data.target_logic === 'single' &&
+        data.user_id !== currentUserData.customId) return;
+
+    // গ) টার্গেটিং: রিসিভার চেক
+    if (data.target_logic === 'receivers') {
+        let hasReceived = localStorage.getItem(`push_received_${msgId}`);
+
+        if (!hasReceived) {
+            try {
+                const cache = await caches.open('popup-receipts');
+                const match = await cache.match('/receipt_' + msgId);
+                if (match) {
+                    hasReceived = true;
+                    localStorage.setItem(`push_received_${msgId}`, 'true');
+                }
+            } catch (e) {}
+        }
+
+        if (!hasReceived) return;
+    }
+
+    // ঘ) ফ্রিকোয়েন্সি
+    if (data.display_mode === 'once' &&
+        localStorage.getItem(`sp_seen_${msgId}`)) return;
+
+    // ✅ SHOW POPUP
+    renderSmartPopup(data);
+  };
+
+  /* ===============================
+     1️⃣ Initial load (like onSnapshot first fire)
+     =============================== */
+  const { data, error } = await supabase
+    .from('smart_messages')          // ✅ YOUR TABLE
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!error && data) {
+    processPopup(data);
+  }
+
+  /* ===============================
+     2️⃣ Realtime listener (Firestore equivalent)
+     =============================== */
+  supabase
+    .channel('smart-popup-listener')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'smart_messages'
+      },
+      (payload) => {
+        processPopup(payload.new);
+      }
+    )
+    .subscribe();
+}
+
+        // ৩. পপআপ রেন্ডার ফাংশন
+        function renderSmartPopup(data) {
+            activePopupId = data.id;
+            const titleEl = document.getElementById('sp-title');
+            const bodyEl = document.getElementById('sp-body');
+            const modal = document.getElementById('smart-popup-modal');
+            const btnContainer = document.getElementById('sp-buttons');
+            
+            if(!titleEl || !bodyEl || !modal || !btnContainer) return;
+
+            titleEl.innerText = data.pop_title; // ✅ Admin Standard: pop_title
+            bodyEl.innerText = data.pop_body;   // ✅ Admin Standard: pop_body
+            btnContainer.innerHTML = '';
+
+            if (data.buttons && data.buttons.length > 0) {
+                data.buttons.forEach((btn, index) => {
+                    const b = document.createElement('button');
+                    b.className = index === 0 ? 'sp-btn sp-btn-primary' : 'sp-btn sp-btn-outline';
+                    b.innerText = btn.text;
+                    b.onclick = () => {
+                        if (btn.link.toLowerCase() === 'close' || btn.link === '') {
+                            closeSmartPopup();
+                        } else {
+                            window.open(btn.link, '_blank');
+                            closeSmartPopup();
+                        }
+                    };
+                    btnContainer.appendChild(b);
+                });
+            } else {
+                const b = document.createElement('button');
+                b.className = 'sp-btn sp-btn-primary';
+                b.innerText = 'ঠিক আছে';
+                b.onclick = closeSmartPopup;
+                btnContainer.appendChild(b);
+            }
+
+            modal.classList.add('show');
+            if (typeof playEffect === 'function') playEffect('alert');
+        }
+
+        // ৪. ক্লোজ লজিক
+        window.closeSmartPopup = () => {
+            if (activePopupId) {
+                localStorage.setItem(`sp_seen_${activePopupId}`, 'true');
+            }
+            const modal = document.getElementById('smart-popup-modal');
+            if(modal) {
+                modal.classList.remove('show');
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
+            }
+        };
+// ==========================================
+//    NEW DYNAMIC WITHDRAWAL SYSTEM (FIXED)
+// ==========================================
+let selectedWithdrawMethod = null;
+let withdrawGrid = null;
+
+// 1. DYNAMIC METHOD LISTENER
+const renderWithdrawMethods = (rows) => {
+    if (!withdrawGrid) return;
+    if (!rows || rows.length === 0) {
+        withdrawGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:gray;'>মেথড পাওয়া যায়নি</p>";
+        return;
+    }
+    withdrawGrid.innerHTML = rows.map(m => `
+        <div class="method-card" onclick='handleSelectWithdraw(${JSON.stringify(m)}, this)'>
+            <img src="${m.logo}" onerror="this.src='https://via.placeholder.com/40'">
+            <span class="m-name">${m.name}</span>
+        </div>
+    `).join('');
+};
+
+async function initWithdrawMethods() {
+    withdrawGrid = document.getElementById('user-method-grid');
+    if (!withdrawGrid) return;
+
+    try {
+        // 1. Fetch payment methods from Cloudflare KV
+        const res = await fetch(`${KV_URL}/withdraw_methods`);
+        const data = await res.json();
+
+        // 2. Handle empty state
+        if (!data || data.length === 0) {
+            withdrawGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:gray;padding:20px;'>কোন পেমেন্ট মেথড পাওয়া যায়নি</p>";
+            return;
+        }
+
+        // 3. Render the method cards
+        // Note: property names match exactly what your Admin Panel saves
+        withdrawGrid.innerHTML = data.map(m => `
+            <div class="method-card" onclick='handleSelectWithdraw(${JSON.stringify(m)}, this)'>
+                <img src="${m.logo}" onerror="this.src='https://via.placeholder.com/40'">
+                <span class="m-name">${m.name}</span>
+            </div>
+        `).join('');
+
+        console.log("Withdraw Methods loaded from Cloudflare KV");
+
+    } catch (e) {
+        console.error("Withdraw KV Error:", e);
+        withdrawGrid.innerHTML = "<p style='grid-column:1/-1;text-align:center;color:red;'>মেথড লোড করতে ব্যর্থ হয়েছে</p>";
+    }
+
+    // NOTE: The Supabase real-time channel is removed. 
+    // New methods added in Admin will appear when the user refreshes or re-opens the page.
+}
+// Note: Removed the extra }; that was here previously
+
+/* 🔁 INITIAL LOAD (replaces first onSnapshot fire) */
+
+
+/* 🔁 REALTIME (replaces Firestore listener) */
+
+
+// 2. HANDLE SELECTION
+window.handleSelectWithdraw = (method, el) => {
+    selectedWithdrawMethod = method;
+
+    document.querySelectorAll('.method-card')
+      .forEach(c => c.classList.remove('active'));
+
+    if (el) el.classList.add('active');
+
+    document.getElementById('uw-account-info').placeholder =
+      method.label || "একাউন্ট তথ্য দিন";
+
+    document.getElementById('uw-limit-display').innerText =
+      `লিমিট: ৳${method.min} - ৳${method.max}`;
+
+    calculateDynamicWithdraw();
+};
+
+// 3. DYNAMIC CALCULATION (ONLY SHOWS IF RATE > 1)
+window.calculateDynamicWithdraw = () => {
+    const amt = Number(document.getElementById('uw-amount').value);
+    const box = document.getElementById('dynamic-calc-box');
+    const rateLabel = document.getElementById('dyn-rate-label');
+    const receiveText = document.getElementById('dyn-receive-amount');
+
+    // LOGIC: Only show conversion box if rate is NOT 1 (e.g. USD/Coins)
+    if(selectedWithdrawMethod && Number(selectedWithdrawMethod.rate) > 1 && amt > 0) {
+        box.style.display = 'block';
+        const finalAmount = (amt / selectedWithdrawMethod.rate).toFixed(2);
+        rateLabel.innerText = `কনভার্সন রেট: 1 = ৳${selectedWithdrawMethod.rate}`;
+        receiveText.innerText = `আপনি পাবেন: ${finalAmount}`;
+    } else {
+        // If it's cash (Rate 1), the box stays invisible
+        box.style.display = 'none';
+    }
+};
+
+// 4. SUBMIT REQUEST (UPDATED WITH CUSTOM ID)
+window.submitDynamicWithdraw = async () => {
+  if (isActionProcessing) return;
+
+  const amt = Number(document.getElementById('uw-amount').value);
+  const details = document.getElementById('uw-account-info').value.trim();
+
+  // ১. ভ্যালিডেশন
+  if (!selectedWithdrawMethod) return showToast("পেমেন্ট মেথড সিলেক্ট করুন");
+  if (!amt || amt < selectedWithdrawMethod.min) return showToast(`সর্বনিম্ন ৳${selectedWithdrawMethod.min} উত্তোলন করুন`);
+  if (amt > selectedWithdrawMethod.max) return showToast(`সর্বোচ্চ ৳${selectedWithdrawMethod.max} উত্তোলন সম্ভব`);
+  if (amt > currentUserData.balance) return showToast("পর্যাপ্ত ব্যালেন্স নেই");
+  if (!details) return showToast("আপনার একাউন্ট তথ্য দিন");
+
+  isActionProcessing = true;
+  const btn = document.getElementById('btn-withdraw-submit');
+  btn.disabled = true;
+  btn.innerText = "প্রসেসিং...";
+
+  try {
+    // ২. প্রোফাইল থেকে ব্যালেন্স কমানো
+    const newBalance = currentUserData.balance - amt;
+    const { error: balErr } = await supabase
+      .from('profiles')
+      .update({ balance: newBalance })
+      .eq('firebase_uid', auth.currentUser.uid);
+
+    if (balErr) throw balErr;
+
+    // ৩. উইথড্র রিকোয়েস্ট ডাটাবেসে সেভ করা (Fixed Columns)
+    const { error: wErr } = await supabase
+      .from('withdrawals')
+      .insert({
+        user_id: auth.currentUser.uid,
+        user_custom_id: currentUserData.customId, // ✅ 'user_customId' থেকে 'user_custom_id' করা হয়েছে
+        username: currentUserData.fullName || currentUserData.username,
+        amount: amt,
+        method: selectedWithdrawMethod.name,
+        details: details, // ✅ নিশ্চিত করুন এটি 'details' কলামে যাচ্ছে
+        status: 'pending',
+        created_at: new Date().toISOString()
+      });
+
+    if (wErr) throw wErr;
+
+    // ৪. সফল হলে নোটিফিকেশন এবং UI আপডেট
+    if (typeof playEffect === 'function') playEffect('success');
+    showToast("অনুরোধ সফল হয়েছে!");
+
+    document.getElementById('uw-amount').value = '';
+    document.getElementById('uw-account-info').value = '';
+    nav('page-home');
+
+  } catch (e) {
+    showToast("Error: " + (e.message || e));
+    btn.disabled = false;
+    btn.innerText = "রিকুয়েস্ট পাঠান";
+  } finally {
+    isActionProcessing = false;
+  }
+};
+/* ==========================================
+   G-ZONE - PROFESSIONAL FREE SHOP ENGINE
+   ========================================== */
+const shopPackages = [
+    { diamonds: 25, tokens: 25 }, { diamonds: 50, tokens: 40 }, 
+    { diamonds: 115, tokens: 80 }, { diamonds: 240, tokens: 160 }, 
+    { diamonds: 355, tokens: 240 }, { diamonds: 480, tokens: 320 },
+    { diamonds: 505, tokens: 340 }, { diamonds: 610, tokens: 405 }
+];
+
+let selectedShopPkg = null;
+
+// ১. ডায়মন্ড প্যাকেজ রেন্ডার করা
+function renderShopPackages() {
+    const grid = document.getElementById('diamond-packages-grid');
+    if(!grid) return;
+    grid.innerHTML = shopPackages.map(pkg => `
+        <div class="t-card" style="margin: 0; padding: 15px; text-align: center; border: 1px solid var(--glass-border); background: var(--bg-card); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -10px; left: -10px; width: 40px; height: 40px; background: rgba(6, 182, 212, 0.1); border-radius: 50%;"></div>
+            <i class="fas fa-gem" style="color: var(--primary); font-size: 1.8rem; margin-bottom: 10px; filter: drop-shadow(0 0 8px var(--primary-glow));"></i>
+            <div style="color: white; font-weight: 800; font-size: 1.2rem; font-family: var(--font-gaming);">${pkg.diamonds} <small style="font-size: 0.6rem;">💎</small></div>
+            <div style="color: #94a3b8; font-size: 0.7rem; margin-top: 3px; font-weight: 600;">FREE FIRE PKG</div>
+            
+            <!-- ✅ বাটন লজিক: শুধুমাত্র এই 'REDEEM' বক্সে ক্লিক করলে মোডাল আসবে -->
+            <div onclick="openRedeemModal(${pkg.diamonds}, ${pkg.tokens})" 
+                 style="color: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 800; background: var(--primary); padding: 8px 12px; border-radius: 12px; margin-top: 15px; display: block; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;">
+                REDEEM: ${pkg.tokens} <i class="fas fa-ticket-alt" style="font-size: 0.7rem; margin-left: 4px;"></i>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ২. রিডিম মোডাল সেটআপ
+window.openRedeemModal = (diamonds, tokens) => {
+    selectedShopPkg = { diamonds, tokens };
+    document.getElementById('redeem-modal').classList.remove('hidden');
+    document.getElementById('redeem-details').innerHTML = `
+        <div style="font-size: 1.6rem; color: #fff; font-weight: 800; font-family: var(--font-gaming);">${diamonds} DIAMONDS</div>
+        <div style="color: var(--warning); font-weight: 700; margin-top: 5px; font-size: 0.9rem;">খরচ হবে: ${tokens} শপ টোকেন</div>
+    `;
+};
+
+// ৩. রিডিম সাবমিশন (Server-Validated)
+document.getElementById('btn-confirm-redeem').onclick = async () => {
+    if(isActionProcessing) return;
+    
+    const ffUid = document.getElementById('redeem-ff-uid').value.trim();
+    if(!ffUid || ffUid.length < 5) return showToast("সঠিক প্লেয়ার ইউআইডি (UID) দিন");
+    
+    // টোকেন চেক
+    if((currentUserData.shopTokens || 0) < selectedShopPkg.tokens) {
+        playEffect('alert');
+        return showToast("আপনার একাউন্টে পর্যাপ্ত টোকেন নেই!");
+    }
+
+    isActionProcessing = true;
+    const btn = document.getElementById('btn-confirm-redeem');
+    btn.disabled = true; btn.innerText = "প্রসেসিং...";
+
+    try {
+        // A. টোকেন ব্যালেন্স আপডেট
+        const { error: updErr } = await supabase
+            .from('profiles')
+            .update({ shopTokens: currentUserData.shopTokens - selectedShopPkg.tokens })
+            .eq('firebase_uid', auth.currentUser.uid);
+
+        if (updErr) throw updErr;
+
+        // B. রিকোয়েস্ট তৈরি (অ্যাডমিন প্যানেলের জন্য)
+        const { error: insErr } = await supabase.from('shop_redemptions').insert({
+            user_id: auth.currentUser.uid,
+            user_custom_id: currentUserData.customId,
+            player_uid: ffUid,
+            diamond_amount: selectedShopPkg.diamonds + " Diamonds",
+            tokens_used: selectedShopPkg.tokens,
+            status: 'pending',
+            created_at: new Date().toISOString()
+        });
+
+        if (insErr) throw insErr;
+
+        playEffect('success');
+        showToast("সফল হয়েছে! অ্যাডমিন চেক করে ডায়মন্ড পাঠিয়ে দিবে।");
+        document.getElementById('redeem-modal').classList.add('hidden');
+        document.getElementById('redeem-ff-uid').value = '';
+        
+        loadShopHistory(); // হিস্টোরি রিফ্রেশ
+        nav('page-home');
+        
+    } catch (e) {
+        showToast("Error: " + e.message);
+        btn.disabled = false; btn.innerText = "রিডিম রিকোয়েস্ট পাঠান";
+    } finally {
+        isActionProcessing = false;
+    }
+};
+
+// ৪. রিডেম্পশন ইতিহাস লোড করা
+async function loadShopHistory() {
+if (window.isShopHistoryLoaded) return;
+window.isShopHistoryLoaded = true;
+    const listArea = document.getElementById('shop-history-list');
+    if(!listArea) return;
+
+    const { data: rows, error } = await supabase
+        .from('shop_redemptions')
+        .select('diamond_amount, player_uid, status, created_at')
+        .eq('user_id', auth.currentUser.uid)
+        .order('created_at', { ascending: false });
+
+    if(error || !rows || rows.length === 0) return;
+
+    listArea.innerHTML = rows.map(r => {
+        const isPaid = r.status === 'completed';
+        const statusColor = isPaid ? 'var(--success)' : 'var(--warning)';
+        
+        return `
+            <div class="t-card" style="margin: 0 0 10px 0; padding: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.02);">
+                <div>
+                    <b style="color: #fff; font-size: 0.9rem;">${r.diamond_amount}</b><br>
+                    <small style="color: gray;">UID: ${r.player_uid}</small>
+                </div>
+                <div style="text-align: right;">
+                    <span style="color: ${statusColor}; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">
+                        ${isPaid ? '<i class="fas fa-check-circle"></i> PAID' : '<i class="fas fa-clock"></i> PENDING'}
+                    </span><br>
+                    <small style="color: #555; font-size: 0.65rem;">${new Date(r.created_at).toLocaleDateString()}</small>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+ // ১. কানেক্টিভিটি চেক করার ফাংশন
+window.checkConnectivity = () => {
+    const offlineScreen = document.getElementById('offline-screen');
+    if (navigator.onLine) {
+        offlineScreen.style.display = 'none';
+        showToast("আপনি এখন অনলাইনে আছেন!");
+        location.reload(); // পেজটি রিফ্রেশ করলে ডাটা সিঙ্ক হবে
+    } else {
+        showToast("এখনো ইন্টারনেট সংযোগ নেই!");
+        // অফলাইন পেজটি কাপানোর জন্য একটি ছোট এনিমেশন (Optional)
+        offlineScreen.style.animation = 'shake 0.5s ease';
+        setTimeout(() => offlineScreen.style.animation = '', 500);
+    }
+};
+// ২. ইন্টারনেটের অবস্থা মনিটর করা (Live Detection)
+window.addEventListener('offline', () => {
+    document.getElementById('offline-screen').style.display = 'flex';
+});
+
+window.addEventListener('online', () => {
+    document.getElementById('offline-screen').style.display = 'none';
+    location.reload(); // নেট আসলে অটো রিফ্রেশ হবে
+});
+
+// ৩. অটো ডিক্টেটর: অ্যাপ লোড হওয়ার সময় নেট চেক
+if (!navigator.onLine) {
+    document.getElementById('offline-screen').style.display = 'flex';
+}
+
+
+</script>
+</body>
+</html>

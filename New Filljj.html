@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captcha Vision Tester</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+  :root {
+    --bg:#08080e;--surface:#0f0f18;--card:#13131f;--border:#1c1c2e;
+    --accent:#00ff88;--red:#ff3355;--blue:#3b9eff;--yellow:#ffb830;
+    --text:#dde0f0;--muted:#52527a;--font:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:12px}
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,136,.007) 3px,rgba(0,255,136,.007) 4px);pointer-events:none;z-index:9999}
+  .topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px}
+  .topbar-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent);animation:blink 2s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .topbar h1{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--accent);letter-spacing:.12em;text-transform:uppercase}
+  .topbar-status{margin-left:auto;font-size:10px;color:var(--muted)}
+  .topbar-status span{color:var(--text)}
+  .layout{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 52px)}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+  .lbl{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  .ptabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+  .ptab{padding:8px 4px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);font-family:var(--font);font-size:10px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;letter-spacing:.04em}
+  .ptab:hover{border-color:var(--blue);color:var(--blue)}
+  .ptab.active{border-color:var(--accent);color:var(--accent);background:rgba(0,255,136,.06)}
+  input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:11px;padding:9px 10px;border-radius:4px;outline:none;transition:border-color .15s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  .row2{display:flex;gap:6px}
+  .row2>*{flex:1}
+  textarea{resize:vertical;min-height:115px;line-height:1.65}
+  .drop-zone{border:2px dashed var(--border);border-radius:5px;padding:16px 12px;text-align:center;cursor:pointer;position:relative;transition:all .2s}
+  .drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:rgba(0,255,136,.03)}
+  .drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .drop-zone .di{font-size:20px;margin-bottom:3px}
+  .drop-zone p{font-size:10px;color:var(--muted)}
+  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .thumb{position:relative;border:1px solid var(--border);border-radius:3px;overflow:hidden;cursor:pointer;aspect-ratio:240/110;transition:border-color .12s}
+  .thumb:hover{border-color:var(--blue)}
+  .thumb.active{border-color:var(--accent)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .x{position:absolute;top:1px;right:1px;background:var(--red);color:#fff;border:none;border-radius:2px;font-size:8px;padding:1px 3px;cursor:pointer;opacity:0;transition:opacity .12s;font-family:var(--font);font-weight:700}
+  .thumb:hover .x{opacity:1}
+  .stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .sbox{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px 6px;text-align:center}
+  .sbox .v{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)}
+  .sbox .l{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+  .btn{font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border:none;border-radius:4px;cursor:pointer;transition:all .15s;width:100%}
+  .btn-go{background:var(--accent);color:#000}
+  .btn-go:hover{filter:brightness(1.1)}
+  .btn-go:disabled{background:var(--muted);color:#000;cursor:not-allowed;filter:none}
+  .btn-clear{background:transparent;border:1px solid var(--border);color:var(--muted);margin-top:4px}
+  .btn-clear:hover{border-color:var(--red);color:var(--red)}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .5s linear infinite;vertical-align:middle;margin-right:5px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .main{display:grid;grid-template-rows:1fr 185px;overflow:hidden}
+  .main-top{display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .cpanel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px;background:#0a0a12;border-right:1px solid var(--border);position:relative}
+  .clabel{position:absolute;top:11px;left:13px;font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+  #cv{border:1px solid var(--border);border-radius:3px;image-rendering:pixelated;max-width:100%}
+  .cpill{display:flex;gap:16px;background:var(--card);border:1px solid var(--border);padding:7px 16px;border-radius:20px;font-size:13px}
+  .cpill .cx{color:var(--blue)}
+  .cpill .cy{color:var(--accent)}
+  .cpill .ct{color:var(--muted);font-size:10px;align-self:center}
+  .chint{font-size:10px;color:var(--muted);text-align:center;max-width:260px;line-height:1.6}
+  .lpanel{display:flex;flex-direction:column;overflow:hidden}
+  .phead{padding:9px 14px;border-bottom:1px solid var(--border);background:var(--surface);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .bsm{font-family:var(--font);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);cursor:pointer;transition:all .12s}
+  .bsm:hover{border-color:var(--blue);color:var(--blue)}
+  #logBox{flex:1;overflow-y:auto;padding:10px 14px;background:var(--bg);font-size:10px;line-height:1.9}
+  .le{display:flex;gap:8px;animation:fi .2s ease;border-bottom:1px solid rgba(255,255,255,.02);padding:1px 0}
+  @keyframes fi{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+  .lt{color:var(--muted);flex-shrink:0}
+  .lok{color:var(--accent)}.lerr{color:var(--red)}.linfo{color:var(--blue)}.lwarn{color:var(--yellow)}
+  .rpanel{border-top:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+  #rWrap{flex:1;overflow-y:auto;background:var(--bg)}
+  table{width:100%;border-collapse:collapse}
+  th{padding:6px 10px;text-align:left;font-size:8px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;background:var(--surface);position:sticky;top:0;z-index:1;border-bottom:1px solid var(--border)}
+  td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.025);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.02);cursor:pointer}
+  tr.sel td{background:rgba(0,255,136,.05)}
+  .tag{display:inline-block;font-size:8px;padding:2px 5px;border-radius:2px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .tok{background:rgba(0,255,136,.12);color:var(--accent)}
+  .terr{background:rgba(255,51,85,.12);color:var(--red)}
+  .trun{background:rgba(255,184,48,.12);color:var(--yellow)}
+  .mini{width:44px;height:20px;object-fit:cover;border:1px solid var(--border);border-radius:2px;display:block}
+  .rc{max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+  .estate{text-align:center;padding:28px;color:var(--muted);font-size:11px}
+  .estate .ei{font-size:22px;margin-bottom:5px}
+  .ebox{background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.25);border-radius:4px;padding:7px 10px;font-size:10px;color:var(--red);line-height:1.6;display:none;margin-top:5px}
+  ::-webkit-scrollbar{width:3px;height:3px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  hr{border:none;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-dot"></div>
+  <h1>Vision Captcha Tester</h1>
+  <div class="topbar-status">Status: <span id="topStatus">Ready</span></div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <div>
+      <div class="lbl">Provider</div>
+      <div class="ptabs">
+        <button class="ptab active" onclick="setProvider('groq',this)">Groq</button>
+        <button class="ptab" onclick="setProvider('openrouter',this)">OpenRouter</button>
+        <button class="ptab" onclick="setProvider('mistral',this)">Mistral</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="lbl" id="keyLbl">Groq API Key</div>
+      <div class="row2">
+        <input type="password" id="apiKey" placeholder="gsk_..." />
+        <button class="bsm" style="width:auto;white-space:nowrap;padding:0 12px" onclick="testKey()">Test</button>
+      </div>
+      <div class="ebox" id="ebox"></div>
+    </div>
+
+    <div>
+      <div class="lbl">Model <span id="mnote" style="color:var(--blue);font-size:9px;font-weight:400">(vision)</span></div>
+      <select id="msel" onchange="onMC()"></select>
+      <div id="cmWrap" style="margin-top:5px;display:none">
+        <input type="text" id="cm" placeholder="Enter custom model ID..." />
+      </div>
+    </div>
+
+    <div>
+      <div class="lbl">Prompt</div>
+      <textarea id="prompt">Look at this captcha image (240x110 pixels).
+
+Step 1: Find the text label in the image. It names one specific object (example: "car", "bicycle", "apple").
+Step 2: Find that exact object in the image.
+Step 3: Return the center pixel coordinates of that object.
+
+Respond with ONLY this JSON:
+{"x": number, "y": number}
+
+Where x is 0-240 and y is 0-110. No explanation. No markdown.</textarea>
+    </div>
+
+    <div>
+      <div class="lbl">Images</div>
+      <div class="drop-zone" id="dz">
+        <input type="file" id="fi" accept="image/*" multiple />
+        <div class="di">📁</div>
+        <p>Drop images or click to browse</p>
+      </div>
+      <div class="tgrid" id="tg" style="margin-top:7px"></div>
+    </div>
+
+    <hr />
+
+    <div class="stats3">
+      <div class="sbox"><div class="v" id="sT">0</div><div class="l">Total</div></div>
+      <div class="sbox"><div class="v" id="sO" style="color:var(--accent)">0</div><div class="l">Solved</div></div>
+      <div class="sbox"><div class="v" id="sF" style="color:var(--red)">0</div><div class="l">Failed</div></div>
+    </div>
+
+    <button class="btn btn-go" id="runBtn" onclick="runAll()" disabled>▶ Run All</button>
+    <button class="btn btn-clear" onclick="clearAll()">Clear All</button>
+
+  </div>
+
+  <div class="main">
+    <div class="main-top">
+
+      <div class="cpanel">
+        <div class="clabel">Dot Placement — 2× Scale</div>
+        <canvas id="cv" width="480" height="220"></canvas>
+        <div class="cpill">
+          <span>x: <span class="cx" id="cx">—</span></span>
+          <span>y: <span class="cy" id="cy">—</span></span>
+          <span class="ct" id="ct"></span>
+        </div>
+        <div class="chint" id="hint">Select a result row to preview dot placement</div>
+      </div>
+
+      <div class="lpanel">
+        <div class="phead"><span>Live Log</span><button class="bsm" onclick="clearLog()">Clear</button></div>
+        <div id="logBox">
+          <div class="le"><span class="lt">--:--:--</span><span class="linfo">Ready. Select provider, enter key, upload images, run.</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="rpanel">
+      <div class="phead"><span>Results</span><button class="bsm" onclick="exportCSV()">Export CSV</button></div>
+      <div id="rWrap"><div class="estate"><div class="ei">🔍</div>Results appear here</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const P = {
+  groq: {
+    lbl:'Groq API Key', ph:'gsk_...',
+    url:'https://api.groq.com/openai/v1/chat/completions',
+    testUrl:'https://api.groq.com/openai/v1/models',
+    models:[
+      {id:'meta-llama/llama-4-scout-17b-16e-instruct', name:'Llama 4 Scout 17B ✓ vision'},
+      {id:'meta-llama/llama-4-maverick-17b-128e-instruct', name:'Llama 4 Maverick 17B ✓ vision'},
+    ],
+    payload(model,b64,prompt){
+      return {model,max_tokens:80,messages:[{role:'user',content:[
+        {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}},
+        {type:'text',text:prompt}
+      ]}]};
+    },
+    hdrs(k){return{'Authorization':`Bearer ${k}`,'Content-Type':'application/json'}}
+  },
+  openrouter: {
+    lbl:'OpenRouter API Key', ph:'sk-or-v1-...',
+    url:'https://openrouter.ai/api/v1/chat/completions',
+    testUrl:'https://openrouter.ai/api/v1/models',
+    models:[
+      {id:'meta-llama/llama-4-scout', name:'Llama 4 Scout ✓ vision'},
+      {id:'meta-llama/llama-4-maverick', name:'Llama 4 Maverick ✓ vision'},
+      {id:'google/gemini-2.0-flash-001', name:'Gemini 2.0 Flash ✓ vision'},
+      {id:'google/gemini-2.5-flash-preview:thinking', name:'Gemini 2.5 Flash ✓ vision'},
+      {id:'mistralai/pixtral-12b', name:'Pixtral 12B ✓ vision'},
+      {id:'openai/gpt-4o-mini', name:'GPT-4o Mini ✓ vision'},
+      {id:'openai/gpt-4o', name:'GPT-4o ✓ vision'},
+      {id:'anthropic/claude-3-5-haiku', name:'Claude 3.5 Haiku ✓ vision'},
+      {id:'qwen/qwen2.5-vl-72b-instruct', name:'Qwen 2.5 VL 72B ✓ vision'},
+      {id:'__custom__', name:'— Custom model ID —'},
+    ],
+    payload(model,b64,prompt){
+      return {model,max_tokens:80,messages:[{role:'user',content:[
+        {type:'text',text:prompt},
+        {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}}
+      ]}]};
+    },
+    hdrs(k){return{'Authorization':`Bearer ${k}`,'Content-Type':'application/json','HTTP-Referer':'https://captcha-tester','X-Title':'Captcha Tester'}}
+  },
+  mistral: {
+    lbl:'Mistral API Key', ph:'mistral key...',
+    url:'https://api.mistral.ai/v1/chat/completions',
+    testUrl:'https://api.mistral.ai/v1/models',
+    models:[
+      {id:'pixtral-12b-2409', name:'Pixtral 12B ✓ vision'},
+      {id:'pixtral-large-latest', name:'Pixtral Large ✓ vision'},
+      {id:'mistral-small-latest', name:'Mistral Small 3.1 ✓ vision'},
+    ],
+    payload(model,b64,prompt){
+      return {model,max_tokens:80,messages:[{role:'user',content:[
+        {type:'text',text:prompt},
+        {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}}
+      ]}]};
+    },
+    hdrs(k){return{'Authorization':`Bearer ${k}`,'Content-Type':'application/json'}}
+  }
+};
+
+let prov='groq', images=[], results=[], running=false;
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+
+function setProvider(p,el){
+  prov=p;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const c=P[p];
+  document.getElementById('keyLbl').textContent=c.lbl;
+  document.getElementById('apiKey').placeholder=c.ph;
+  document.getElementById('apiKey').value='';
+  hideErr(); buildModels();
+}
+
+function buildModels(){
+  const sel=document.getElementById('msel');
+  sel.innerHTML=P[prov].models.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  onMC();
+}
+function onMC(){
+  document.getElementById('cmWrap').style.display=
+    document.getElementById('msel').value==='__custom__'?'block':'none';
+}
+function getMod(){
+  const v=document.getElementById('msel').value;
+  return v==='__custom__'?document.getElementById('cm').value.trim():v;
+}
+buildModels();
+
+// File upload
+const dz=document.getElementById('dz'), fi=document.getElementById('fi');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');load(e.dataTransfer.files)});
+fi.addEventListener('change',()=>{load(fi.files);fi.value=''});
+
+function load(files){
+  [...files].forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const r=new FileReader();
+    r.onload=e=>{
+      const du=e.target.result;
+      images.push({name:f.name,b64:du.split(',')[1],dataUrl:du});
+      rThumbs(); upBtn();
+    };
+    r.readAsDataURL(f);
+  });
+}
+function rThumbs(){
+  document.getElementById('tg').innerHTML=images.map((img,i)=>`
+    <div class="thumb" id="th${i}" onclick="prevImg(${i})">
+      <img src="${img.dataUrl}" />
+      <button class="x" onclick="rmImg(event,${i})">✕</button>
+    </div>`).join('');
+}
+function rmImg(e,i){e.stopPropagation();images.splice(i,1);rThumbs();upBtn()}
+function prevImg(i){
+  document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));
+  document.getElementById('th'+i)?.classList.add('active');
+  drawCv(images[i].dataUrl,null,null,null);
+}
+function upBtn(){document.getElementById('runBtn').disabled=images.length===0||running}
+
+// Canvas
+function drawCv(dataUrl,x,y,label){
+  const img=new Image();
+  img.onload=()=>{
+    ctx.clearRect(0,0,480,220);
+    ctx.drawImage(img,0,0,480,220);
+    if(x!==null&&y!==null){
+      const sx=x*2,sy=y*2;
+      ctx.save();ctx.setLineDash([3,3]);
+      ctx.strokeStyle='rgba(255,51,85,.4)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,220);ctx.moveTo(0,sy);ctx.lineTo(480,sy);ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();ctx.arc(sx,sy,15,0,Math.PI*2);ctx.strokeStyle='rgba(255,51,85,.25)';ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.arc(sx,sy,7,0,Math.PI*2);ctx.fillStyle='#ff3355';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+      const lbl=`(${x}, ${y})`;
+      ctx.font='bold 11px JetBrains Mono,monospace';
+      const tw=ctx.measureText(lbl).width;
+      let lx=sx+18,ly=sy-4;
+      if(lx+tw+6>480)lx=sx-tw-22;
+      ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(lx-2,ly-12,tw+6,15);
+      ctx.fillStyle='#ff3355';ctx.fillText(lbl,lx+1,ly);
+      document.getElementById('cx').textContent=x;
+      document.getElementById('cy').textContent=y;
+      if(label)document.getElementById('hint').textContent=label;
+    } else {
+      document.getElementById('cx').textContent='—';
+      document.getElementById('cy').textContent='—';
+    }
+  };
+  img.src=dataUrl;
+}
+(function(){ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,480,220);ctx.fillStyle='#1c1c2e';ctx.font='11px JetBrains Mono,monospace';ctx.textAlign='center';ctx.fillText('Upload images → Run → see dot placement here',240,110);ctx.textAlign='left'})();
+
+// Log
+function log(msg,type='info'){
+  const b=document.getElementById('logBox');
+  const t=new Date().toLocaleTimeString('en-US',{hour12:false});
+  const d=document.createElement('div');d.className='le';
+  d.innerHTML=`<span class="lt">${t}</span><span class="l${type}">${esc(msg)}</span>`;
+  b.appendChild(d);b.scrollTop=b.scrollHeight;
+}
+function clearLog(){document.getElementById('logBox').innerHTML=''}
+function showErr(m){const b=document.getElementById('ebox');b.textContent=m;b.style.display='block'}
+function hideErr(){document.getElementById('ebox').style.display='none'}
+
+// Test key
+async function testKey(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){showErr('Enter API key first');return}
+  hideErr();log(`Testing ${prov} key...`,'info');
+  try{
+    const r=await fetch(P[prov].testUrl,{headers:P[prov].hdrs(key)});
+    if(r.ok){log(`✅ ${prov} key valid!`,'ok');document.getElementById('topStatus').textContent='✅ Connected'}
+    else{
+      let msg=`HTTP ${r.status}`;
+      try{const e=await r.json();msg=e?.error?.message||msg}catch{}
+      log(`❌ ${msg}`,'err');showErr(msg);
+    }
+  }catch(e){log(`❌ ${e.message}`,'err');showErr(e.message)}
+}
+
+// Extract coords
+function extractCoords(text){
+  text=text.trim().replace(/```json|```/g,'').trim();
+  try{const d=JSON.parse(text);if(typeof d.x!=='undefined'&&typeof d.y!=='undefined')return clamp(+d.x,+d.y)}catch{}
+  const m=text.match(/\{\s*"x"\s*:\s*(\d+(?:\.\d+)?)\s*,\s*"y"\s*:\s*(\d+(?:\.\d+)?)\s*\}/);
+  if(m)return clamp(+m[1],+m[2]);
+  const mx=text.match(/"?x"?\s*[:=]\s*(\d+)/i),my=text.match(/"?y"?\s*[:=]\s*(\d+)/i);
+  if(mx&&my)return clamp(+mx[1],+my[1]);
+  return null;
+}
+function clamp(x,y){return{x:Math.round(Math.max(0,Math.min(x,240))),y:Math.round(Math.max(0,Math.min(y,110)))}}
+
+// Solve one
+async function solveOne(img){
+  const key=document.getElementById('apiKey').value.trim();
+  const model=getMod(), prompt=document.getElementById('prompt').value;
+  if(!model)throw new Error('No model selected');
+  const t0=Date.now();
+  const r=await fetch(P[prov].url,{method:'POST',headers:P[prov].hdrs(key),body:JSON.stringify(P[prov].payload(model,img.b64,prompt))});
+  const ms=Date.now()-t0;
+  if(!r.ok){let m=`HTTP ${r.status}`;try{const e=await r.json();m=e?.error?.message||m}catch{}throw new Error(m)}
+  const data=await r.json();
+  const raw=data.choices?.[0]?.message?.content?.trim()||'';
+  return{raw,ms};
+}
+
+// Run all
+async function runAll(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){showErr('Enter API key first');return}
+  if(!getMod()){showErr('Select a model');return}
+  if(!images.length)return;
+  hideErr();running=true;results=[];upBtn();
+  const btn=document.getElementById('runBtn');
+  btn.innerHTML='<span class="spin"></span>Running...';
+  document.getElementById('topStatus').textContent='Running...';
+  let ok=0,fail=0;rTable();
+  for(let i=0;i<images.length;i++){
+    const img=images[i];
+    log(`[${i+1}/${images.length}] → ${img.name}`,'info');
+    results.push({name:img.name,x:null,y:null,raw:'...',status:'running',ms:0,dataUrl:img.dataUrl});
+    rTable();
+    try{
+      const{raw,ms}=await solveOne(img);
+      log(`Raw: ${raw.slice(0,70)}`,'info');
+      const coords=extractCoords(raw);
+      if(coords){
+        ok++;results[i]={...results[i],x:coords.x,y:coords.y,raw,status:'ok',ms};
+        log(`✅ x=${coords.x} y=${coords.y} (${ms}ms)`,'ok');
+        drawCv(img.dataUrl,coords.x,coords.y,`${img.name} → x:${coords.x} y:${coords.y}`);
+        document.getElementById('ct').textContent=`${ms}ms`;
+      }else{
+        fail++;results[i]={...results[i],raw,status:'parse_err',ms};
+        log(`⚠ Parse failed: ${raw.slice(0,50)}`,'warn');
+      }
+    }catch(e){
+      fail++;results[i]={...results[i],raw:e.message,status:'api_err',ms:0};
+      log(`❌ API error: ${e.message}`,'err');showErr(`API error: ${e.message}`);
+    }
+    document.getElementById('sT').textContent=i+1;
+    document.getElementById('sO').textContent=ok;
+    document.getElementById('sF').textContent=fail;
+    rTable();
+    if(i<images.length-1)await sleep(350);
+  }
+  running=false;btn.innerHTML='▶ Run All';upBtn();
+  const rate=images.length?Math.round(ok/images.length*100):0;
+  log(`Done! ${ok}/${images.length} (${rate}% accuracy)`,ok===images.length?'ok':'warn');
+  document.getElementById('topStatus').textContent=`${rate}% accuracy`;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// Results table
+function rTable(){
+  const w=document.getElementById('rWrap');
+  if(!results.length){w.innerHTML='<div class="estate"><div class="ei">🔍</div>Results appear here</div>';return}
+  w.innerHTML=`<table><thead><tr><th>#</th><th>Img</th><th>File</th><th>Status</th><th>X</th><th>Y</th><th>Time</th><th>Raw</th></tr></thead><tbody>
+    ${results.map((r,i)=>`<tr onclick="selRow(${i})" id="row${i}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><img class="mini" src="${r.dataUrl}" /></td>
+      <td style="max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r.name)}">${esc(r.name)}</td>
+      <td>${stag(r.status)}</td>
+      <td style="color:${r.x!==null?'var(--accent)':'var(--red)'}">${r.x??'—'}</td>
+      <td style="color:${r.y!==null?'var(--accent)':'var(--red)'}">${r.y??'—'}</td>
+      <td style="color:var(--muted)">${r.ms?r.ms+'ms':'—'}</td>
+      <td class="rc" title="${esc(r.raw)}">${esc(r.raw.slice(0,50))}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+function stag(s){
+  if(s==='ok')return'<span class="tag tok">✓ Solved</span>';
+  if(s==='running')return'<span class="tag trun">⏳ Running</span>';
+  if(s==='parse_err')return'<span class="tag terr">⚠ Parse</span>';
+  if(s==='api_err')return'<span class="tag terr">✗ API Err</span>';
+  return'—';
+}
+function selRow(i){
+  document.querySelectorAll('tr').forEach(t=>t.classList.remove('sel'));
+  document.getElementById('row'+i)?.classList.add('sel');
+  const r=results[i];if(!r)return;
+  drawCv(r.dataUrl,r.x,r.y,`${r.name} — x:${r.x} y:${r.y}`);
+  if(r.ms)document.getElementById('ct').textContent=`${r.ms}ms`;
+}
+
+// Export
+function exportCSV(){
+  if(!results.length){alert('No results');return}
+  const model=getMod();
+  const rows=[['#','File','Provider','Model','Status','X','Y','ms','Raw']];
+  results.forEach((r,i)=>rows.push([i+1,r.name,prov,model,r.status,r.x??'',r.y??'',r.ms,`"${r.raw.replace(/"/g,"'").replace(/\n/g,' ')}"`]));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));
+  a.download=`captcha_${Date.now()}.csv`;a.click();
+  log('CSV exported','ok');
+}
+
+// Clear
+function clearAll(){
+  images=[];results=[];rThumbs();rTable();upBtn();
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,480,220);
+  ctx.fillStyle='#1c1c2e';ctx.font='11px JetBrains Mono,monospace';
+  ctx.textAlign='center';ctx.fillText('Upload images → Run → see dot placement here',240,110);ctx.textAlign='left';
+  ['sT','sO','sF'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('topStatus').textContent='Ready';
+  document.getElementById('cx').textContent='—';document.getElementById('cy').textContent='—';
+  hideErr();log('Cleared','info');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+</script>
+</body>
+</html>

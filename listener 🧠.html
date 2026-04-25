@@ -1,0 +1,182 @@
+// ==========================================
+// 1. CONFIGURATION (Supabase Connection)
+// ==========================================
+const SUPABASE_URL = "https://hjzwndttkhhicvlookhb.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqenduZHR0a2hoaWN2bG9va2hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NDY1NzgsImV4cCI6MjA4NDMyMjU3OH0.5SUDbHahV1NEKe9NAWe4Al4lGBjEwXJzixQY9SEWfew";
+
+// Memory storage for the "History" view in browser (resets on worker restart)
+let recentNotifications = [];
+
+export default {
+  async fetch(request, env, ctx) {
+    // ==========================================
+    // 2. REQUEST ROUTING (CORS & GET History)
+    // ==========================================
+    if (request.method === "OPTIONS") return handleCORS();
+
+    // GET Request: Used to see logs in your browser
+    if (request.method === "GET") {
+      return new Response(JSON.stringify({ status: "Worker Running", history: recentNotifications }, null, 2), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    if (request.method !== "POST") return new Response("Use POST", { status: 405 });
+
+    try {
+      const data = await request.json();
+
+      // Combine Title and Message
+      const originalText = data.title + " " + data.msg; 
+      
+      // Convert to lowercase and English digits for searching keywords and amounts
+      let rawText = convertBengaliDigits(originalText.toLowerCase());
+      
+      // Identify source app
+      const appSource = (data.app || "").toLowerCase();
+
+      // ==========================================
+      // 3. BRAIN: METHOD IDENTIFICATION
+      // ==========================================
+      let method = "unknown";
+      if (rawText.includes("bkash") || rawText.includes("বিকাশ") || appSource.includes("bkash")) method = "bkash";
+      else if (rawText.includes("nagad") || rawText.includes("নগদ") || appSource.includes("nagad")) method = "nagad";
+      else if (rawText.includes("rocket") || rawText.includes("রকেট") || rawText.includes("dbbl") || appSource.includes("dutch.bangla")) method = "rocket";
+
+      // ==========================================
+      // 4. BRAIN: PAYMENT INTENT VALIDATION
+      // ==========================================
+      const isPayment = /received|credited|payment|cash in|সফল|গৃহীত|আসে|ভরা|রিসিভ/.test(rawText);
+
+      // ==========================================
+      // 5. BRAIN: DATA EXTRACTION (AMOUNT)
+      // ==========================================
+      const amountRegex = /(?:tk|bdt|amount|৳|পরিমাণ|টাকা)\s?([\d,.]+)/i;
+      const amountMatch = rawText.match(amountRegex);
+      const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
+
+// ==========================================
+      // 6. BRAIN: DATA EXTRACTION (TRX ID) - UNIVERSAL VERSION
+      // ==========================================
+      
+      // EXPLANATION OF THIS REGEX:
+      // (?:...) : Non-capturing group for all possible keywords
+      // trx\s?i'?d : matches 'trxid', 'trx id', "trx i'd", 'trx i d'
+      // i'?d : matches 'id' or "i'd"
+      // [:\s=-]* : matches separators like ':', ' ', '=', '-' or nothing
+      // ([a-z0-9\-._]*[a-z0-9]) : The ID. It captures letters, numbers, dots, dashes.
+      // The [a-z0-9] at the end ensures it doesn't grab a trailing period (.) at the end of a sentence.
+      
+      const trxRegex = /(?:trx\s?i'?d|trx|transaction\s?id|i'?d|আইডি|ট্রানজেকশন\s?আইডি)[:\s=-]*([a-z0-9\-._]*[a-z0-9])/i;
+
+      // Match against originalText to preserve lowercase/uppercase (e.g., DsSH-yr78bfgj)
+      const trxMatch = originalText.match(trxRegex);
+      
+      // If found, we take the ID. No length restriction anymore.
+      const trxId = trxMatch ? trxMatch[1] : null;
+      // ==========================================
+      // 7. BRAIN: DATA EXTRACTION (SENDER)
+      // ==========================================
+      const senderRegex = /(?:from|sender|প্রেরক)[:\s]*(01[0-9]{9})/;
+      const senderMatch = rawText.match(senderRegex);
+      const senderNumber = senderMatch ? senderMatch[1] : "Unknown";
+
+      // ==========================================
+      // 8. LOGGING & DEBUGGING
+      // ==========================================
+      let statusInfo = "Unknown";
+      let supabaseError = null;
+
+      if (!isPayment) {
+          statusInfo = "REJECTED: Not a payment intent message";
+      } else if (!trxId || amount <= 0) {
+          statusInfo = `REJECTED: Missing TrxID (${trxId}) or Amount (${amount})`;
+      } else {
+        // ==========================================
+        // 9. DATABASE COMMUNICATION (SUPABASE)
+        // ==========================================
+        const result = await saveToSupabase({
+          method,
+          amount,
+          trx_id: trxId,
+          sender: senderNumber,
+          raw_message: data.msg
+        });
+
+        if (result.success) {
+            statusInfo = "SUCCESS: Saved to Supabase";
+        } else {
+            statusInfo = "FAILED: Supabase Error";
+            supabaseError = result.error;
+        }
+      }
+
+      // Add to history for browser check (keeps last 20)
+      recentNotifications.unshift({
+        time: new Date().toLocaleString(),
+        status: statusInfo,
+        extracted: { method, amount, trxId, senderNumber },
+        supabaseError: supabaseError,
+        originalData: data
+      });
+      if (recentNotifications.length > 20) recentNotifications.pop();
+
+      return new Response(JSON.stringify({ status: statusInfo, extracted_id: trxId }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+
+    } catch (e) {
+      return new Response(e.stack, { status: 500 });
+    }
+  }
+};
+
+// ==========================================
+// UTILITY: SAVE TO SUPABASE
+// ==========================================
+async function saveToSupabase(payload) {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) return { success: true };
+    const errText = await response.text();
+    return { success: false, error: errText };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ==========================================
+// UTILITY: BENGALI DIGIT CONVERTER
+// ==========================================
+function convertBengaliDigits(input) {
+  const bengali = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  let result = input;
+  for (let i = 0; i < 10; i++) {
+    result = result.replace(new RegExp(bengali[i], 'g'), english[i]);
+  }
+  return result;
+}
+
+// ==========================================
+// UTILITY: CORS HANDLER
+// ==========================================
+function handleCORS() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Currency + Crypto Test</title>
+</head>
+<body>
+
+  <h2>Currency & Crypto Checker</h2>
+
+  <!-- Buttons -->
+  <button onclick="getRate()">Get USD → BDT</button>
+  <button onclick="getTRX()">Get TRX Price</button>
+
+  <p id="result">Result will appear here</p>
+
+  <script>
+    // USD → BDT
+    function getRate() {
+      fetch("https://latest.currency-api.pages.dev/v1/currencies/usd.json")
+        .then(res => res.json())
+        .then(data => {
+          const rate = data.usd.bdt;
+          document.getElementById("result").innerText = "1 USD = " + rate + " BDT";
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error fetching USD";
+          console.error(err);
+        });
+    }
+
+    // TRX → USD
+    function getTRX() {
+      fetch("https://api.coingecko.com/api/v3/simple/price?ids=tron&vs_currencies=usd")
+        .then(res => res.json())
+        .then(data => {
+          const price = data.tron.usd;
+          document.getElementById("result").innerText = "1 TRX = " + price + " USD";
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error fetching TRX";
+          console.error(err);
+        });
+    }
+  </script>
+
+</body>
+</html>

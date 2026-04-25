@@ -1,0 +1,140 @@
+export default {
+  async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    const url = new URL(request.url);
+    const PROJECT_ID = "tournament-97743";
+    const BASE_FS_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+    // ============================================================
+    // ৩. GET SECTION: ইউজারের অ্যাপ এখান থেকে ডাটা রিড করবে
+    // ============================================================
+    if (request.method === "GET") {
+      let key = "TOURNAMENT_DATA"; 
+      
+      if (url.pathname.includes("/sliders")) key = "SLIDER_DATA";
+      else if (url.pathname.includes("/videos")) key = "VIDEO_DATA";
+      else if (url.pathname.includes("/withdraw_methods")) key = "METHOD_DATA";
+      else if (url.pathname.includes("/state")) key = "STATE_DATA";
+      else if (url.pathname.includes("/app_settings")) key = "SETTING_DATA";
+      else if (url.pathname.includes("/tournaments")) key = "TOURNAMENT_DATA";
+
+      const data = await env.KV2.get(key);
+      return new Response(data || "[]", {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // ============================================================
+    // ৪. POST SECTION: অ্যাডমিন প্যানেল থেকে ডাটা সিঙ্ক বা ডাইরেক্ট আপলোড
+    // ============================================================
+    if (request.method === "POST") {
+      try {
+        const body = await request.json();
+        const type = body.sync_type; // Identifier: 'sliders', 'tournaments' ইত্যাদি
+        
+        let kvKey = "";
+        // কি-ম্যাপিং (Direct এবং Sync উভয় ক্ষেত্রে লাগবে)
+        if (type === "sliders") kvKey = "SLIDER_DATA";
+        else if (type === "videos") kvKey = "VIDEO_DATA";
+        else if (type === "withdraw_methods") kvKey = "METHOD_DATA";
+        else if (type === "app_settings") kvKey = "SETTING_DATA";
+        else if (type === "tournaments") kvKey = "TOURNAMENT_DATA";
+        else if (type === "state") kvKey = "STATE_DATA";
+
+        // --- নতুন লজিক: যদি অ্যাডমিন সরাসরি ডাটা পাঠায় (Direct KV Upload) ---
+        if (body.direct_data) {
+          await env.KV2.put(kvKey, JSON.stringify(body.direct_data));
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: type + " saved directly to KV2" 
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // --- পুরানো লজিক: ফায়ারস্টোর থেকে সিঙ্ক (Sync from Firestore) ---
+        let firestoreUrl = "";
+        let isSingleDoc = false;
+
+        switch (type) {
+          case "tournaments":
+            firestoreUrl = `${BASE_FS_URL}/game_data/tournament_hub`;
+            isSingleDoc = true;
+            break;
+          case "state":
+            // লিডারবোর্ড ফায়ারস্টোর থেকে আসবে কারণ ব্যালেন্স সেখানে থাকে
+            firestoreUrl = `${BASE_FS_URL}/profile?pageSize=10&orderBy=balance%20desc`;
+            isSingleDoc = false;
+            break;
+          // স্লাইডার, ভিডিও ইত্যাদি যদি ফায়ারস্টোর থেকে সিঙ্ক করতে চান তবে নিচে কেস যোগ করা যাবে
+          default:
+            throw new Error("Missing direct_data or invalid sync_type");
+        }
+
+        const fsRes = await fetch(firestoreUrl);
+        if (!fsRes.ok) throw new Error("Firestore connect failed: " + fsRes.statusText);
+        const fsData = await fsRes.json();
+
+        let finalData = [];
+
+        if (isSingleDoc) {
+          if (fsData.fields && fsData.fields.active_matches) {
+            finalData = (fsData.fields.active_matches.arrayValue.values || []).map(v => parseFirestoreFields(v.mapValue.fields));
+          } else {
+            finalData = parseFirestoreFields(fsData.fields);
+          }
+        } else {
+          finalData = (fsData.documents || []).map(doc => {
+            const parsed = parseFirestoreFields(doc.fields);
+            if (type === "state") {
+              return { name: parsed.fullName, balance: parsed.balance, img: parsed.photoURL };
+            }
+            return parsed;
+          });
+        }
+
+        await env.KV2.put(kvKey, JSON.stringify(finalData));
+
+        return new Response(JSON.stringify({ 
+            success: true, 
+            message: type + " Sync Successful", 
+            count: Array.isArray(finalData) ? finalData.length : 1 
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: e.message }), { 
+          status: 500, headers: corsHeaders 
+        });
+      }
+    }
+  }
+};
+
+// ============================================================
+// ৫. HELPER FUNCTION: ফায়ারস্টোর ডাটা পার্সার (Universal Parser)
+// ============================================================
+function parseFirestoreFields(fields) {
+  let res = {};
+  if (!fields) return res;
+  for (let key in fields) {
+    const val = fields[key];
+    if (val.stringValue) res[key] = val.stringValue;
+    else if (val.integerValue) res[key] = parseInt(val.integerValue);
+    else if (val.doubleValue) res[key] = parseFloat(val.doubleValue);
+    else if (val.booleanValue !== undefined) res[key] = val.booleanValue;
+    else if (val.arrayValue) {
+      res[key] = (val.arrayValue.values || []).map(v => 
+        v.mapValue ? parseFirestoreFields(v.mapValue.fields) : (v.stringValue || v.integerValue)
+      );
+    }
+    else if (val.mapValue) res[key] = parseFirestoreFields(val.mapValue.fields);
+  }
+  return res;
+}

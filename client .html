@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>BD Inkam - Earn Money</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Firebase SDK — Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        (function() {
+            try {
+                const tg = window.Telegram.WebApp;
+                const isDark = tg.colorScheme === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } catch (e) {
+                const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            }
+        })();
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap');
+        :root { --primary-color: #007AFF; --primary-color-rgb: 0, 122, 255; --secondary-color: #0056B3; --background-color: #F0F2F5; --card-background: #FFFFFF; --text-color: #1D1D1F; --text-light: #6E6E73; --border-color: #E5E5EA; --glass-bg: rgba(240, 242, 245, 0.8); }
+        [data-theme="dark"] { --primary-color: #0A84FF; --primary-color-rgb: 10, 132, 255; --secondary-color: #3395FF; --background-color: #000000; --card-background: #1C1C1E; --text-color: #F5F5F7; --text-light: #8E8E93; --border-color: #3A3A3C; --glass-bg: rgba(28, 28, 30, 0.8); }
+        
+        * { box-sizing: border-box; }
+        html, body { overscroll-behavior-y: contain; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans', sans-serif; background-color: var(--background-color); color: var(--text-color); -webkit-font-smoothing: antialiased; transition: background-color 0.3s; padding-bottom: 90px; }
+        
+        #preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: var(--background-color); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.5s ease; }
+        #preloader i { font-size: 48px; color: var(--primary-color); animation: spin 1.5s linear infinite; }
+        #preloader-percentage { font-size: 20px; font-weight: 700; }
+
+        .container { max-width: 500px; margin: 0 auto; display: none; padding: 20px 15px; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 24px; }
+        #profile-pic { width: 52px; height: 52px; border-radius: 50%; background-color: var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; border: 2px solid var(--card-background); }
+        #profile-pic img { width: 100%; height: 100%; object-fit: cover; }
+        #greeting { font-size: 20px; font-weight: 800; }
+        
+        .balance-card { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 25px; border-radius: 24px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(var(--primary-color-rgb), 0.2); }
+        .balance-card .amount { font-size: 40px; font-weight: 800; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-item { background: var(--card-background); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid var(--border-color); }
+        .stat-item .icon { color: var(--primary-color); font-size: 20px; margin-bottom: 5px; }
+        .stat-item .value { font-size: 16px; font-weight: 800; }
+        .stat-item .label { font-size: 11px; color: var(--text-light); }
+        
+        .card { background: var(--card-background); padding: 20px; border-radius: 18px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .card-title { font-size: 18px; font-weight: 700; margin-bottom: 15px; }
+        
+        .action-button { width: 100%; padding: 16px; border: none; border-radius: 14px; background: var(--primary-color); color: white; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .action-button:disabled { background: #8e8e93; opacity: 0.6; cursor: not-allowed; }
+        .secondary-button { background: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); margin-top: 10px; }
+        
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); padding: 10px; background: var(--glass-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); z-index: 1000; }
+        .nav-button { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-light); border: none; background: none; gap: 4px; cursor: pointer; }
+        .nav-button.active { color: var(--primary-color); }
+        .nav-button i { font-size: 20px; }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: flex-end; }
+        .modal-content { background: var(--card-background); padding: 25px; border-radius: 20px 20px 0 0; width: 100%; max-width: 500px; margin: 0 auto; max-height: 80vh; overflow-y: auto; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #ad-loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; flex-direction: column; color: white; gap: 15px; }
+        .loader-spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.2); border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+
+        /* Form inputs dark mode fix */
+        .form-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--background-color); color: var(--text-color); font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+        .form-input:focus { border-color: var(--primary-color); }
+
+        /* History items */
+        .history-item { padding: 12px; border-radius: 12px; background: var(--background-color); margin-bottom: 10px; border: 1px solid var(--border-color); }
+        .history-item .hi-top { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+        .history-item .hi-bottom { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-light); margin-top: 4px; }
+        .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+        .badge-pending { background: rgba(255,165,0,0.15); color: orange; }
+        .badge-approved { background: rgba(0,200,100,0.15); color: #00c864; }
+        .badge-rejected { background: rgba(255,60,60,0.15); color: #ff3c3c; }
+
+        /* Notice popup */
+        #notice-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 50000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        #notice-box { background: var(--card-background); border-radius: 20px; padding: 28px 22px 22px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        #notice-icon { font-size: 36px; color: var(--primary-color); margin-bottom: 12px; }
+        #notice-title { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+        #notice-content { font-size: 14px; color: var(--text-light); line-height: 1.6; margin-bottom: 20px; white-space: pre-wrap; }
+        #notice-ok-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; background: var(--primary-color); color: white; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+        /* Ban screen */
+        #ban-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--background-color); z-index: 99998; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 30px; text-align: center; }
+        #ban-screen i { font-size: 56px; color: #ff3c3c; }
+        #ban-screen h2 { font-size: 22px; font-weight: 800; margin: 0; }
+        #ban-screen p { color: var(--text-light); font-size: 14px; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="preloader">
+        <i class="fa-solid fa-spinner"></i>
+        <div id="preloader-percentage">0%</div>
+        <div style="font-size: 12px; color: var(--text-light);">Connecting to Secure Server...</div>
+    </div>
+
+    <div id="ban-screen">
+        <i class="fa-solid fa-ban"></i>
+        <h2>Account Banned</h2>
+        <p>Your account has been suspended. Please contact support if you think this is a mistake.</p>
+    </div>
+
+    <!-- Notice Popup -->
+    <div id="notice-overlay">
+        <div id="notice-box">
+            <div id="notice-icon"><i class="fa-solid fa-bullhorn"></i></div>
+            <div id="notice-title">Notice</div>
+            <div id="notice-content"></div>
+            <button id="notice-ok-btn" onclick="dismissNotice()">OK, Got it</button>
+        </div>
+    </div>
+    
+    <div id="ad-loader-overlay">
+        <div class="loader-spinner"></div>
+        <span>Loading Advertisement...</span>
+    </div>
+    
+    <div class="container" id="main-container">
+        <div class="profile-header">
+            <div id="profile-pic"><i class="fa-solid fa-user"></i></div>
+            <h1 id="greeting">Welcome!</h1>
+        </div>
+
+        <div class="balance-card">
+            <div style="font-size: 14px; opacity: 0.9;">Total Balance</div>
+            <div class="amount" id="total-earning">$0.000</div>
+            <div style="font-size: 12px; opacity: 0.75; margin-top: 4px;" id="available-balance-text"></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-item">
+                <i class="fa-solid fa-rectangle-ad icon"></i>
+                <div class="value" id="ad-count">0</div>
+                <div class="label">Total Ads</div>
+            </div>
+            <div class="stat-item">
+                <i class="fa-solid fa-calendar icon"></i>
+                <div class="value" id="ads-today-count">0/35</div>
+                <div class="label">Today</div>
+            </div>
+            <div class="stat-item">
+                <i class="fa-solid fa-users icon"></i>
+                <div class="value" id="referral-count">0</div>
+                <div class="label">Referrals</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Tasks</h3>
+            <button class="action-button" id="watch-ad-button"><i class="fa-solid fa-play"></i> Watch Ad</button>
+            <button class="action-button secondary-button" id="join-channel-button"><i class="fa-brands fa-telegram"></i> Telegram Channel</button>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Activity Graph</h3>
+            <div style="height: 180px;"><canvas id="activityChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-bar">
+        <button class="nav-button" onclick="showModal('withdrawModal', this)"><i class="fa-solid fa-wallet"></i><span>Withdraw</span></button>
+        <button class="nav-button" onclick="showModal('historyModal', this)"><i class="fa-solid fa-clock-rotate-left"></i><span>History</span></button>
+        <button class="nav-button active" onclick="closeAllModals(this)"><i class="fa-solid fa-house"></i><span>Home</span></button>
+        <button class="nav-button" onclick="showModal('inviteModal', this)"><i class="fa-solid fa-user-plus"></i><span>Invite</span></button>
+        <button class="nav-button" onclick="showModal('bonusTasksModal', this)"><i class="fa-solid fa-gift"></i><span>Bonus</span></button>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <h3 class="card-title">Withdraw Funds</h3>
+            <p id="min-withdraw-text" style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;"></p>
+            <select id="method" class="form-input" style="margin-bottom: 10px;">
+                <option value="" disabled selected>Select Payment Method</option>
+            </select>
+            <p id="method-hint" style="font-size: 12px; color: var(--text-light); margin: 0 0 8px 2px;"></p>
+            <input type="text" id="account-number" placeholder="Enter account / UID" class="form-input" style="margin-bottom: 10px;">
+            <input type="number" step="0.001" id="withdraw-amount" placeholder="Amount ($)" class="form-input" style="margin-bottom: 20px;">
+            <button class="action-button" id="withdraw-submit-btn" onclick="submitWithdrawal()">Request Withdrawal</button>
+            <button class="action-button secondary-button" onclick="closeModal('withdrawModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <h3 class="card-title">Withdrawal History</h3>
+            <div id="history-list"></div>
+            <button class="action-button secondary-button" onclick="closeModal('historyModal')">Close</button>
+        </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div id="inviteModal" class="modal">
+        <div class="modal-content">
+            <h3 class="card-title">Referral</h3>
+            <p id="referral-reward-text" style="color: var(--text-light); font-size: 14px;">Invite friends and earn rewards!</p>
+            <button class="action-button" onclick="copyReferralLink()"><i class="fa-solid fa-copy"></i> Copy Invite Link</button>
+            <button class="action-button secondary-button" onclick="closeModal('inviteModal')">Close</button>
+        </div>
+    </div>
+
+    <!-- Bonus Modal -->
+    <div id="bonusTasksModal" class="modal">
+        <div class="modal-content">
+            <h3 class="card-title">Bonus</h3>
+            <div id="bonus-tasks-list" style="color: var(--text-light); font-size: 14px;">No bonus tasks available.</div>
+            <button class="action-button secondary-button" onclick="closeModal('bonusTasksModal')" style="margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ─── Firebase Config ───────────────────────────────────────────────
+        const firebaseConfig = {
+  apiKey: "AIzaSyDGk4_qWOAlSYW0zFF2yrG3ZtUBJf_EX3Y",
+  authDomain: "db3forsharding.firebaseapp.com",
+  projectId: "db3forsharding",
+  storageBucket: "db3forsharding.firebasestorage.app",
+  messagingSenderId: "74436800590",
+  appId: "1:74436800590:web:bf517f9cda4728e077131f"
+};
+
+        // ─── Globals ───────────────────────────────────────────────────────
+        const tg = window.Telegram.WebApp;
+        let db, myChart;
+        let appConfig = {};
+        let state = {
+            totalEarning: 0.0,
+            withdrawn: 0.0,
+            adCount: 0,
+            adsWatchedToday: 0,
+            lastAdDate: '',
+            weeklyActivity: [0,0,0,0,0,0,0],
+            referralCount: 0,
+            withdrawalHistory: []
+        };
+        let telegramUser = null;
+        let noticeQueue = [];
+        let noticeShown = false;
+
+        // ─── Firestore helpers ─────────────────────────────────────────────
+        function userRef() {
+            return db.collection('users').doc(String(telegramUser.id));
+        }
+
+        // ─── Load app config from Firestore ───────────────────────────────
+        async function loadConfig() {
+            try {
+                const snap = await db.collection('config').doc('appConfig').get();
+                if (snap.exists) {
+                    appConfig = snap.data();
+                } else {
+                    // fallback defaults
+                    appConfig = {
+                        botUsername: 'bdinkam01_bot',
+                        telegramChannelLink: 'https://t.me/+m_vqfC902Q83NjE1',
+                        monetagZoneId: '10864810',
+                        adReward: 0.001,
+                        dailyAdLimit: 35,
+                        maintenanceMode: false,
+                        paymentMethods: [
+                            { name: 'Bikash',  minWithdraw: 0.50, hint: 'Enter your Bikash number' },
+                            { name: 'Nogad',   minWithdraw: 1.00, hint: 'Enter your Nogad number' },
+                            { name: 'Binance', minWithdraw: 5.00, hint: 'Enter your Binance UID' }
+                        ]
+                    };
+                }
+            } catch (e) {
+                console.error('Config load error', e);
+            }
+        }
+
+        // ─── Load user state from Firestore ───────────────────────────────
+        async function loadState() {
+            const snap = await userRef().get();
+            const today = todayStr();
+
+            if (snap.exists) {
+                const data = snap.data();
+
+                // daily reset check
+                const lastDate = data.lastAdDate || '';
+                const adsToday = lastDate === today ? (data.adsWatchedToday || 0) : 0;
+
+                state = {
+                    totalEarning:     data.totalEarning     || 0,
+                    withdrawn:        data.withdrawn        || 0,
+                    adCount:          data.adCount          || 0,
+                    adsWatchedToday:  adsToday,
+                    lastAdDate:       today,
+                    weeklyActivity:   data.weeklyActivity   || [0,0,0,0,0,0,0],
+                    referralCount:    data.referralCount    || 0,
+                    withdrawalHistory: data.withdrawalHistory || []
+                };
+
+                // check notice
+                if (data.notice && data.notice.active) {
+                    const exp = data.notice.expiresAt ? data.notice.expiresAt.toDate ? data.notice.expiresAt.toDate() : new Date(data.notice.expiresAt) : null;
+                    if (!exp || exp > new Date()) {
+                        noticeQueue.push({ title: 'Personal Notice', content: data.notice.content });
+                    }
+                }
+
+            } else {
+                // new user — create doc
+                const newUser = {
+                    telegramId:      telegramUser.id,
+                    firstName:       telegramUser.first_name || '',
+                    username:        telegramUser.username   || '',
+                    photoUrl:        telegramUser.photo_url  || '',
+                    joinedAt:        firebase.firestore.FieldValue.serverTimestamp(),
+                    referredBy:      getReferrerId(),
+                    totalEarning:    0,
+                    withdrawn:       0,
+                    adCount:         0,
+                    adsWatchedToday: 0,
+                    lastAdDate:      today,
+                    weeklyActivity:  [0,0,0,0,0,0,0],
+                    referralCount:   0,
+                    withdrawalHistory: [],
+                    isBanned:        false,
+                    lastSeen:        firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await userRef().set(newUser);
+
+                // credit referrer if came via referral
+                await handleReferral();
+            }
+
+            // check global notice
+            if (appConfig.globalNotice && appConfig.globalNotice.active) {
+                const gn = appConfig.globalNotice;
+                const exp = gn.expiresAt ? (gn.expiresAt.toDate ? gn.expiresAt.toDate() : new Date(gn.expiresAt)) : null;
+                if (!exp || exp > new Date()) {
+                    noticeQueue.push({ title: gn.title || 'Global Notice', content: gn.content });
+                }
+            }
+        }
+
+        // ─── Save state to Firestore ───────────────────────────────────────
+        async function saveState() {
+            if (!telegramUser) return;
+            try {
+                await userRef().update({
+                    totalEarning:    state.totalEarning,
+                    withdrawn:       state.withdrawn,
+                    adCount:         state.adCount,
+                    adsWatchedToday: state.adsWatchedToday,
+                    lastAdDate:      state.lastAdDate,
+                    weeklyActivity:  state.weeklyActivity,
+                    referralCount:   state.referralCount,
+                    withdrawalHistory: state.withdrawalHistory,
+                    lastSeen:        firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {
+                console.error('Save error', e);
+            }
+        }
+
+        // ─── Referral helpers ──────────────────────────────────────────────
+        function getReferrerId() {
+            try {
+                const startParam = tg.initDataUnsafe?.start_param || '';
+                return startParam && startParam !== String(telegramUser.id) ? startParam : null;
+            } catch { return null; }
+        }
+
+        async function handleReferral() {
+            const refId = getReferrerId();
+            if (!refId) return;
+            try {
+                const refSnap = await db.collection('users').doc(String(refId)).get();
+                if (refSnap.exists) {
+                    const refData = refSnap.data();
+                    const reward = appConfig.referralReward || 0.01;
+                    await db.collection('users').doc(String(refId)).update({
+                        referralCount: (refData.referralCount || 0) + 1,
+                        totalEarning: parseFloat(((refData.totalEarning || 0) + reward).toFixed(3))
+                    });
+                    // log referral
+                    await db.collection('referrals').add({
+                        referrerId: String(refId),
+                        referredId: String(telegramUser.id),
+                        reward: reward,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (e) { console.error('Referral error', e); }
+        }
+
+        // ─── UI update ─────────────────────────────────────────────────────
+        function updateUI() {
+            const available = Math.max(0, state.totalEarning - state.withdrawn);
+            document.getElementById('total-earning').textContent = `$${state.totalEarning.toFixed(3)}`;
+            document.getElementById('available-balance-text').textContent = `Available: $${available.toFixed(3)}`;
+            document.getElementById('ad-count').textContent = state.adCount;
+            document.getElementById('ads-today-count').textContent = `${state.adsWatchedToday}/${appConfig.dailyAdLimit || 35}`;
+            document.getElementById('referral-count').textContent = state.referralCount;
+
+            const btn = document.getElementById('watch-ad-button');
+            if (state.adsWatchedToday >= (appConfig.dailyAdLimit || 35)) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> Daily Limit Reached';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> Watch Ad';
+            }
+
+            // populate withdraw dropdown dynamically
+            const methods = appConfig.paymentMethods || [];
+            const select = document.getElementById('method');
+            select.innerHTML = '<option value="" disabled selected>Select Payment Method</option>';
+            methods.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.name;
+                opt.textContent = `${m.name} (min $${m.minWithdraw})`;
+                select.appendChild(opt);
+            });
+
+            // withdrawal history
+            renderHistory();
+        }
+
+        // ─── Method hint + min withdraw on select change ───────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('method').addEventListener('change', function() {
+                const methods = appConfig.paymentMethods || [];
+                const selected = methods.find(m => m.name === this.value);
+                const hintEl = document.getElementById('method-hint');
+                const minEl  = document.getElementById('min-withdraw-text');
+                if (selected) {
+                    hintEl.textContent = selected.hint || '';
+                    minEl.textContent  = `Minimum withdrawal: $${selected.minWithdraw}`;
+                    document.getElementById('account-number').placeholder = selected.hint || 'Enter account / UID';
+                } else {
+                    hintEl.textContent = '';
+                    minEl.textContent  = '';
+                }
+            });
+        });
+
+        // ─── Render history ────────────────────────────────────────────────
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            const history = [...(state.withdrawalHistory || [])].reverse();
+            if (!history.length) {
+                list.innerHTML = '<p style="color:var(--text-light);font-size:14px;text-align:center;">No withdrawal history yet.</p>';
+                return;
+            }
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div class="hi-top">
+                        <span>${h.method} — $${parseFloat(h.amount).toFixed(3)}</span>
+                        <span class="badge badge-${h.status}">${h.status}</span>
+                    </div>
+                    <div class="hi-bottom">
+                        <span>${h.account}</span>
+                        <span>${new Date(h.requestedAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ─── Chart ─────────────────────────────────────────────────────────
+        function renderChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+                    datasets: [{
+                        label: 'Ads',
+                        data: state.weeklyActivity,
+                        backgroundColor: 'rgba(var(--primary-color-rgb), 0.8)',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false }, ticks: { color: isDark ? '#888' : '#444' } },
+                        x: { grid: { display: false }, ticks: { color: isDark ? '#888' : '#444' } }
+                    }
+                }
+            });
+        }
+
+        // ─── Watch Ad ──────────────────────────────────────────────────────
+        async function watchAd() {
+            if (state.adsWatchedToday >= (appConfig.dailyAdLimit || 35)) {
+                tg.showAlert('Daily ad limit reached. Come back tomorrow!');
+                return;
+            }
+            const overlay = document.getElementById('ad-loader-overlay');
+            overlay.style.display = 'flex';
+
+            const zoneId = appConfig.monetagZoneId || '10864810';
+            const adFunc = window[`show_${zoneId}`];
+            if (typeof adFunc === 'function') {
+                adFunc().then(() => {
+                    const reward = appConfig.adReward || 0.001;
+                    state.totalEarning = parseFloat((state.totalEarning + reward).toFixed(3));
+                    state.adCount++;
+                    state.adsWatchedToday++;
+                    state.lastAdDate = todayStr();
+                    state.weeklyActivity[new Date().getDay()]++;
+                    saveState();
+                    updateUI();
+                    renderChart();
+                    try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+                }).catch(() => tg.showAlert('Ad failed to load. Please try again.'))
+                  .finally(() => overlay.style.display = 'none');
+            } else {
+                overlay.style.display = 'none';
+                tg.showAlert('Ad not ready. Please wait a moment and try again.');
+            }
+        }
+
+        // ─── Withdrawal ────────────────────────────────────────────────────
+        async function submitWithdrawal() {
+            const method  = document.getElementById('method').value;
+            const account = document.getElementById('account-number').value.trim();
+            const amount  = parseFloat(document.getElementById('withdraw-amount').value);
+
+            if (!method)  { tg.showAlert('Please select a payment method.'); return; }
+            if (!account) { tg.showAlert('Please enter your account / UID.'); return; }
+            if (!amount || isNaN(amount) || amount <= 0) { tg.showAlert('Please enter a valid amount.'); return; }
+
+            const methods = appConfig.paymentMethods || [];
+            const selected = methods.find(m => m.name === method);
+            const minW = selected ? selected.minWithdraw : 0.5;
+
+            if (amount < minW) {
+                tg.showAlert(`Minimum withdrawal for ${method} is $${minW}`);
+                return;
+            }
+
+            const available = parseFloat((state.totalEarning - state.withdrawn).toFixed(3));
+            if (amount > available) {
+                tg.showAlert(`Insufficient balance. Available: $${available.toFixed(3)}`);
+                return;
+            }
+
+            const btn = document.getElementById('withdraw-submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const now = new Date().toISOString();
+                const withdrawalData = {
+                    userId:      String(telegramUser.id),
+                    firstName:   telegramUser.first_name || '',
+                    username:    telegramUser.username   || '',
+                    method,
+                    account,
+                    amount,
+                    status:      'pending',
+                    requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    resolvedAt:  null
+                };
+
+                // write to withdrawals collection
+                await db.collection('withdrawals').add(withdrawalData);
+
+                // update user's withdrawn amount + embed in history
+                const historyEntry = { method, account, amount, status: 'pending', requestedAt: now };
+                state.withdrawn = parseFloat((state.withdrawn + amount).toFixed(3));
+                state.withdrawalHistory = [...(state.withdrawalHistory || []), historyEntry];
+                await saveState();
+
+                updateUI();
+                closeModal('withdrawModal');
+
+                // clear form
+                document.getElementById('method').value = '';
+                document.getElementById('account-number').value = '';
+                document.getElementById('withdraw-amount').value = '';
+                document.getElementById('method-hint').textContent = '';
+                document.getElementById('min-withdraw-text').textContent = '';
+
+                tg.showAlert('Withdrawal request submitted! We will process it shortly.');
+            } catch (e) {
+                console.error(e);
+                tg.showAlert('Something went wrong. Please try again.');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Request Withdrawal';
+        }
+
+        // ─── Notice system ─────────────────────────────────────────────────
+        function showNextNotice() {
+            if (noticeShown || noticeQueue.length === 0) return;
+            const notice = noticeQueue.shift();
+            document.getElementById('notice-title').textContent   = notice.title;
+            document.getElementById('notice-content').textContent = notice.content;
+            document.getElementById('notice-overlay').style.display = 'flex';
+            noticeShown = true;
+        }
+
+        function dismissNotice() {
+            document.getElementById('notice-overlay').style.display = 'none';
+            noticeShown = false;
+            if (noticeQueue.length > 0) {
+                setTimeout(showNextNotice, 300);
+            }
+        }
+
+        // ─── Modal helpers ─────────────────────────────────────────────────
+        function showModal(id, btn) {
+            document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function closeAllModals(btn) {
+            document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        }
+
+        // ─── Referral link ─────────────────────────────────────────────────
+        function copyReferralLink() {
+            const botUser = appConfig.botUsername || 'bdinkam01_bot';
+            const link = `https://t.me/${botUser}/startup?startapp=${telegramUser?.id || 'user'}`;
+            navigator.clipboard.writeText(link).then(() => {
+                tg.showAlert('Referral link copied!');
+            }).catch(() => {
+                tg.showAlert('Copy failed. Link: ' + link);
+            });
+        }
+
+        // ─── Utility ───────────────────────────────────────────────────────
+        function todayStr() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // ─── Init App ──────────────────────────────────────────────────────
+        async function initApp() {
+            const preloader = document.getElementById('preloader');
+            const percent   = document.getElementById('preloader-percentage');
+
+            // smooth preloader — fixed increment so it never stalls
+            let p = 0;
+            const intv = setInterval(() => {
+                p += 3;
+                if (p > 90) p = 90; // hold at 90 until ready
+                percent.textContent = `${p}%`;
+            }, 80);
+
+            try {
+                tg.ready();
+                tg.expand();
+
+                telegramUser = tg.initDataUnsafe?.user || null;
+
+                // init Firebase + Firestore
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+
+                // load config + user state (2 reads)
+                await loadConfig();
+
+                // maintenance mode check
+                if (appConfig.maintenanceMode) {
+                    clearInterval(intv);
+                    percent.textContent = '';
+                    document.querySelector('#preloader i').className = 'fa-solid fa-wrench';
+                    document.querySelector('#preloader div:last-child').textContent = 'Under Maintenance. Please check back later.';
+                    return;
+                }
+
+                if (telegramUser) {
+                    await loadState();
+
+                    // ban check
+                    const userSnap = await userRef().get();
+                    if (userSnap.exists && userSnap.data().isBanned) {
+                        clearInterval(intv);
+                        preloader.style.display = 'none';
+                        document.getElementById('ban-screen').style.display = 'flex';
+                        return;
+                    }
+
+                    // set profile
+                    document.getElementById('greeting').textContent = `Hi, ${telegramUser.first_name}!`;
+                    if (telegramUser.photo_url) {
+                        document.getElementById('profile-pic').innerHTML = `<img src="${telegramUser.photo_url}" alt="avatar">`;
+                    }
+                } else {
+                    // fallback for browser testing outside Telegram
+                    telegramUser = { id: 'test_user', first_name: 'Test', username: 'test' };
+                    await loadState();
+                }
+
+                // load Monetag SDK
+                const zoneId = appConfig.monetagZoneId || '10864810';
+                const script = document.createElement('script');
+                script.src = '//libtl.com/sdk.js';
+                script.setAttribute('data-zone', zoneId);
+                script.setAttribute('data-sdk', `show_${zoneId}`);
+                document.body.appendChild(script);
+
+                // event listeners
+                document.getElementById('watch-ad-button').addEventListener('click', watchAd);
+                document.getElementById('join-channel-button').addEventListener('click', () => {
+                    const link = appConfig.telegramChannelLink || 'https://t.me/';
+                    try { tg.openTelegramLink(link); } catch { window.open(link, '_blank'); }
+                });
+
+                // finish preloader
+                clearInterval(intv);
+                percent.textContent = '100%';
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    updateUI();
+                    renderChart();
+                    // show notices after a short delay
+                    setTimeout(showNextNotice, 800);
+                }, 500);
+
+            } catch (err) {
+                console.error(err);
+                clearInterval(intv);
+                alert('Loading error. Please restart the app.');
+            }
+        }
+
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>

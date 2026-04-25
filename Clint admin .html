@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Inkam Admin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 14px; }
+
+/* ── Top Nav ── */
+.topnav {
+  background: #1a1a2e;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 8px;
+}
+.topnav-brand { font-weight: 700; font-size: 16px; flex: 1; }
+.topnav-tabs { display: flex; gap: 2px; }
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.tab-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
+.tab-btn:hover:not(.active) { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+
+/* ── Mobile tabs ── */
+.mobile-tabs {
+  display: none;
+  background: #1a1a2e;
+  overflow-x: auto;
+  padding: 8px 12px;
+  gap: 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.mobile-tabs::-webkit-scrollbar { display: none; }
+
+@media (max-width: 600px) {
+  .topnav-tabs { display: none; }
+  .mobile-tabs { display: flex; }
+}
+
+/* ── Pages ── */
+.page { display: none; padding: 16px; max-width: 1100px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ── Cards ── */
+.card { background: #fff; border-radius: 12px; border: 1px solid #e2e6ea; margin-bottom: 16px; overflow: hidden; }
+.card-header { padding: 14px 16px; border-bottom: 1px solid #e2e6ea; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.card-title { font-weight: 700; font-size: 15px; }
+.card-body { padding: 16px; }
+
+/* ── Stats ── */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat-box { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 16px; text-align: center; }
+.stat-box .val { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+.stat-box .lbl { font-size: 11px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: 7px; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap; font-family: inherit;
+}
+.btn:active { transform: scale(0.97); }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-success { background: #e6f9f0; color: #0a8754; border: 1px solid #b7ecd4; }
+.btn-danger  { background: #ffeaea; color: #cc2b2b; border: 1px solid #f5b8b8; }
+.btn-warning { background: #fff4e0; color: #b97300; border: 1px solid #ffd490; }
+.btn-info    { background: #e8f0fe; color: #2155cd; border: 1px solid #b3c8fc; }
+.btn-ghost   { background: #f0f2f5; color: #444; border: 1px solid #ddd; }
+.btn-sm      { padding: 5px 10px; font-size: 11px; }
+
+/* ── Search ── */
+.search-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.search-input {
+  flex: 1; min-width: 160px;
+  padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 13px; font-family: inherit; background: #fff;
+  outline: none; transition: border-color 0.15s;
+}
+.search-input:focus { border-color: #1a1a2e; }
+
+/* ── User rows ── */
+.user-row { border: 1px solid #e2e6ea; border-radius: 10px; margin-bottom: 10px; background: #fff; overflow: hidden; }
+.user-row.banned { border-color: #f5b8b8; background: #fff8f8; }
+.user-row-top { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; flex-wrap: wrap; }
+
+.user-avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: #e2e6ea;
+  object-fit: cover; flex-shrink: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 16px; color: #888; overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.user-main { flex: 1; min-width: 120px; }
+.user-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.user-sub  { font-size: 11px; color: #888; margin-top: 2px; }
+
+.user-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.user-stat { text-align: center; min-width: 50px; }
+.user-stat .v { font-weight: 700; font-size: 13px; color: #1a1a2e; }
+.user-stat .l { font-size: 10px; color: #999; }
+
+.banned-tag { background: #ffeaea; color: #cc2b2b; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; border: 1px solid #f5b8b8; }
+.user-actions { display: flex; gap: 6px; padding: 0 14px 12px; flex-wrap: wrap; }
+
+/* ── Badges ── */
+.badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.badge-pending  { background: #fff4e0; color: #b97300; }
+.badge-approved { background: #e6f9f0; color: #0a8754; }
+.badge-rejected { background: #ffeaea; color: #cc2b2b; }
+
+/* ── WD rows ── */
+.wd-row { border: 1px solid #e2e6ea; border-radius: 10px; margin-bottom: 8px; background: #fff; padding: 12px 14px; }
+.wd-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.wd-user { font-weight: 700; font-size: 13px; }
+.wd-meta { font-size: 12px; color: #555; margin-bottom: 8px; line-height: 1.6; }
+.wd-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Config ── */
+.cfg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input { padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; outline: none; transition: border-color 0.15s; width: 100%; }
+.form-input:focus { border-color: #1a1a2e; }
+textarea.form-input { min-height: 90px; resize: vertical; }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f2f5; }
+.toggle-row:last-child { border-bottom: none; }
+.tl { font-weight: 600; font-size: 14px; }
+.ts { font-size: 12px; color: #888; margin-top: 2px; }
+.toggle { position: relative; width: 42px; height: 23px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: #ccc; border-radius: 23px; cursor: pointer; transition: background 0.2s; }
+.slider::before { content: ''; position: absolute; width: 17px; height: 17px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+.toggle input:checked + .slider { background: #1a1a2e; }
+.toggle input:checked + .slider::before { transform: translateX(19px); }
+
+.pm-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f2f5; flex-wrap: wrap; }
+.pm-row:last-child { border-bottom: none; }
+.pm-row .form-input { flex: 1; min-width: 80px; }
+
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 16px; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: popIn 0.2s ease; }
+@keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.modal-header { padding: 16px 18px; border-bottom: 1px solid #e2e6ea; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-weight: 700; font-size: 15px; }
+.modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: #888; padding: 4px; }
+.modal-body { padding: 18px; }
+.modal-footer { padding: 14px 18px; border-top: 1px solid #e2e6ea; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Existing notices */
+.notice-item { border: 1px solid #e2e6ea; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.notice-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.notice-item-title { font-weight: 600; font-size: 13px; }
+.notice-item-content { font-size: 12px; color: #555; line-height: 1.5; }
+.notice-item-meta { font-size: 11px; color: #999; margin-top: 4px; }
+.global-badge { background: #e8f0fe; color: #2155cd; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+
+/* ── Toast ── */
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+
+/* ── Misc ── */
+.empty { text-align: center; padding: 30px; color: #aaa; font-size: 13px; }
+.empty i { font-size: 28px; display: block; margin-bottom: 8px; }
+.page-top { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 12px; flex-wrap: wrap; gap: 8px; }
+.page-top-title { font-weight: 700; font-size: 17px; }
+
+@media (max-width: 500px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .user-stats { gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-brand">📊 BD Inkam Admin</div>
+  <div class="topnav-tabs">
+    <button class="tab-btn active" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="tab-btn" data-page="users" onclick="showPage('users')">Users</button>
+    <button class="tab-btn" data-page="withdrawals" onclick="showPage('withdrawals')">Withdrawals</button>
+    <button class="tab-btn" data-page="config" onclick="showPage('config')">Config</button>
+  </div>
+</div>
+<div class="mobile-tabs">
+  <button class="tab-btn active" data-page="dashboard" onclick="showPage('dashboard')">📊 Dashboard</button>
+  <button class="tab-btn" data-page="users" onclick="showPage('users')">👥 Users</button>
+  <button class="tab-btn" data-page="withdrawals" onclick="showPage('withdrawals')">💸 Withdrawals</button>
+  <button class="tab-btn" data-page="config" onclick="showPage('config')">⚙️ Config</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-row" style="margin-top:16px;">
+    <div class="stat-box"><div class="val" id="stat-users">—</div><div class="lbl">Total Users</div></div>
+    <div class="stat-box"><div class="val" id="stat-earned">—</div><div class="lbl">Total Earned</div></div>
+    <div class="stat-box"><div class="val" id="stat-pending">—</div><div class="lbl">Pending</div></div>
+    <div class="stat-box"><div class="val" id="stat-banned">—</div><div class="lbl">Banned</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Recent Withdrawals</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadDashboard()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+    </div>
+    <div class="card-body" id="dash-recent">
+      <div class="empty"><i class="fa-solid fa-spinner fa-spin"></i>Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div class="page" id="page-users">
+  <div class="page-top">
+    <div class="page-top-title">Users</div>
+    <button class="btn btn-primary" onclick="openNoticeModal(null,null)"><i class="fa-solid fa-bullhorn"></i> Global Notice</button>
+  </div>
+  <div class="search-row">
+    <input type="text" class="search-input" id="user-search" placeholder="Search name / username / ID..." oninput="filterUsers()">
+    <select class="search-input" style="max-width:140px;" id="user-filter" onchange="filterUsers()">
+      <option value="all">All Users</option>
+      <option value="active">Active</option>
+      <option value="banned">Banned</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="loadUsers()"><i class="fa-solid fa-rotate-right"></i></button>
+  </div>
+  <div id="users-list"><div class="empty"><i class="fa-solid fa-spinner fa-spin"></i>Loading...</div></div>
+</div>
+
+<!-- WITHDRAWALS -->
+<div class="page" id="page-withdrawals">
+  <div class="page-top">
+    <div class="page-top-title">Withdrawals</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadWithdrawals()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+  </div>
+  <div class="search-row">
+    <select class="search-input" style="max-width:150px;" id="wd-filter" onchange="filterWithdrawals()">
+      <option value="pending">Pending</option>
+      <option value="all">All</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <input type="text" class="search-input" id="wd-search" placeholder="Search user or method..." oninput="filterWithdrawals()">
+  </div>
+  <div id="wd-list"><div class="empty"><i class="fa-solid fa-spinner fa-spin"></i>Loading...</div></div>
+</div>
+
+<!-- CONFIG -->
+<div class="page" id="page-config">
+  <div class="page-top">
+    <div class="page-top-title">App Config</div>
+    <button class="btn btn-primary" onclick="saveConfig()"><i class="fa-solid fa-floppy-disk"></i> Save All</button>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-header"><div class="card-title">Toggles</div></div>
+    <div class="card-body">
+      <div class="toggle-row">
+        <div><div class="tl">Maintenance Mode</div><div class="ts">Blocks all users from accessing the app</div></div>
+        <label class="toggle"><input type="checkbox" id="cfg-maintenance"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-header"><div class="card-title">Core Settings</div></div>
+    <div class="card-body">
+      <div class="cfg-grid">
+        <div class="form-group"><label class="form-label">Bot Username</label><input type="text" class="form-input" id="cfg-bot" placeholder="bdinkam01_bot"></div>
+        <div class="form-group"><label class="form-label">Telegram Channel Link</label><input type="text" class="form-input" id="cfg-channel" placeholder="https://t.me/..."></div>
+        <div class="form-group"><label class="form-label">Monetag Zone ID</label><input type="text" class="form-input" id="cfg-zoneid" placeholder="10864810"></div>
+        <div class="form-group"><label class="form-label">Ad Reward ($)</label><input type="number" step="0.0001" class="form-input" id="cfg-adreward" placeholder="0.001"></div>
+        <div class="form-group"><label class="form-label">Daily Ad Limit</label><input type="number" class="form-input" id="cfg-dailylimit" placeholder="35"></div>
+        <div class="form-group"><label class="form-label">Referral Reward ($)</label><input type="number" step="0.001" class="form-input" id="cfg-referralreward" placeholder="0.010"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Payment Methods</div>
+      <button class="btn btn-ghost btn-sm" onclick="addPM()"><i class="fa-solid fa-plus"></i> Add</button>
+    </div>
+    <div class="card-body"><div id="pm-list"></div></div>
+  </div>
+</div>
+
+<!-- NOTICE MODAL -->
+<div class="modal-overlay" id="notice-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="notice-modal-title">Send Notice</div>
+      <button class="modal-close" onclick="closeModal('notice-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="notice-target-info" style="font-size:12px;color:#555;margin-bottom:12px;background:#f0f2f5;padding:8px 10px;border-radius:7px;display:none;"></div>
+      <div class="form-group" style="margin-bottom:12px;" id="notice-title-group">
+        <label class="form-label">Notice Title</label>
+        <input type="text" class="form-input" id="notice-title-input" placeholder="e.g. Important Update">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Message</label>
+        <textarea class="form-input" id="notice-content-input" placeholder="Write your message here..."></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;" id="notice-expiry-group">
+        <label class="form-label">Expires At (optional)</label>
+        <input type="datetime-local" class="form-input" id="notice-expires-input">
+      </div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;border-top:1px solid #e2e6ea;padding-top:14px;">Existing Notices</div>
+      <div id="existing-notices-list"><div class="empty" style="padding:12px;"><i class="fa-solid fa-spinner fa-spin"></i></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('notice-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitNotice()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- BALANCE MODAL -->
+<div class="modal-overlay" id="balance-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="bal-modal-title">Adjust Balance</div>
+      <button class="modal-close" onclick="closeModal('balance-modal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="bal-user-info" style="font-size:13px;color:#555;margin-bottom:14px;background:#f0f2f5;padding:10px 12px;border-radius:7px;"></div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Amount ($)</label>
+        <input type="number" step="0.001" class="form-input" id="bal-amount" placeholder="e.g. 0.500">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-success" style="flex:1;" onclick="applyBalance('add')"><i class="fa-solid fa-plus"></i> Add Balance</button>
+        <button class="btn btn-danger" style="flex:1;" onclick="applyBalance('deduct')"><i class="fa-solid fa-minus"></i> Deduct</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('balance-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Firebase ─────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDGk4_qWOAlSYW0zFF2yrG3ZtUBJf_EX3Y",
+  authDomain: "db3forsharding.firebaseapp.com",
+  projectId: "db3forsharding",
+  storageBucket: "db3forsharding.firebasestorage.app",
+  messagingSenderId: "74436800590",
+  appId: "1:74436800590:web:bf517f9cda4728e077131f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── State ────────────────────────────────────────────────────────
+let allUsers = [];
+let allWithdrawals = [];
+let pmMethods = [];
+let currentNoticeTargetId = null;
+let currentNoticeTargetName = null;
+let balanceTargetId = null;
+let balanceCurrentVal = 0;
+
+// ── Toast ────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = (isError ? '✗ ' : '✓ ') + msg;
+  t.style.background = isError ? '#c0392b' : '#1a1a2e';
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.remove('active');
+    if (b.getAttribute('data-page') === name) b.classList.add('active');
+  });
+  var target = document.getElementById('page-' + name);
+  if (target) target.classList.add('active');
+
+  if (name === 'dashboard')   loadDashboard();
+  if (name === 'users')       loadUsers();
+  if (name === 'withdrawals') loadWithdrawals();
+  if (name === 'config')      loadConfig();
+}
+
+// ── Modals ────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+  m.addEventListener('click', function(e) {
+    if (e.target === m) m.classList.remove('open');
+  });
+});
+
+// ── Dashboard ─────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const usersSnap = await db.collection('users').get();
+    const wdSnap = await db.collection('withdrawals').orderBy('requestedAt', 'desc').limit(20).get();
+
+    let totalEarned = 0, banned = 0, pendingCount = 0;
+    usersSnap.forEach(function(d) {
+      var u = d.data();
+      totalEarned += u.totalEarning || 0;
+      if (u.isBanned) banned++;
+    });
+    wdSnap.forEach(function(d) { if (d.data().status === 'pending') pendingCount++; });
+
+    document.getElementById('stat-users').textContent   = usersSnap.size;
+    document.getElementById('stat-earned').textContent  = '$' + totalEarned.toFixed(2);
+    document.getElementById('stat-pending').textContent = pendingCount;
+    document.getElementById('stat-banned').textContent  = banned;
+
+    var recent = wdSnap.docs.slice(0, 8);
+    if (!recent.length) {
+      document.getElementById('dash-recent').innerHTML = '<div class="empty"><i class="fa-solid fa-inbox"></i>No withdrawals yet</div>';
+      return;
+    }
+    document.getElementById('dash-recent').innerHTML = recent.map(function(d) {
+      var w = d.data();
+      var date = w.requestedAt && w.requestedAt.toDate ? w.requestedAt.toDate().toLocaleDateString() : '—';
+      return '<div class="wd-row"><div class="wd-top"><div class="wd-user">' + (w.firstName||'—') + ' <span style="color:#888;font-weight:400;font-size:12px;">@' + (w.username||'—') + '</span></div><span class="badge badge-' + w.status + '">' + w.status + '</span></div><div class="wd-meta">' + w.method + ' · ' + w.account + ' · <strong>$' + parseFloat(w.amount).toFixed(3) + '</strong> · ' + date + '</div></div>';
+    }).join('');
+  } catch(e) {
+    showToast('Failed to load dashboard', true);
+    console.error(e);
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────────
+async function loadUsers() {
+  document.getElementById('users-list').innerHTML = '<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i>Loading users...</div>';
+  try {
+    const snap = await db.collection('users').orderBy('joinedAt', 'desc').get();
+    allUsers = snap.docs.map(function(d) { return Object.assign({ _id: d.id }, d.data()); });
+    renderUsers(allUsers);
+  } catch(e) {
+    showToast('Failed to load users', true);
+    document.getElementById('users-list').innerHTML = '<div class="empty">Failed to load</div>';
+  }
+}
+
+function renderUsers(list) {
+  var el = document.getElementById('users-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><i class="fa-solid fa-users-slash"></i>No users found</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(u) {
+    var joined   = u.joinedAt  && u.joinedAt.toDate  ? u.joinedAt.toDate().toLocaleDateString()  : '—';
+    var lastSeen = u.lastSeen  && u.lastSeen.toDate  ? u.lastSeen.toDate().toLocaleDateString()  : '—';
+    var available = Math.max(0, (u.totalEarning||0) - (u.withdrawn||0));
+    var avatarHtml = u.photoUrl
+      ? '<div class="user-avatar"><img src="' + u.photoUrl + '" onerror="this.parentElement.innerHTML=\'<i class=&quot;fa-solid fa-user&quot;></i>\'"></div>'
+      : '<div class="user-avatar"><i class="fa-solid fa-user"></i></div>';
+    var safeName = (u.firstName||'User').replace(/'/g, "\\'");
+    return '<div class="user-row ' + (u.isBanned ? 'banned' : '') + '" id="urow-' + u._id + '">' +
+      '<div class="user-row-top">' +
+        avatarHtml +
+        '<div class="user-main">' +
+          '<div class="user-name">' + (u.firstName||'Unknown') + (u.isBanned ? ' <span class="banned-tag">Banned</span>' : '') + '</div>' +
+          '<div class="user-sub">@' + (u.username||'—') + ' · ID: ' + (u.telegramId||u._id) + '</div>' +
+          '<div class="user-sub">Joined: ' + joined + ' · Last seen: ' + lastSeen + '</div>' +
+          '<div class="user-stats">' +
+            '<div class="user-stat"><div class="v">$' + (u.totalEarning||0).toFixed(3) + '</div><div class="l">Earned</div></div>' +
+            '<div class="user-stat"><div class="v">$' + available.toFixed(3) + '</div><div class="l">Available</div></div>' +
+            '<div class="user-stat"><div class="v">$' + (u.withdrawn||0).toFixed(3) + '</div><div class="l">Withdrawn</div></div>' +
+            '<div class="user-stat"><div class="v">' + (u.adCount||0) + '</div><div class="l">Total Ads</div></div>' +
+            '<div class="user-stat"><div class="v">' + (u.adsWatchedToday||0) + '</div><div class="l">Today Ads</div></div>' +
+            '<div class="user-stat"><div class="v">' + (u.referralCount||0) + '</div><div class="l">Referrals</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="user-actions">' +
+        '<button class="btn btn-info btn-sm" onclick="openNoticeModal(\'' + u._id + '\', \'' + safeName + '\')"><i class="fa-solid fa-bell"></i> Notice</button>' +
+        '<button class="btn btn-success btn-sm" onclick="openBalanceModal(\'' + u._id + '\', \'' + safeName + '\', ' + (u.totalEarning||0) + ')"><i class="fa-solid fa-dollar-sign"></i> Balance</button>' +
+        '<button class="btn ' + (u.isBanned ? 'btn-warning' : 'btn-danger') + ' btn-sm" onclick="toggleBan(\'' + u._id + '\', ' + (!!u.isBanned) + ')">' +
+          '<i class="fa-solid ' + (u.isBanned ? 'fa-unlock' : 'fa-ban') + '"></i> ' + (u.isBanned ? 'Unban' : 'Ban') +
+        '</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="resetAds(\'' + u._id + '\')"><i class="fa-solid fa-rotate-left"></i> Reset Ads</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function filterUsers() {
+  var q = document.getElementById('user-search').value.toLowerCase();
+  var f = document.getElementById('user-filter').value;
+  var filtered = allUsers.filter(function(u) {
+    var matchSearch = !q
+      || (u.firstName||'').toLowerCase().includes(q)
+      || (u.username||'').toLowerCase().includes(q)
+      || String(u.telegramId||u._id).includes(q);
+    var matchFilter = f === 'all'
+      || (f === 'banned' && u.isBanned)
+      || (f === 'active' && !u.isBanned);
+    return matchSearch && matchFilter;
+  });
+  renderUsers(filtered);
+}
+
+async function toggleBan(userId, isBanned) {
+  if (!confirm((isBanned ? 'Unban' : 'Ban') + ' this user?')) return;
+  try {
+    await db.collection('users').doc(userId).update({ isBanned: !isBanned });
+    showToast('User ' + (isBanned ? 'unbanned' : 'banned'));
+    loadUsers();
+  } catch(e) { showToast('Failed', true); }
+}
+
+async function resetAds(userId) {
+  if (!confirm('Reset today\'s ads for this user?')) return;
+  try {
+    await db.collection('users').doc(userId).update({ adsWatchedToday: 0, lastAdDate: '' });
+    showToast('Daily ads reset');
+    loadUsers();
+  } catch(e) { showToast('Failed', true); }
+}
+
+// ── Balance Modal ─────────────────────────────────────────────────
+function openBalanceModal(userId, name, currentBal) {
+  balanceTargetId   = userId;
+  balanceCurrentVal = currentBal;
+  document.getElementById('bal-modal-title').textContent = 'Adjust Balance — ' + name;
+  document.getElementById('bal-user-info').textContent   = 'Current total earning: $' + currentBal.toFixed(3);
+  document.getElementById('bal-amount').value = '';
+  openModal('balance-modal');
+}
+
+async function applyBalance(action) {
+  var amt = parseFloat(document.getElementById('bal-amount').value);
+  if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', true); return; }
+  var newVal = action === 'add'
+    ? parseFloat((balanceCurrentVal + amt).toFixed(3))
+    : parseFloat(Math.max(0, balanceCurrentVal - amt).toFixed(3));
+  try {
+    await db.collection('users').doc(balanceTargetId).update({ totalEarning: newVal });
+    showToast('Balance ' + (action === 'add' ? 'added' : 'deducted') + ': $' + amt.toFixed(3));
+    closeModal('balance-modal');
+    loadUsers();
+  } catch(e) { showToast('Failed', true); }
+}
+
+// ── Notice Modal ──────────────────────────────────────────────────
+function openNoticeModal(userId, userName) {
+  currentNoticeTargetId   = userId;
+  currentNoticeTargetName = userName;
+  document.getElementById('notice-title-input').value   = '';
+  document.getElementById('notice-content-input').value = '';
+  document.getElementById('notice-expires-input').value = '';
+
+  var targetInfo = document.getElementById('notice-target-info');
+  if (userId) {
+    document.getElementById('notice-modal-title').textContent = 'Send Notice to ' + userName;
+    targetInfo.textContent    = '📌 Personal notice → User ID: ' + userId;
+    targetInfo.style.display  = 'block';
+    document.getElementById('notice-title-group').style.display   = 'none';
+    document.getElementById('notice-expiry-group').style.display  = 'none';
+  } else {
+    document.getElementById('notice-modal-title').textContent = 'Send Global Notice';
+    targetInfo.style.display  = 'none';
+    document.getElementById('notice-title-group').style.display   = 'flex';
+    document.getElementById('notice-expiry-group').style.display  = 'flex';
+  }
+  loadExistingNotices();
+  openModal('notice-modal');
+}
+
+async function loadExistingNotices() {
+  var el = document.getElementById('existing-notices-list');
+  el.innerHTML = '<div class="empty" style="padding:10px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  try {
+    var snap = await db.collection('config').doc('appConfig').get();
+    var html = '';
+    if (snap.exists) {
+      var gn = snap.data().globalNotice;
+      if (gn && gn.active && gn.content) {
+        var exp = null;
+        if (gn.expiresAt) {
+          exp = gn.expiresAt.toDate ? gn.expiresAt.toDate().toLocaleString() : new Date(gn.expiresAt).toLocaleString();
+        }
+        html += '<div class="notice-item"><div class="notice-item-top"><div class="notice-item-title">' + (gn.title||'Global Notice') + '</div><div style="display:flex;gap:5px;align-items:center;"><span class="global-badge">GLOBAL</span><button class="btn btn-danger btn-sm" onclick="deleteGlobalNotice()"><i class="fa-solid fa-trash"></i></button></div></div><div class="notice-item-content">' + gn.content + '</div>' + (exp ? '<div class="notice-item-meta">Expires: ' + exp + '</div>' : '') + '</div>';
+      }
+    }
+    if (!html) html = '<div class="empty" style="padding:10px;font-size:12px;">No active notices</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="padding:10px;">Failed to load</div>';
+  }
+}
+
+async function submitNotice() {
+  var content = document.getElementById('notice-content-input').value.trim();
+  if (!content) { showToast('Message is required', true); return; }
+
+  if (currentNoticeTargetId) {
+    try {
+      await db.collection('users').doc(currentNoticeTargetId).set({ notice: { active: true, content: content, expiresAt: null } }, { merge: true });
+      showToast('Personal notice sent!');
+      closeModal('notice-modal');
+    } catch(e) { showToast('Failed', true); }
+  } else {
+    var title   = document.getElementById('notice-title-input').value.trim() || 'Notice';
+    var expires = document.getElementById('notice-expires-input').value;
+    try {
+      await db.collection('config').doc('appConfig').set({
+        globalNotice: { active: true, title: title, content: content, expiresAt: expires ? new Date(expires) : null }
+      }, { merge: true });
+      showToast('Global notice sent!');
+      loadExistingNotices();
+      document.getElementById('notice-title-input').value   = '';
+      document.getElementById('notice-content-input').value = '';
+      document.getElementById('notice-expires-input').value = '';
+    } catch(e) { showToast('Failed', true); }
+  }
+}
+
+async function deleteGlobalNotice() {
+  if (!confirm('Delete global notice?')) return;
+  try {
+    await db.collection('config').doc('appConfig').set({ globalNotice: { active: false, title: '', content: '', expiresAt: null } }, { merge: true });
+    showToast('Notice deleted');
+    loadExistingNotices();
+  } catch(e) { showToast('Failed', true); }
+}
+
+// ── Withdrawals ───────────────────────────────────────────────────
+async function loadWithdrawals() {
+  document.getElementById('wd-list').innerHTML = '<div class="empty"><i class="fa-solid fa-spinner fa-spin"></i>Loading...</div>';
+  try {
+    var snap = await db.collection('withdrawals').orderBy('requestedAt', 'desc').get();
+    allWithdrawals = snap.docs.map(function(d) { return Object.assign({ _docId: d.id }, d.data()); });
+    filterWithdrawals();
+  } catch(e) { showToast('Failed to load withdrawals', true); }
+}
+
+function filterWithdrawals() {
+  var status = document.getElementById('wd-filter').value;
+  var q = document.getElementById('wd-search').value.toLowerCase();
+  var filtered = allWithdrawals.filter(function(w) {
+    var matchStatus = status === 'all' || w.status === status;
+    var matchSearch = !q
+      || (w.firstName||'').toLowerCase().includes(q)
+      || (w.username||'').toLowerCase().includes(q)
+      || (w.method||'').toLowerCase().includes(q)
+      || (w.account||'').toLowerCase().includes(q);
+    return matchStatus && matchSearch;
+  });
+  renderWithdrawals(filtered);
+}
+
+function renderWithdrawals(list) {
+  var el = document.getElementById('wd-list');
+  if (!list.length) { el.innerHTML = '<div class="empty"><i class="fa-solid fa-inbox"></i>No records found</div>'; return; }
+  el.innerHTML = list.map(function(w) {
+    var date = w.requestedAt && w.requestedAt.toDate ? w.requestedAt.toDate().toLocaleString() : '—';
+    return '<div class="wd-row"><div class="wd-top"><div><div class="wd-user">' + (w.firstName||'—') + ' <span style="color:#888;font-weight:400;font-size:12px;">@' + (w.username||'—') + '</span></div><div style="font-size:11px;color:#888;">ID: ' + (w.userId||'—') + '</div></div><span class="badge badge-' + w.status + '">' + w.status + '</span></div><div class="wd-meta"><strong>' + w.method + '</strong> · ' + w.account + ' · <strong style="color:#0a8754;">$' + parseFloat(w.amount).toFixed(3) + '</strong><br><span style="font-size:11px;">' + date + '</span></div>' +
+      (w.status === 'pending'
+        ? '<div class="wd-actions"><button class="btn btn-success btn-sm" onclick="resolveWd(\'' + w._docId + '\',\'' + (w.userId||'') + '\',' + w.amount + ',\'approved\')"><i class="fa-solid fa-check"></i> Approve</button><button class="btn btn-danger btn-sm" onclick="resolveWd(\'' + w._docId + '\',\'' + (w.userId||'') + '\',' + w.amount + ',\'rejected\')"><i class="fa-solid fa-xmark"></i> Reject</button></div>'
+        : '<div style="font-size:11px;color:#aaa;">Resolved</div>')
+      + '</div>';
+  }).join('');
+}
+
+async function resolveWd(docId, userId, amount, action) {
+  if (!confirm((action === 'approved' ? 'Approve' : 'Reject') + ' this withdrawal of $' + amount + '?')) return;
+  try {
+    var batch = db.batch();
+    batch.update(db.collection('withdrawals').doc(docId), { status: action, resolvedAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+    if (userId) {
+      var uSnap = await db.collection('users').doc(userId).get();
+      if (uSnap.exists) {
+        var data = uSnap.data();
+        var hist = data.withdrawalHistory || [];
+        var idx  = -1;
+        hist.forEach(function(h, i) { if (h.status === 'pending' && parseFloat(h.amount) === parseFloat(amount)) idx = i; });
+        if (idx >= 0) hist[idx].status = action;
+
+        var updateObj = { withdrawalHistory: hist };
+        if (action === 'rejected') {
+          updateObj.withdrawn = Math.max(0, parseFloat(((data.withdrawn||0) - amount).toFixed(3)));
+        }
+        batch.update(db.collection('users').doc(userId), updateObj);
+      }
+    }
+
+    await batch.commit();
+    showToast('Withdrawal ' + action);
+    loadWithdrawals();
+  } catch(e) { showToast('Failed', true); console.error(e); }
+}
+
+// ── Config ────────────────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    var snap = await db.collection('config').doc('appConfig').get();
+    if (!snap.exists) return;
+    var cfg = snap.data();
+    document.getElementById('cfg-maintenance').checked  = cfg.maintenanceMode || false;
+    document.getElementById('cfg-bot').value            = cfg.botUsername || '';
+    document.getElementById('cfg-channel').value        = cfg.telegramChannelLink || '';
+    document.getElementById('cfg-zoneid').value         = cfg.monetagZoneId || '';
+    document.getElementById('cfg-adreward').value       = cfg.adReward || '';
+    document.getElementById('cfg-dailylimit').value     = cfg.dailyAdLimit || '';
+    document.getElementById('cfg-referralreward').value = cfg.referralReward || '';
+    pmMethods = cfg.paymentMethods || [];
+    renderPMList();
+  } catch(e) { showToast('Failed to load config', true); }
+}
+
+function renderPMList() {
+  var el = document.getElementById('pm-list');
+  if (!pmMethods.length) { el.innerHTML = '<div class="empty" style="padding:14px;">No payment methods yet</div>'; return; }
+  el.innerHTML = pmMethods.map(function(m, i) {
+    return '<div class="pm-row"><input type="text" class="form-input" value="' + (m.name||'') + '" oninput="pmMethods[' + i + '].name=this.value" placeholder="Name"><input type="number" class="form-input" step="0.01" value="' + (m.minWithdraw||'') + '" oninput="pmMethods[' + i + '].minWithdraw=parseFloat(this.value)||0" placeholder="Min $" style="max-width:90px;"><input type="text" class="form-input" value="' + (m.hint||'') + '" oninput="pmMethods[' + i + '].hint=this.value" placeholder="Hint text"><button class="btn btn-danger btn-sm" onclick="pmMethods.splice(' + i + ',1);renderPMList()"><i class="fa-solid fa-trash"></i></button></div>';
+  }).join('');
+}
+
+function addPM() { pmMethods.push({ name: '', minWithdraw: 0.5, hint: '' }); renderPMList(); }
+
+async function saveConfig() {
+  var cfg = {
+    maintenanceMode:     document.getElementById('cfg-maintenance').checked,
+    botUsername:         document.getElementById('cfg-bot').value.trim(),
+    telegramChannelLink: document.getElementById('cfg-channel').value.trim(),
+    monetagZoneId:       document.getElementById('cfg-zoneid').value.trim(),
+    adReward:            parseFloat(document.getElementById('cfg-adreward').value) || 0.001,
+    dailyAdLimit:        parseInt(document.getElementById('cfg-dailylimit').value) || 35,
+    referralReward:      parseFloat(document.getElementById('cfg-referralreward').value) || 0.01,
+    paymentMethods:      pmMethods
+  };
+  try {
+    await db.collection('config').doc('appConfig').set(cfg, { merge: true });
+    showToast('Config saved!');
+  } catch(e) { showToast('Failed to save', true); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>

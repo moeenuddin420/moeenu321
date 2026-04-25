@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WTS Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f2ef; --bg2:#e4e7e2; --card:#ffffff;
+  --green:#3d6e4e; --green-l:#cfe4d8; --green-m:#6fa882; --green-d:#2e5439;
+  --text:#171c19; --text2:#4e5e55; --text3:#8a9b90; --border:#dce4de;
+  --red:#b83232; --red-l:#fceaea; --yellow:#b87a00; --yellow-l:#fdf4dc;
+  --blue:#2563a8; --blue-l:#dbeafe; --purple:#6d28d9; --purple-l:#ede9fe;
+  --radius:12px; --shadow:0 2px 16px rgba(61,110,78,0.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px 32px;width:100%;max-width:360px;box-shadow:var(--shadow);text-align:center;}
+.login-box .logo{width:56px;height:56px;background:var(--green);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:700;margin-bottom:14px;}
+.login-box h2{font-size:20px;font-weight:700;margin-bottom:4px;}
+.login-box p{font-size:13px;color:var(--text3);margin-bottom:24px;}
+.login-box input{width:100%;padding:12px 14px;margin-bottom:12px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;text-align:center;letter-spacing:0.15em;transition:border-color 0.18s;}
+.login-box input:focus{border-color:var(--green-m);background:white;letter-spacing:0.05em;}
+.btn-main{width:100%;padding:12px;background:var(--green);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:background 0.18s;}
+.btn-main:hover{background:var(--green-d);}
+.btn-main:disabled{background:var(--green-m);cursor:not-allowed;}
+.login-err{font-size:12px;color:var(--red);margin-top:10px;min-height:18px;}
+
+/* LAYOUT */
+#admin-screen{display:none;min-height:100vh;}
+.topbar{background:var(--green-d);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-left .dot{width:30px;height:30px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;}
+.topbar-left span{font-size:16px;font-weight:700;color:white;}
+.topbar-badge{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.rate-badge{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);padding:4px 10px;border-radius:8px;font-size:11px;font-family:'DM Mono',monospace;cursor:default;}
+.btn-logout-top{background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:6px 14px;font-size:12px;color:white;cursor:pointer;font-family:inherit;transition:background 0.18s;}
+.btn-logout-top:hover{background:rgba(255,255,255,0.28);}
+.nav-bar{background:white;border-bottom:1px solid var(--border);display:flex;padding:0 16px;gap:0;overflow-x:auto;scrollbar-width:none;}
+.nav-bar::-webkit-scrollbar{display:none;}
+.nav-tab{padding:14px 16px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.18s;flex-shrink:0;}
+.nav-tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:600;}
+.nav-tab:hover:not(.active){color:var(--text2);}
+.content{padding:20px;max-width:1100px;margin:0 auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:default;}
+.stat-card:hover{box-shadow:var(--shadow);}
+.stat-card .slabel{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;}
+.stat-card .sval{font-size:24px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;line-height:1;}
+.stat-card .ssub{font-size:11px;color:var(--text3);margin-top:4px;}
+.stat-card.green .sval{color:var(--green);}
+.stat-card.red   .sval{color:var(--red);}
+.stat-card.blue  .sval{color:var(--blue);}
+.stat-card.yellow .sval{color:var(--yellow);}
+.stat-card.purple .sval{color:var(--purple);}
+
+/* SECTION */
+.sec-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sec-title-left{display:flex;align-items:center;gap:8px;}
+.sec-badge{background:var(--bg2);color:var(--text3);padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.refresh-btn{font-size:12px;color:var(--text3);cursor:pointer;background:none;border:1px solid var(--border);border-radius:7px;padding:5px 11px;font-family:inherit;transition:all 0.18s;}
+.refresh-btn:hover{border-color:var(--green-m);color:var(--green);}
+.search-bar{width:100%;padding:9px 14px;margin-bottom:12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:white;color:var(--text);outline:none;transition:border-color 0.18s;}
+.search-bar:focus{border-color:var(--green-m);}
+
+/* TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:22px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+thead th{padding:11px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#fafbf9;}
+.mono{font-family:'DM Mono',monospace;font-size:12px;}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;}
+.badge-active{background:var(--green-l);color:var(--green);}
+.badge-pending{background:var(--yellow-l);color:var(--yellow);}
+.badge-processed{background:var(--green-l);color:var(--green);}
+.badge-rejected{background:var(--red-l);color:var(--red);}
+.badge-removed{background:var(--red-l);color:var(--red);}
+.badge-success{background:var(--green-l);color:var(--green);}
+.badge-failed{background:var(--red-l);color:var(--red);}
+.badge-timeout{background:var(--yellow-l);color:var(--yellow);}
+.badge-needs_otp{background:var(--blue-l);color:var(--blue);}
+.badge-progress1{background:var(--blue-l);color:var(--blue);}
+.badge-usdt{background:#e0f2e9;color:#1a7a4a;}
+.badge-trx{background:var(--red-l);color:#c0392b;}
+.badge-usd{background:var(--green-l);color:var(--green);}
+.badge-bdt{background:var(--yellow-l);color:var(--yellow);}
+
+/* BUTTONS */
+.btn-sm{padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all 0.18s;white-space:nowrap;}
+.btn-green{background:var(--green-l);color:var(--green);}
+.btn-green:hover{background:var(--green);color:white;}
+.btn-red{background:var(--red-l);color:var(--red);}
+.btn-red:hover{background:var(--red);color:white;}
+.btn-blue{background:var(--blue-l);color:var(--blue);}
+.btn-blue:hover{background:var(--blue);color:white;}
+.btn-yellow{background:var(--yellow-l);color:var(--yellow);}
+.btn-yellow:hover{background:var(--yellow);color:white;}
+.btn-actions{display:flex;gap:5px;flex-wrap:wrap;}
+
+/* CONFIG */
+.config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-bottom:22px;}
+.config-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.config-card .clabel{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:5px;}
+.config-card .cdesc{font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6;}
+.config-card input,.config-card select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);outline:none;margin-bottom:10px;transition:border-color 0.18s;}
+.config-card input:focus,.config-card select:focus{border-color:var(--green-m);background:white;}
+.config-card textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;margin-bottom:10px;transition:border-color 0.18s;resize:vertical;min-height:200px;line-height:1.7;}
+.config-card textarea:focus{border-color:var(--green-m);background:white;}
+.btn-save{width:100%;padding:10px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:background 0.18s;}
+.btn-save:hover{background:var(--green-d);}
+
+/* METHODS */
+.add-method-card{background:var(--card);border:1.5px dashed var(--green-m);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+.add-method-card h4{font-size:13px;font-weight:700;margin-bottom:16px;color:var(--green);display:flex;align-items:center;gap:6px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px;}
+.form-grid input,.form-grid select{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.18s;width:100%;}
+.form-grid input:focus,.form-grid select:focus{border-color:var(--green-m);background:white;}
+.form-hint{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5;padding:8px 12px;background:var(--bg2);border-radius:7px;}
+.btn-add-method{padding:10px 20px;background:var(--green);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:background 0.18s;}
+.btn-add-method:hover{background:var(--green-d);}
+.methods-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.method-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.method-row:hover{box-shadow:var(--shadow);}
+.method-row.disabled{opacity:0.5;}
+.method-info{flex:1;min-width:0;}
+.method-info .mname{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.method-info .mmeta{font-size:12px;color:var(--text3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;}
+.method-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.toggle-btn{padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all 0.18s;}
+.toggle-btn.on{background:var(--green-l);color:var(--green);}
+.toggle-btn.off{background:var(--red-l);color:var(--red);}
+
+/* WTR REWARDS */
+.reward-form-card{background:var(--card);border:1.5px dashed #93c5fd;border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+.reward-form-card h4{font-size:13px;font-weight:700;margin-bottom:16px;color:var(--blue);display:flex;align-items:center;gap:6px;}
+.reward-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.reward-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.reward-card:hover{box-shadow:var(--shadow);}
+.rc-info .rc-cc{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--text);}
+.rc-info .rc-bdt{font-size:13px;color:var(--green);font-weight:600;margin-top:2px;}
+.rc-info .rc-updated{font-size:10px;color:var(--text3);margin-top:3px;}
+.rc-actions{display:flex;gap:6px;}
+
+/* RATES */
+.rates-strip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+.rates-strip .r-group{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.rate-item{text-align:center;}
+.rate-item .rlabel{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;}
+.rate-item .rval{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--text);margin-top:2px;}
+.rate-item .rval.green{color:var(--green);}
+.btn-refresh-rates{padding:6px 14px;background:var(--green-l);color:var(--green);border:1px solid var(--green-m);border-radius:8px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.18s;}
+.btn-refresh-rates:hover{background:var(--green);color:white;}
+.btn-refresh-rates:disabled{opacity:0.6;cursor:not-allowed;}
+.rate-updated{font-size:11px;color:var(--text3);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:white;border-radius:18px;width:100%;max-width:460px;padding:26px;animation:fadeIn 0.2s ease;max-height:92vh;overflow-y:auto;}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+.modal-box h3{font-size:17px;font-weight:700;margin-bottom:18px;}
+.modal-box .field{margin-bottom:13px;}
+.modal-box .field label{display:block;font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px;letter-spacing:0.06em;text-transform:uppercase;}
+.modal-box .field input,.modal-box .field select{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;background:var(--bg);outline:none;transition:border-color 0.18s;color:var(--text);}
+.modal-box .field input:focus{border-color:var(--green-m);background:white;}
+.modal-box .field input:disabled{color:var(--text2);cursor:default;}
+.modal-box .copy-row{display:flex;gap:6px;}
+.modal-box .copy-row input{flex:1;}
+.modal-box .copy-row button{padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.18s;white-space:nowrap;}
+.modal-box .copy-row button:hover{background:var(--green-l);border-color:var(--green-m);}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+.modal-actions button{flex:1;padding:11px;border-radius:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;border:none;transition:all 0.18s;}
+.btn-cancel{background:var(--bg2);color:var(--text2);}
+.btn-cancel:hover{background:var(--bg);}
+.btn-approve{background:var(--green);color:white;}
+.btn-approve:hover{background:var(--green-d);}
+.btn-reject{background:var(--red-l);color:var(--red);}
+.btn-reject:hover{background:var(--red);color:white;}
+.modal-info{background:var(--bg2);border-radius:9px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;line-height:1.75;color:var(--text2);}
+.modal-info b{color:var(--text);}
+
+/* MISC */
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:rot 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes rot{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:11px 24px;border-radius:24px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;transition:transform 0.28s ease;background:var(--text);color:white;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.green{background:var(--green);}
+#toast.red{background:var(--red);}
+.empty-row td{text-align:center;padding:36px;color:var(--text3);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">⚙</div>
+    <h2>WTS Admin</h2>
+    <p>Enter your admin key to access the control panel</p>
+    <input id="admin-key-input" type="password" placeholder="Admin key" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <button class="btn-main" onclick="doAdminLogin()">Access Panel</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div id="admin-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="dot">WS</div>
+      <span>WTS Admin</span>
+      <span class="topbar-badge">Control Panel</span>
+    </div>
+    <div class="topbar-right">
+      <span class="rate-badge" id="topbar-rates">Loading rates...</span>
+      <button class="btn-logout-top" onclick="doAdminLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-tab active" onclick="switchPage('overview')">📊 Overview</div>
+    <div class="nav-tab" onclick="switchPage('users')">👥 Users</div>
+    <div class="nav-tab" onclick="switchPage('withdrawals')">💸 Withdrawals</div>
+    <div class="nav-tab" onclick="switchPage('numbers')">📱 WTS Numbers</div>
+    <div class="nav-tab" onclick="switchPage('wtr-regs')">📲 WTR Registrations</div>
+    <div class="nav-tab" onclick="switchPage('wtr-rewards')">💰 WTR Rewards</div>
+    <div class="nav-tab" onclick="switchPage('methods')">💳 Pay Methods</div>
+    <div class="nav-tab" onclick="switchPage('rates')">💱 Rates</div>
+    <div class="nav-tab" onclick="switchPage('config')">⚙️ Config</div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="slabel">Total Users</div><div class="sval" id="s-users">—</div></div>
+        <div class="stat-card green"><div class="slabel">Your Earnings</div><div class="sval" id="s-owner">—</div><div class="ssub">commission collected</div></div>
+        <div class="stat-card"><div class="slabel">WTS Tasks</div><div class="sval" id="s-tasks">—</div></div>
+        <div class="stat-card purple"><div class="slabel">WTR Registrations</div><div class="sval" id="s-wtr-total">—</div><div class="ssub" id="s-wtr-sub">0 today</div></div>
+        <div class="stat-card"><div class="slabel">Active Numbers</div><div class="sval" id="s-nums">—</div><div class="ssub" id="s-nums-sub">of 0 total</div></div>
+        <div class="stat-card blue"><div class="slabel">Pending Withdrawals</div><div class="sval" id="s-pw">—</div><div class="ssub" id="s-pwa">৳0 pending</div></div>
+        <div class="stat-card yellow"><div class="slabel">Total Paid Out</div><div class="sval" id="s-paid">—</div><div class="ssub">to users</div></div>
+      </div>
+      <div class="sec-title">
+        <div class="sec-title-left">Recent WTR Registrations</div>
+        <button class="refresh-btn" onclick="loadOverview()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Number</th><th>User</th><th>Status</th><th>Reward (BDT)</th><th>Date</th></tr></thead>
+          <tbody id="recent-wtr"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="sec-title">
+        <div class="sec-title-left">All Users <span class="sec-badge" id="users-count">0</span></div>
+        <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+      </div>
+      <input class="search-bar" id="user-search" type="text" placeholder="🔍 Search by username or email..." oninput="filterUsers()">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Username</th><th>Email</th><th>Balance (BDT)</th><th>WTS Tasks</th><th>WTR Done</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WITHDRAWALS -->
+    <div class="page" id="page-withdrawals">
+      <div class="sec-title">
+        <div class="sec-title-left">Pending Withdrawals <span class="sec-badge" id="pending-count">0</span></div>
+        <button class="refresh-btn" onclick="loadWithdrawals()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap" style="margin-bottom:22px">
+        <table>
+          <thead><tr><th>User</th><th>BDT Amount</th><th>Equiv.</th><th>Method</th><th>Account</th><th>Requested</th><th>Action</th></tr></thead>
+          <tbody id="pending-w-table"></tbody>
+        </table>
+      </div>
+      <div class="sec-title"><div class="sec-title-left">Processed / Rejected</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>TX / Ref</th><th>Processed</th></tr></thead>
+          <tbody id="done-w-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WTS NUMBERS -->
+    <div class="page" id="page-numbers">
+      <div class="sec-title">
+        <div class="sec-title-left">WTS Numbers <span class="sec-badge" id="numbers-count">0</span></div>
+        <button class="refresh-btn" onclick="loadNumbers()">↻ Refresh</button>
+      </div>
+      <input class="search-bar" id="number-search" type="text" placeholder="🔍 Search by number or username..." oninput="filterNumbers()">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Number</th><th>User</th><th>Type</th><th>Limit</th><th>Status</th><th>Added</th></tr></thead>
+          <tbody id="numbers-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WTR REGISTRATIONS -->
+    <div class="page" id="page-wtr-regs">
+      <div class="sec-title">
+        <div class="sec-title-left">WTR Registrations <span class="sec-badge" id="wtr-regs-count">0</span></div>
+        <button class="refresh-btn" onclick="loadWtrRegs()">↻ Refresh</button>
+      </div>
+      <input class="search-bar" id="wtr-reg-search" type="text" placeholder="🔍 Search by number or username..." oninput="filterWtrRegs()">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Number</th><th>User</th><th>Country</th><th>Status</th><th>Reward</th><th>Fail Reason</th><th>Date</th></tr></thead>
+          <tbody id="wtr-regs-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WTR REWARDS -->
+    <div class="page" id="page-wtr-rewards">
+      <div class="reward-form-card">
+        <h4>💰 Add / Update Country Reward</h4>
+        <div class="form-hint">
+          Set BDT reward for each country code. Enter the country dial code (e.g. <b>880</b> for Bangladesh, <b>91</b> for India).
+          If the code already exists it will be updated. Rewards are paid instantly on successful OTP registration.
+        </div>
+        <div class="form-grid">
+          <input id="rew-cc"  type="text" inputmode="numeric" placeholder="Country code e.g. 880">
+          <input id="rew-bdt" type="number" step="0.01" min="0" placeholder="Reward in BDT e.g. 12.50">
+        </div>
+        <button class="btn-add-method" onclick="saveReward()">Save Reward</button>
+      </div>
+
+      <div class="sec-title">
+        <div class="sec-title-left">All Country Rewards <span class="sec-badge" id="rewards-count">0</span></div>
+        <button class="refresh-btn" onclick="loadRewards()">↻ Refresh</button>
+      </div>
+      <div class="reward-grid" id="rewards-grid">
+        <div style="text-align:center;padding:24px;color:var(--text3);grid-column:1/-1">Loading...</div>
+      </div>
+    </div>
+
+    <!-- PAY METHODS -->
+    <div class="page" id="page-methods">
+      <div class="add-method-card">
+        <h4>➕ Add New Withdrawal Method</h4>
+        <div class="form-hint">
+          <b>currency_mode</b> controls what conversion is shown to users:<br>
+          <b>bdt</b> = local wallets (bKash, Nagad) &nbsp;|&nbsp; <b>usd</b> = USD-based &nbsp;|&nbsp; <b>usdt</b> = USDT crypto &nbsp;|&nbsp; <b>trx</b> = TRX crypto
+        </div>
+        <div class="form-grid">
+          <select id="m-type" onchange="onMethodTypeChange()">
+            <option value="local">Local (bKash / Nagad etc)</option>
+            <option value="crypto">Crypto</option>
+          </select>
+          <select id="m-currency-mode">
+            <option value="bdt">bdt — Local wallet</option>
+            <option value="usd">usd — USD method</option>
+            <option value="usdt">usdt — USDT crypto</option>
+            <option value="trx">trx — TRX crypto</option>
+          </select>
+          <input id="m-name" type="text" placeholder="Name e.g. bKash / USDT">
+          <input id="m-netlabel" type="text" placeholder="Network or label e.g. TRC20">
+        </div>
+        <div class="form-grid">
+          <input id="m-placeholder" type="text" placeholder="Input hint e.g. Your TRC20 wallet address">
+          <input id="m-min" type="number" step="0.01" min="0" placeholder="Min amount in USD e.g. 1.00">
+        </div>
+        <button class="btn-add-method" onclick="addMethod()">Add Method</button>
+      </div>
+      <div class="sec-title">
+        <div class="sec-title-left">All Methods <span class="sec-badge" id="methods-count">0</span></div>
+        <button class="refresh-btn" onclick="loadMethods()">↻ Refresh</button>
+      </div>
+      <div class="methods-list" id="methods-list">
+        <div style="text-align:center;padding:24px;color:var(--text3)">Loading...</div>
+      </div>
+    </div>
+
+    <!-- RATES -->
+    <div class="page" id="page-rates">
+      <div class="sec-title">
+        <div class="sec-title-left">Exchange Rates</div>
+        <button class="refresh-btn" id="manual-refresh-btn" onclick="doManualRatesRefresh()">↻ Fetch Latest</button>
+      </div>
+      <div class="rates-strip" style="flex-direction:column;align-items:stretch;gap:16px;">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div class="rate-item"><div class="rlabel">1 USD →</div><div class="rval" id="r-bdt">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px">BDT</div></div>
+          <div class="rate-item"><div class="rlabel">1 USD →</div><div class="rval green" id="r-usdt">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px">USDT</div></div>
+          <div class="rate-item"><div class="rlabel">1 USD →</div><div class="rval" id="r-trx">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px">TRX</div></div>
+          <div class="rate-item"><div class="rlabel">1 BDT →</div><div class="rval" id="r-bdt-usd">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px">USD</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--text3)" id="r-updated">Last updated: —</div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="sec-title"><div class="sec-title-left">Conversion Preview</div></div>
+        <div class="config-card">
+          <div class="clabel">Test Conversion</div>
+          <div class="cdesc">Enter a BDT amount to see what users would see</div>
+          <input id="test-bdt" type="number" placeholder="Enter BDT amount e.g. 500" oninput="updateConvPreview()">
+          <div id="conv-preview" style="font-size:13px;color:var(--text2);line-height:2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="sec-title"><div class="sec-title-left">Platform Configuration</div></div>
+      <div class="config-grid">
+        <div class="config-card">
+          <div class="clabel">Commission Rate</div>
+          <div class="cdesc">Percentage you keep from each task. 0.10 = 10%</div>
+          <input id="cfg-commission" type="number" step="0.01" min="0" max="1" placeholder="0.10">
+          <button class="btn-save" onclick="saveConfig('commission_rate','cfg-commission')">Save</button>
+        </div>
+        <div class="config-card">
+          <div class="clabel">Minimum Withdrawal (USD)</div>
+          <div class="cdesc">Minimum amount users can withdraw</div>
+          <input id="cfg-minw" type="number" step="0.01" min="0" placeholder="1.00">
+          <button class="btn-save" onclick="saveConfig('min_withdrawal','cfg-minw')">Save</button>
+        </div>
+        <div class="config-card">
+          <div class="clabel">Max Numbers Per User (WTS)</div>
+          <div class="cdesc">Maximum WhatsApp numbers one user can add</div>
+          <input id="cfg-maxnum" type="number" step="1" min="1" placeholder="10">
+          <button class="btn-save" onclick="saveConfig('max_numbers_per_user','cfg-maxnum')">Save</button>
+        </div>
+        <div class="config-card">
+          <div class="clabel">WTS Render Server URL</div>
+          <div class="cdesc">Used for keep-alive pings</div>
+          <input id="cfg-serverurl" type="text" placeholder="https://wts-py.onrender.com">
+          <button class="btn-save" onclick="saveConfig('server_url','cfg-serverurl')">Save</button>
+        </div>
+        <div class="config-card">
+          <div class="clabel">WTR Render Server URL</div>
+          <div class="cdesc">wtr.py server URL for keep-alive</div>
+          <input id="cfg-wtr-serverurl" type="text" placeholder="https://wtr.onrender.com">
+          <button class="btn-save" onclick="saveConfig('wtr_server_url','cfg-wtr-serverurl')">Save</button>
+        </div>
+        <div class="config-card">
+          <div class="clabel">Maintenance Mode</div>
+          <div class="cdesc">Put platform in maintenance — users cannot access</div>
+          <select id="cfg-maintenance">
+            <option value="false">Off — Platform active</option>
+            <option value="true">On — Maintenance mode</option>
+          </select>
+          <button class="btn-save" onclick="saveConfig('maintenance_mode','cfg-maintenance')">Save</button>
+        </div>
+        <div class="config-card" style="grid-column:1/-1">
+          <div class="clabel">Terms &amp; Conditions</div>
+          <div class="cdesc">Shown to new users on registration.</div>
+          <textarea id="cfg-terms" placeholder="Enter terms and conditions..."></textarea>
+          <button class="btn-save" onclick="saveTerms()">Save Terms</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-balance">
+  <div class="modal-box">
+    <h3>Adjust Balance</h3>
+    <input type="hidden" id="bal-user-id">
+    <div class="field"><label>Username</label><input id="bal-username" type="text" disabled></div>
+    <div class="field"><label>Current Balance (BDT)</label><input id="bal-current" type="text" disabled></div>
+    <div class="field"><label>Adjustment Amount (BDT) — use - to deduct</label><input id="bal-amount" type="number" step="0.01" placeholder="e.g. 50 or -25"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-balance')">Cancel</button>
+      <button class="btn-approve" onclick="doAdjustBalance()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-password">
+  <div class="modal-box">
+    <h3>Reset Password</h3>
+    <input type="hidden" id="pw-user-id">
+    <div class="field"><label>Username</label><input id="pw-username" type="text" disabled></div>
+    <div class="field"><label>New Password</label><input id="pw-new" type="text" placeholder="Enter new password (min 6 chars)"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-password')">Cancel</button>
+      <button class="btn-approve" onclick="doResetPassword()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-withdraw">
+  <div class="modal-box">
+    <h3>Process Withdrawal</h3>
+    <input type="hidden" id="w-id">
+    <div class="modal-info" id="w-modal-info">—</div>
+    <div class="field">
+      <label>Account / Wallet to Send To</label>
+      <div class="copy-row">
+        <input id="w-addr-disp" type="text" disabled>
+        <button onclick="copyWithdrawAddr()">📋 Copy</button>
+      </div>
+    </div>
+    <div class="field"><label>TX Hash / Payment Reference (optional)</label><input id="w-txhash" type="text" placeholder="Paste after sending"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-withdraw')">Cancel</button>
+      <button class="btn-reject" onclick="doProcessWithdrawal('reject')">Reject &amp; Refund</button>
+      <button class="btn-approve" onclick="doProcessWithdrawal('approve')">Approve ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-reward">
+  <div class="modal-box">
+    <h3>Edit Reward</h3>
+    <input type="hidden" id="edit-rew-cc-val">
+    <div class="field"><label>Country Code</label><input id="edit-rew-cc-disp" type="text" disabled></div>
+    <div class="field"><label>Reward (BDT)</label><input id="edit-rew-bdt" type="number" step="0.01" min="0" placeholder="e.g. 12.50"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-reward')">Cancel</button>
+      <button class="btn-approve" onclick="doUpdateReward()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══ CONFIG ══
+// Single combined CF worker handles all endpoints (WTS + WTR)
+const CF     = "https://broken-hat-0702.moeenu001-f36.workers.dev";
+let adminKey    = "";
+let currentRates = { usd_to_bdt:0, usd_to_usdt:1, usd_to_trx:0, bdt_to_usd:0 };
+let allUsers    = [];
+let allNumbers  = [];
+let allWtrRegs  = [];
+let allWtrUsers = {};
+
+// ══ LOGIN ══
+function doAdminLogin() {
+  const key = document.getElementById("admin-key-input").value.trim();
+  if (!key) return;
+  adminKey = key;
+  const btn = document.querySelector(".login-box .btn-main");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Verifying...';
+  fetch(`${CF}/admin/stats`, { headers:{"X-Admin-Key":adminKey} })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById("login-screen").style.display  = "none";
+        document.getElementById("admin-screen").style.display  = "block";
+        loadOverview(); loadRatesQuiet();
+      } else {
+        document.getElementById("login-err").textContent = "Invalid admin key";
+        adminKey = "";
+      }
+    })
+    .catch(() => { document.getElementById("login-err").textContent = "Connection error"; adminKey = ""; })
+    .finally(() => { btn.disabled = false; btn.innerHTML = "Access Panel"; });
+}
+function doAdminLogout() {
+  adminKey = "";
+  document.getElementById("admin-screen").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("admin-key-input").value = "";
+}
+
+// ══ NAV ══
+const PAGES = ["overview","users","withdrawals","numbers","wtr-regs","wtr-rewards","methods","rates","config"];
+function switchPage(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(`page-${page}`).classList.add("active");
+  const idx = PAGES.indexOf(page);
+  document.querySelectorAll(".nav-tab")[idx]?.classList.add("active");
+  if (page === "overview")    loadOverview();
+  if (page === "users")       loadUsers();
+  if (page === "withdrawals") loadWithdrawals();
+  if (page === "numbers")     loadNumbers();
+  if (page === "wtr-regs")    loadWtrRegs();
+  if (page === "wtr-rewards") loadRewards();
+  if (page === "methods")     loadMethods();
+  if (page === "rates")       loadRatesPage();
+  if (page === "config")      loadConfig();
+}
+
+// ══ HELPERS ══
+function adminFetch(path, opts={}) {
+  return fetch(`${CF}${path}`, { ...opts, headers:{"X-Admin-Key":adminKey,"Content-Type":"application/json",...(opts.headers||{})} });
+}
+// All endpoints now on single CF worker
+const wFetch   = (path, opts={}) => adminFetch(path, opts);
+const wtrFetch = (path, opts={}) => adminFetch(path, opts);
+
+function fmtBdt(n) { return `৳${parseFloat(n||0).toFixed(2)}`; }
+function fmtDate(d){ return d ? new Date(d).toLocaleString() : "—"; }
+function emptyRow(cols,msg){ return `<tr class="empty-row"><td colspan="${cols}">${msg}</td></tr>`; }
+function escHtml(str){ if(str==null)return ""; return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+
+// ══ RATES ══
+async function loadRatesQuiet() {
+  try {
+    const res  = await wFetch("/admin/config");
+    const data = await res.json();
+    const bdt  = parseFloat(data.rate_usd_to_bdt  || 0);
+    const usdt = parseFloat(data.rate_usd_to_usdt || 1);
+    const trx  = parseFloat(data.rate_usd_to_trx  || 0);
+    currentRates = { usd_to_bdt:bdt, usd_to_usdt:usdt, usd_to_trx:trx, bdt_to_usd:bdt>0?1/bdt:0, updated_at:data.rates_updated_at||null };
+    const badge = document.getElementById("topbar-rates");
+    if (bdt > 0) badge.textContent = `৳${bdt.toFixed(2)} / $1 · TRX ${trx.toFixed(2)}`;
+    else badge.textContent = "Rates not loaded";
+  } catch(e) {}
+}
+
+// ══ OVERVIEW ══
+async function loadOverview() {
+  try {
+    const [statsRes, wtrRes] = await Promise.all([
+      wFetch("/admin/stats"),
+      wtrFetch("/admin/wtr/stats")
+    ]);
+    const stats = await statsRes.json();
+    document.getElementById("s-users").textContent = stats.total_users || 0;
+    document.getElementById("s-owner").textContent = fmtBdt(stats.total_owner_earnings_bdt || (stats.total_owner_earnings * (currentRates.usd_to_bdt||1)));
+    document.getElementById("s-tasks").textContent = stats.total_tasks || 0;
+    document.getElementById("s-nums").textContent  = stats.active_numbers || 0;
+    document.getElementById("s-nums-sub").textContent = `of ${stats.total_numbers||0} total`;
+    document.getElementById("s-pw").textContent   = stats.pending_withdrawals || 0;
+    document.getElementById("s-pwa").textContent  = fmtBdt(stats.pending_withdrawal_amount_bdt||0) + " pending";
+    document.getElementById("s-paid").textContent = fmtBdt(stats.total_user_paid_bdt||0);
+
+    if (wtrRes.ok) {
+      const wtrStats = await wtrRes.json();
+      document.getElementById("s-wtr-total").textContent = wtrStats.total_registrations || 0;
+      document.getElementById("s-wtr-sub").textContent   = `${wtrStats.success_count||0} successful`;
+    }
+
+    // Recent WTR
+    const tbody = document.getElementById("recent-wtr");
+    try {
+      const rRes  = await wtrFetch("/admin/wtr/registrations?limit=10");
+      const regs  = await rRes.json();
+      if (!regs||!regs.length) { tbody.innerHTML = emptyRow(5,"No WTR registrations yet"); return; }
+      tbody.innerHTML = regs.map(r => `<tr>
+        <td class="mono">+${escHtml(r.phone_number)}</td>
+        <td>${escHtml(allWtrUsers[r.user_id] || r.user_id?.slice(0,8)+"…")}</td>
+        <td><span class="badge badge-${r.status}">${r.status}</span></td>
+        <td class="mono">${r.status==="success" ? fmtBdt(r.reward_bdt) : "—"}</td>
+        <td style="font-size:12px">${fmtDate(r.created_at)}</td>
+      </tr>`).join("");
+    } catch(e) { tbody.innerHTML = emptyRow(5,"Could not load WTR data"); }
+  } catch(e) { showToast("Failed to load stats","red"); }
+}
+
+// ══ USERS ══
+async function loadUsers() {
+  const tbody = document.getElementById("users-table");
+  tbody.innerHTML = emptyRow(7,"Loading...");
+  try {
+    const res = await wFetch("/admin/users");
+    allUsers  = await res.json();
+    allUsers.forEach(u => { allWtrUsers[u.id] = u.username; });
+    document.getElementById("users-count").textContent = allUsers.length;
+    renderUsers(allUsers);
+  } catch(e) { tbody.innerHTML = emptyRow(7,"Failed to load"); }
+}
+function renderUsers(users) {
+  const tbody = document.getElementById("users-table");
+  if (!users.length) { tbody.innerHTML = emptyRow(7,"No users yet"); return; }
+  tbody.innerHTML = users.map(u => `<tr>
+    <td><b>${escHtml(u.username)}</b></td>
+    <td style="font-size:12px;color:var(--text3)">${escHtml(u.email||"—")}</td>
+    <td class="mono">${fmtBdt(u.balance_bdt||u.balance*currentRates.usd_to_bdt||0)}</td>
+    <td><span style="font-weight:600">${u.numbers_count||0}</span></td>
+    <td><span style="font-weight:600">${u.wtr_count||0}</span></td>
+    <td>${fmtDate(u.created_at)}</td>
+    <td>
+      <div class="btn-actions">
+        <button class="btn-sm btn-blue" onclick="openBalanceModal('${u.id}','${escHtml(u.username)}',${u.balance_bdt||0})">Balance</button>
+        <button class="btn-sm btn-green" onclick="openPasswordModal('${u.id}','${escHtml(u.username)}')">Password</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+function filterUsers() {
+  const q = document.getElementById("user-search").value.toLowerCase();
+  renderUsers(allUsers.filter(u => u.username?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)));
+}
+function openBalanceModal(userId, username, currentBal) {
+  document.getElementById("bal-user-id").value  = userId;
+  document.getElementById("bal-username").value = username;
+  document.getElementById("bal-current").value  = fmtBdt(currentBal);
+  document.getElementById("bal-amount").value   = "";
+  document.getElementById("modal-balance").classList.add("show");
+}
+async function doAdjustBalance() {
+  const userId = document.getElementById("bal-user-id").value;
+  const amount = parseFloat(document.getElementById("bal-amount").value);
+  if (isNaN(amount)) return showToast("Enter a valid amount","red");
+  try {
+    const res  = await wFetch("/admin/adjust-balance", { method:"POST", body:JSON.stringify({user_id:userId,amount}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(`Balance updated → ${fmtBdt(data.new_balance_bdt||data.new_balance)}`, "green");
+    closeModal("modal-balance"); loadUsers();
+  } catch(e) { showToast(e.message,"red"); }
+}
+function openPasswordModal(userId, username) {
+  document.getElementById("pw-user-id").value  = userId;
+  document.getElementById("pw-username").value = username;
+  document.getElementById("pw-new").value      = "";
+  document.getElementById("modal-password").classList.add("show");
+}
+async function doResetPassword() {
+  const userId  = document.getElementById("pw-user-id").value;
+  const newPass = document.getElementById("pw-new").value.trim();
+  if (!newPass||newPass.length<6) return showToast("Password must be 6+ characters","red");
+  try {
+    const res  = await wFetch("/admin/reset-password", { method:"POST", body:JSON.stringify({user_id:userId,new_password:newPass}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast("Password reset successfully ✓","green");
+    closeModal("modal-password");
+  } catch(e) { showToast(e.message,"red"); }
+}
+
+// ══ WITHDRAWALS ══
+async function loadWithdrawals() { await Promise.all([loadPendingW(), loadDoneW()]); }
+async function loadPendingW() {
+  const tbody = document.getElementById("pending-w-table");
+  tbody.innerHTML = emptyRow(7,"Loading...");
+  try {
+    const res  = await wFetch("/admin/withdrawals?status=pending");
+    const data = await res.json();
+    document.getElementById("pending-count").textContent = data.length;
+    if (!data.length) { tbody.innerHTML = emptyRow(7,"✓ No pending withdrawals"); return; }
+    tbody.innerHTML = data.map(w => {
+      const mode = w.currency_mode||"usd";
+      const modeMap = {usdt:"badge-usdt",trx:"badge-trx",bdt:"badge-bdt",usd:"badge-usd"};
+      let equiv = "";
+      if (mode==="usdt"&&w.crypto_amount) equiv = `${w.crypto_amount} USDT`;
+      else if (mode==="trx"&&w.crypto_amount) equiv = `${w.crypto_amount} TRX`;
+      else if (mode==="bdt"&&w.bdt_amount) equiv = `৳${w.bdt_amount}`;
+      return `<tr>
+        <td><b>${escHtml(w.username||"—")}</b>${w.email?`<div style="font-size:11px;color:var(--text3)">${escHtml(w.email)}</div>`:""}</td>
+        <td class="mono">${fmtBdt(w.bdt_amount||w.amount*currentRates.usd_to_bdt)}</td>
+        <td class="mono" style="color:var(--text3);font-size:12px">${equiv||"—"}</td>
+        <td><span class="badge ${modeMap[mode]||'badge-local'}">${(w.crypto_type||mode).toUpperCase()}</span>${w.network_or_label?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${escHtml(w.network_or_label)}</div>`:""}</td>
+        <td class="mono" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(w.account_details||'')}">
+          ${escHtml(w.account_details||"—")}</td>
+        <td style="font-size:12px">${fmtDate(w.requested_at)}</td>
+        <td><button class="btn-sm btn-green" onclick='openWithdrawModal(${JSON.stringify(w)})'>Process</button></td>
+      </tr>`;
+    }).join("");
+  } catch(e) { tbody.innerHTML = emptyRow(7,"Failed to load"); }
+}
+async function loadDoneW() {
+  const tbody = document.getElementById("done-w-table");
+  try {
+    const [pR,rR] = await Promise.all([wFetch("/admin/withdrawals?status=processed"),wFetch("/admin/withdrawals?status=rejected")]);
+    const all = [...(await pR.json()||[]),...(await rR.json()||[])].sort((a,b)=>new Date(b.processed_at||0)-new Date(a.processed_at||0));
+    if (!all.length) { tbody.innerHTML = emptyRow(6,"No processed withdrawals yet"); return; }
+    tbody.innerHTML = all.map(w=>`<tr>
+      <td><b>${escHtml(w.username||"—")}</b></td>
+      <td class="mono">${fmtBdt(w.bdt_amount||w.amount*currentRates.usd_to_bdt)}</td>
+      <td>${escHtml(w.crypto_type||"—")}${w.network_or_label?" · "+escHtml(w.network_or_label):""}</td>
+      <td><span class="badge badge-${w.status}">${w.status}</span></td>
+      <td class="mono" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(w.tx_hash||'')}">
+        ${escHtml(w.tx_hash||"—")}</td>
+      <td style="font-size:12px">${fmtDate(w.processed_at)}</td>
+    </tr>`).join("");
+  } catch(e) { tbody.innerHTML = emptyRow(6,"Failed to load"); }
+}
+function openWithdrawModal(w) {
+  document.getElementById("w-id").value = w.id;
+  document.getElementById("w-addr-disp").value = w.account_details||"";
+  document.getElementById("w-txhash").value = "";
+  document.getElementById("w-modal-info").innerHTML = `
+    <b>User:</b> ${escHtml(w.username||"—")}<br>
+    <b>Amount:</b> ${fmtBdt(w.bdt_amount||w.amount*currentRates.usd_to_bdt)}<br>
+    <b>Method:</b> ${escHtml(w.crypto_type||"—")}${w.network_or_label?" — "+escHtml(w.network_or_label):""}<br>
+    <b>Requested:</b> ${fmtDate(w.requested_at)}`;
+  document.getElementById("modal-withdraw").classList.add("show");
+}
+function copyWithdrawAddr() {
+  const addr = document.getElementById("w-addr-disp").value;
+  if (!addr) return;
+  navigator.clipboard.writeText(addr).then(() => showToast("Address copied!","green")).catch(() => {
+    const el = document.createElement("textarea"); el.value=addr; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
+    showToast("Address copied!","green");
+  });
+}
+async function doProcessWithdrawal(action) {
+  const wId    = document.getElementById("w-id").value;
+  const txHash = document.getElementById("w-txhash").value.trim();
+  try {
+    const res  = await wFetch("/admin/process-withdrawal", { method:"POST", body:JSON.stringify({withdrawal_id:wId,action,tx_hash:txHash}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(action==="approve"?"Withdrawal approved ✓":"Withdrawal rejected & refunded", action==="approve"?"green":"red");
+    closeModal("modal-withdraw"); loadWithdrawals();
+  } catch(e) { showToast(e.message,"red"); }
+}
+
+// ══ WTS NUMBERS ══
+async function loadNumbers() {
+  const tbody = document.getElementById("numbers-table");
+  tbody.innerHTML = emptyRow(6,"Loading...");
+  try {
+    const [numsRes,usersRes] = await Promise.all([wFetch("/admin/numbers"),wFetch("/admin/users")]);
+    if (!numsRes.ok) { tbody.innerHTML = emptyRow(6,"Endpoint not available"); return; }
+    allNumbers = await numsRes.json();
+    const users = await usersRes.json();
+    const userMap = {};
+    (users||[]).forEach(u => { userMap[u.id]=u.username; allWtrUsers[u.id]=u.username; });
+    document.getElementById("numbers-count").textContent = allNumbers.length;
+    renderNumbers(allNumbers, userMap);
+    window._userMap = userMap;
+  } catch(e) { tbody.innerHTML = emptyRow(6,"Failed to load"); }
+}
+function renderNumbers(nums, userMap) {
+  const map   = userMap || window._userMap || {};
+  const tbody = document.getElementById("numbers-table");
+  if (!nums.length) { tbody.innerHTML = emptyRow(6,"No numbers added yet"); return; }
+  tbody.innerHTML = nums.map(n => {
+    const removed = n.is_removed||n.status==="failed";
+    const badge   = removed ? `<span class="badge badge-removed">Disconnected</span>`
+      : n.status==="pending" ? `<span class="badge badge-pending">Pending</span>`
+      : `<span class="badge badge-active">Active</span>`;
+    return `<tr>
+      <td class="mono">+${n.whatsapp_number}</td>
+      <td>${escHtml(map[n.user_id]||"—")}</td>
+      <td>${escHtml(n.account_type||"—")}</td>
+      <td>${n.daily_limit===999?"No Limit":n.daily_limit}</td>
+      <td>${badge}</td>
+      <td style="font-size:12px">${fmtDate(n.added_at)}</td>
+    </tr>`;
+  }).join("");
+}
+function filterNumbers() {
+  const q   = document.getElementById("number-search").value.toLowerCase();
+  const map = window._userMap||{};
+  renderNumbers(allNumbers.filter(n => n.whatsapp_number?.includes(q)||(map[n.user_id]||"").toLowerCase().includes(q)), map);
+}
+
+// ══ WTR REGISTRATIONS ══
+async function loadWtrRegs() {
+  const tbody = document.getElementById("wtr-regs-table");
+  tbody.innerHTML = emptyRow(7,"Loading...");
+  try {
+    const [regsRes,usersRes] = await Promise.all([
+      wtrFetch("/admin/wtr/registrations"),
+      wFetch("/admin/users")
+    ]);
+    allWtrRegs = await regsRes.json();
+    const users = await usersRes.json();
+    const userMap = {};
+    (users||[]).forEach(u => { userMap[u.id]=u.username; allWtrUsers[u.id]=u.username; });
+    document.getElementById("wtr-regs-count").textContent = allWtrRegs.length;
+    renderWtrRegs(allWtrRegs, userMap);
+    window._wtrUserMap = userMap;
+  } catch(e) { tbody.innerHTML = emptyRow(7,"Failed to load"); }
+}
+function renderWtrRegs(regs, userMap) {
+  const map   = userMap||window._wtrUserMap||{};
+  const tbody = document.getElementById("wtr-regs-table");
+  if (!regs.length) { tbody.innerHTML = emptyRow(7,"No WTR registrations yet"); return; }
+  tbody.innerHTML = regs.map(r => `<tr>
+    <td class="mono">+${escHtml(r.phone_number)}</td>
+    <td>${escHtml(map[r.user_id]||"—")}</td>
+    <td class="mono">+${escHtml(r.country_code)}</td>
+    <td><span class="badge badge-${r.status}">${r.status}</span></td>
+    <td class="mono">${r.status==="success"?fmtBdt(r.reward_bdt):"—"}</td>
+    <td style="font-size:12px;color:var(--text3)">${escHtml(r.fail_reason||"—")}</td>
+    <td style="font-size:12px">${fmtDate(r.created_at)}</td>
+  </tr>`).join("");
+}
+function filterWtrRegs() {
+  const q   = document.getElementById("wtr-reg-search").value.toLowerCase();
+  const map = window._wtrUserMap||{};
+  renderWtrRegs(allWtrRegs.filter(r => r.phone_number?.includes(q)||(map[r.user_id]||"").toLowerCase().includes(q)), map);
+}
+
+// ══ WTR REWARDS ══
+async function loadRewards() {
+  const grid = document.getElementById("rewards-grid");
+  grid.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);grid-column:1/-1">Loading...</div>`;
+  try {
+    const res  = await wtrFetch("/admin/wtr/rewards");
+    const data = await res.json();
+    document.getElementById("rewards-count").textContent = data.length||0;
+    if (!data.length) {
+      grid.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);grid-column:1/-1">No rewards configured yet.</div>`; return;
+    }
+    grid.innerHTML = data.map(r => `
+      <div class="reward-card">
+        <div class="rc-info">
+          <div class="rc-cc">+${escHtml(r.country_code)}</div>
+          <div class="rc-bdt">${fmtBdt(r.reward_bdt)} BDT</div>
+          <div class="rc-updated">Updated: ${fmtDate(r.updated_at)}</div>
+        </div>
+        <div class="rc-actions">
+          <button class="btn-sm btn-blue" onclick="openEditReward('${escHtml(r.country_code)}',${r.reward_bdt})">Edit</button>
+          <button class="btn-sm btn-red"  onclick="deleteReward('${escHtml(r.country_code)}')">Del</button>
+        </div>
+      </div>`).join("");
+  } catch(e) {
+    grid.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);grid-column:1/-1">Failed to load rewards.</div>`;
+  }
+}
+async function saveReward() {
+  const cc  = document.getElementById("rew-cc").value.trim();
+  const bdt = parseFloat(document.getElementById("rew-bdt").value);
+  if (!cc || isNaN(bdt) || bdt < 0) return showToast("Enter valid country code and reward amount","red");
+  try {
+    // Try PATCH first (update), then POST (create)
+    const patchRes = await wtrFetch("/admin/wtr/rewards", { method:"PATCH", body:JSON.stringify({country_code:cc,reward_bdt:bdt}) });
+    if (patchRes.ok) {
+      showToast(`Reward for +${cc} updated → ৳${bdt.toFixed(2)}`, "green");
+    } else {
+      const postRes = await wtrFetch("/admin/wtr/rewards", { method:"POST", body:JSON.stringify({country_code:cc,reward_bdt:bdt}) });
+      const data = await postRes.json();
+      if (!postRes.ok) throw new Error(data.error||"Failed");
+      showToast(`Reward for +${cc} added → ৳${bdt.toFixed(2)}`, "green");
+    }
+    document.getElementById("rew-cc").value  = "";
+    document.getElementById("rew-bdt").value = "";
+    loadRewards();
+  } catch(e) { showToast(e.message,"red"); }
+}
+function openEditReward(cc, currentBdt) {
+  document.getElementById("edit-rew-cc-val").value  = cc;
+  document.getElementById("edit-rew-cc-disp").value = `+${cc}`;
+  document.getElementById("edit-rew-bdt").value     = currentBdt;
+  document.getElementById("modal-edit-reward").classList.add("show");
+}
+async function doUpdateReward() {
+  const cc  = document.getElementById("edit-rew-cc-val").value;
+  const bdt = parseFloat(document.getElementById("edit-rew-bdt").value);
+  if (isNaN(bdt)||bdt<0) return showToast("Enter valid reward amount","red");
+  try {
+    const res  = await wtrFetch("/admin/wtr/rewards", { method:"PATCH", body:JSON.stringify({country_code:cc,reward_bdt:bdt}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(`+${cc} reward updated → ৳${bdt.toFixed(2)}`,"green");
+    closeModal("modal-edit-reward"); loadRewards();
+  } catch(e) { showToast(e.message,"red"); }
+}
+async function deleteReward(cc) {
+  if (!confirm(`Delete reward for +${cc}?`)) return;
+  try {
+    const res  = await wtrFetch("/admin/wtr/rewards", { method:"DELETE", body:JSON.stringify({country_code:cc}) });
+    if (!res.ok) throw new Error("Failed to delete");
+    showToast(`Reward for +${cc} deleted`,"");
+    loadRewards();
+  } catch(e) { showToast(e.message,"red"); }
+}
+
+// ══ METHODS ══
+function onMethodTypeChange() {
+  const type = document.getElementById("m-type").value;
+  const ms   = document.getElementById("m-currency-mode");
+  if (type==="local") ms.value="bdt"; else if (ms.value==="bdt") ms.value="usdt";
+}
+async function loadMethods() {
+  const list = document.getElementById("methods-list");
+  list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3)">Loading...</div>`;
+  try {
+    const res     = await wFetch("/admin/withdrawal-methods");
+    const methods = await res.json();
+    document.getElementById("methods-count").textContent = methods.length;
+    if (!methods.length) { list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3)">No methods added yet.</div>`; return; }
+    const modeLabels = {bdt:"BDT Local",usd:"USD",usdt:"USDT Crypto",trx:"TRX Crypto"};
+    const modeColors = {bdt:"badge-bdt",usd:"badge-usd",usdt:"badge-usdt",trx:"badge-trx"};
+    list.innerHTML = methods.map(m=>`
+      <div class="method-row ${m.is_enabled?"":"disabled"}">
+        <div class="method-info">
+          <div class="mname">
+            <span class="badge ${modeColors[m.currency_mode]||"badge-local"}">${(modeLabels[m.currency_mode]||m.currency_mode||"—").toUpperCase()}</span>
+            <span class="badge badge-${m.type}">${m.type}</span>
+            <b>${escHtml(m.name)}</b>
+            ${m.network_or_label?`<span style="color:var(--text3);font-weight:400">— ${escHtml(m.network_or_label)}</span>`:""}
+          </div>
+          <div class="mmeta">
+            ${m.placeholder?`<span>💬 ${escHtml(m.placeholder)}</span>`:""}
+            <span>💰 Min: $${parseFloat(m.min_amount||1).toFixed(2)}</span>
+            ${m.is_enabled?`<span style="color:var(--green)">✓ Enabled</span>`:`<span style="color:var(--red)">✗ Disabled</span>`}
+          </div>
+        </div>
+        <div class="method-actions">
+          <button class="toggle-btn ${m.is_enabled?"on":"off"}" onclick="toggleMethod('${m.id}',${m.is_enabled})">${m.is_enabled?"Enabled":"Disabled"}</button>
+          <button class="btn-sm btn-red" onclick="deleteMethod('${m.id}','${escHtml(m.name)}')">Delete</button>
+        </div>
+      </div>`).join("");
+  } catch(e) { list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red)">Failed to load methods.</div>`; }
+}
+async function addMethod() {
+  const type          = document.getElementById("m-type").value;
+  const currency_mode = document.getElementById("m-currency-mode").value;
+  const name          = document.getElementById("m-name").value.trim();
+  const netlabel      = document.getElementById("m-netlabel").value.trim();
+  const placeholder   = document.getElementById("m-placeholder").value.trim();
+  const min_amount    = parseFloat(document.getElementById("m-min").value)||1.00;
+  if (!name) return showToast("Enter a method name","red");
+  try {
+    const res  = await wFetch("/admin/withdrawal-methods", { method:"POST", body:JSON.stringify({type,name,network_or_label:netlabel,placeholder,min_amount,currency_mode}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(`${name} added ✓`,"green");
+    document.getElementById("m-name").value=""; document.getElementById("m-netlabel").value="";
+    document.getElementById("m-placeholder").value=""; document.getElementById("m-min").value="";
+    loadMethods();
+  } catch(e) { showToast(e.message,"red"); }
+}
+async function toggleMethod(id, currentState) {
+  try {
+    const res  = await wFetch(`/admin/withdrawal-methods?id=${id}`, { method:"PATCH", body:JSON.stringify({is_enabled:!currentState}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(`Method ${!currentState?"enabled":"disabled"} ✓`,"green");
+    loadMethods();
+  } catch(e) { showToast(e.message,"red"); }
+}
+async function deleteMethod(id, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  try {
+    const res  = await wFetch(`/admin/withdrawal-methods?id=${id}`, { method:"DELETE" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast("Method deleted","");
+    loadMethods();
+  } catch(e) { showToast(e.message,"red"); }
+}
+
+// ══ RATES PAGE ══
+async function loadRatesPage() {
+  await loadRatesQuiet();
+  const r = currentRates;
+  document.getElementById("r-bdt").textContent     = r.usd_to_bdt  ? `৳ ${r.usd_to_bdt.toFixed(4)}`  : "—";
+  document.getElementById("r-usdt").textContent    = r.usd_to_usdt ? r.usd_to_usdt.toFixed(6)         : "—";
+  document.getElementById("r-trx").textContent     = r.usd_to_trx  ? r.usd_to_trx.toFixed(4)          : "—";
+  document.getElementById("r-bdt-usd").textContent = r.bdt_to_usd  ? `$ ${r.bdt_to_usd.toFixed(6)}`   : "—";
+  document.getElementById("r-updated").textContent = r.updated_at ? `Last updated: ${new Date(r.updated_at).toLocaleString()}` : "Last updated: never";
+  updateConvPreview();
+}
+async function doManualRatesRefresh() {
+  const btn = document.getElementById("manual-refresh-btn");
+  btn.disabled=true; btn.innerHTML="Fetching...";
+  try {
+    const res  = await wFetch("/admin/refresh-rates", { method:"POST" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast("Rates updated ✓","green");
+    await loadRatesPage();
+  } catch(e) { showToast("Rate refresh failed: "+e.message,"red"); }
+  btn.disabled=false; btn.innerHTML="↻ Fetch Latest";
+}
+function updateConvPreview() {
+  const bdt  = parseFloat(document.getElementById("test-bdt")?.value)||0;
+  const prev = document.getElementById("conv-preview");
+  if (!prev) return;
+  if (!bdt||!currentRates.bdt_to_usd) { prev.innerHTML="<span style='color:var(--text3)'>Enter a BDT amount above</span>"; return; }
+  const usd  = bdt * currentRates.bdt_to_usd;
+  const usdt = usd * currentRates.usd_to_usdt;
+  const trx  = usd * currentRates.usd_to_trx;
+  prev.innerHTML=`<b>৳${bdt.toLocaleString()} BDT</b><br>→ <b style="color:var(--green)">$${usd.toFixed(4)} USD</b><br>→ <b>${usdt.toFixed(4)} USDT</b><br>→ <b>${trx.toFixed(2)} TRX</b>`;
+}
+
+// ══ CONFIG ══
+async function loadConfig() {
+  try {
+    const res  = await wFetch("/admin/config");
+    const data = await res.json();
+    if (data.commission_rate)      document.getElementById("cfg-commission").value = data.commission_rate;
+    if (data.min_withdrawal)       document.getElementById("cfg-minw").value       = data.min_withdrawal;
+    if (data.max_numbers_per_user) document.getElementById("cfg-maxnum").value     = data.max_numbers_per_user;
+    if (data.server_url)           document.getElementById("cfg-serverurl").value  = data.server_url;
+    if (data.wtr_server_url)       document.getElementById("cfg-wtr-serverurl").value = data.wtr_server_url;
+    if (data.maintenance_mode)     document.getElementById("cfg-maintenance").value = data.maintenance_mode;
+    const tcRes  = await wFetch("/admin/app-content?key=terms");
+    const tcData = await tcRes.json();
+    if (tcData.value) document.getElementById("cfg-terms").value = tcData.value;
+  } catch(e) { showToast("Failed to load config","red"); }
+}
+async function saveConfig(key, inputId) {
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) return showToast("Enter a value first","red");
+  try {
+    const res  = await wFetch("/admin/config", { method:"POST", body:JSON.stringify({[key]:val}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast(`${key} updated ✓`,"green");
+  } catch(e) { showToast(e.message,"red"); }
+}
+async function saveTerms() {
+  const value = document.getElementById("cfg-terms").value.trim();
+  if (!value) return showToast("Enter terms content","red");
+  try {
+    const res  = await wFetch("/admin/app-content", { method:"POST", body:JSON.stringify({key:"terms",value}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||"Failed");
+    showToast("Terms & Conditions saved ✓","green");
+  } catch(e) { showToast(e.message,"red"); }
+}
+
+// ══ MODAL HELPERS ══
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll(".modal-overlay").forEach(el => {
+  el.addEventListener("click", e => { if(e.target===el) el.classList.remove("show"); });
+});
+
+// ══ TOAST ══
+function showToast(msg, type) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "show "+(type||"");
+  setTimeout(() => t.className = "", 3500);
+}
+</script>
+</body>
+</html>

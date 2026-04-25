@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3d6e4e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WTS">
+<meta name="description" content="WTS Platform — Task earning platform">
+<title>WTS Platform</title>
+<!-- PWA: manifest and service worker referenced externally as you already have them -->
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #f6f7f4;
+  --bg2:        #eceee9;
+  --card:       #ffffff;
+  --green:      #3d6e4e;
+  --green-l:    #cfe4d8;
+  --green-m:    #6fa882;
+  --green-dark: #2e5439;
+  --text:       #171c19;
+  --text2:      #4e5e55;
+  --text3:      #8a9b90;
+  --border:     #dce4de;
+  --red:        #b83232;
+  --red-l:      #fceaea;
+  --yellow:     #b87a00;
+  --yellow-l:   #fdf4dc;
+  --radius:     14px;
+  --shadow:     0 2px 16px rgba(61,110,78,0.09);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; min-height: -webkit-fill-available;
+  overscroll-behavior: none;
+}
+
+/* ══════════════════════════════════════
+   AUTH
+══════════════════════════════════════ */
+#auth-screen {
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center; padding: 24px;
+}
+.auth-wrap { width: 100%; max-width: 390px; }
+.auth-brand { text-align: center; margin-bottom: 28px; }
+.auth-brand .logo {
+  width: 52px; height: 52px; background: var(--green);
+  border-radius: 14px; display: inline-flex;
+  align-items: center; justify-content: center;
+  color: white; font-size: 20px; font-weight: 700; margin-bottom: 12px;
+}
+.auth-brand h1 { font-size: 22px; font-weight: 700; }
+.auth-brand p  { font-size: 13px; color: var(--text3); margin-top: 3px; }
+.auth-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 22px; padding: 28px 24px; box-shadow: var(--shadow);
+}
+.auth-tabs {
+  display: flex; background: var(--bg2);
+  border-radius: 10px; padding: 3px; margin-bottom: 22px;
+}
+.auth-tab {
+  flex: 1; text-align: center; padding: 9px 0;
+  border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text2); transition: all 0.18s;
+}
+.auth-tab.active { background: white; color: var(--green); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.field { margin-bottom: 14px; }
+.field label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text3); margin-bottom: 5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.field input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 15px; font-family: inherit;
+  background: var(--bg); color: var(--text); outline: none; transition: all 0.18s;
+}
+.field input:focus { border-color: var(--green-m); background: white; }
+.btn-main {
+  width: 100%; padding: 13px; background: var(--green);
+  color: white; border: none; border-radius: 11px;
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all 0.18s;
+}
+.btn-main:active  { transform: scale(0.98); }
+.btn-main:disabled { background: var(--green-m); cursor: not-allowed; opacity: 0.8; }
+.auth-msg {
+  margin-top: 12px; font-size: 12.5px;
+  text-align: center; min-height: 18px; padding: 0 4px;
+}
+.auth-msg.err { color: var(--red); }
+.auth-msg.ok  { color: var(--green); }
+
+/* ══════════════════════════════════════
+   TERMS MODAL
+══════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.terms-sheet {
+  background: white; border-radius: 22px 22px 0 0;
+  width: 100%; max-width: 480px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  animation: slideUp 0.28s ease; padding-bottom: var(--safe-bottom);
+}
+@keyframes slideUp { from { transform: translateY(48px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.terms-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.terms-head h3 { font-size: 17px; font-weight: 700; }
+.terms-head p  { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.terms-body {
+  padding: 16px 22px; overflow-y: auto; flex: 1;
+  font-size: 13px; line-height: 1.8; color: var(--text2); white-space: pre-wrap;
+}
+.terms-foot { padding: 14px 22px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.scroll-note { font-size: 11px; color: var(--text3); text-align: center; margin-bottom: 10px; }
+#agree-btn {
+  width: 100%; padding: 13px;
+  background: var(--bg2); color: var(--text3);
+  border: 1.5px solid var(--border); border-radius: 11px;
+  font-size: 14px; font-weight: 600; font-family: inherit;
+  cursor: not-allowed; transition: all 0.25s;
+}
+#agree-btn.ready { background: var(--green); color: white; border-color: var(--green); cursor: pointer; }
+
+/* ══════════════════════════════════════
+   APP LAYOUT
+══════════════════════════════════════ */
+#app-screen { display: none; min-height: 100vh; }
+.topbar {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 0 16px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-left .dot {
+  width: 30px; height: 30px; background: var(--green);
+  border-radius: 8px; display: flex;
+  align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700;
+}
+.topbar-left span { font-size: 16px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.balance-pill {
+  background: var(--green-l); color: var(--green);
+  padding: 6px 14px; border-radius: 22px;
+  font-size: 13px; font-weight: 700;
+  font-family: 'DM Mono', monospace; cursor: pointer; transition: all 0.18s;
+  border: 1px solid transparent;
+}
+.balance-pill:active { background: var(--green); color: white; }
+.btn-logout {
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 12px; color: var(--text2);
+  cursor: pointer; font-family: inherit; transition: all 0.18s;
+}
+.btn-logout:active { border-color: var(--red); color: var(--red); }
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex; background: white;
+  border-bottom: 1px solid var(--border); padding: 0 8px;
+}
+.nav-tab {
+  flex: 1; padding: 13px 4px; font-size: 13px; font-weight: 500; text-align: center;
+  color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.18s; white-space: nowrap;
+}
+.nav-tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+
+.page { display: none; padding: 18px 16px 40px; max-width: 560px; margin: 0 auto; }
+.page.active { display: block; }
+
+.sec-label {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px;
+}
+
+/* ══════════════════════════════════════
+   ADD NUMBER CARD
+══════════════════════════════════════ */
+.add-card {
+  background: white; border: 1.5px solid var(--green-m);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 22px;
+  box-shadow: 0 2px 12px rgba(61,110,78,0.07);
+}
+.add-card-title {
+  font-size: 13px; font-weight: 700; color: var(--green);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+}
+
+/* Country code + number row */
+.phone-row {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.country-select-wrap {
+  position: relative; flex-shrink: 0;
+}
+.country-select-wrap select {
+  appearance: none; -webkit-appearance: none;
+  padding: 11px 28px 11px 10px;
+  border: 1.5px solid var(--border); border-radius: 9px;
+  font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace;
+  background: var(--bg); color: var(--text); outline: none;
+  cursor: pointer; transition: border-color 0.18s;
+  min-width: 100px;
+}
+.country-select-wrap::after {
+  content: '▾'; position: absolute; right: 9px; top: 50%;
+  transform: translateY(-50%); font-size: 10px; color: var(--text3);
+  pointer-events: none;
+}
+.country-select-wrap select:focus { border-color: var(--green-m); background: white; }
+.number-input-wrap { flex: 1; position: relative; }
+.number-input-wrap input {
+  width: 100%; padding: 11px 12px;
+  border: 1.5px solid var(--border); border-radius: 9px;
+  font-size: 14px; font-family: 'DM Mono', monospace;
+  background: var(--bg); color: var(--text); outline: none; transition: all 0.18s;
+}
+.number-input-wrap input:focus { border-color: var(--green-m); background: white; }
+.number-preview {
+  font-size: 11px; color: var(--text3); margin-top: 4px; margin-bottom: 8px;
+  font-family: 'DM Mono', monospace; padding-left: 2px;
+}
+.number-preview span { color: var(--green); font-weight: 600; }
+
+.add-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.add-row select {
+  flex: 1; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 9px;
+  font-size: 13px; font-family: inherit;
+  background: var(--bg); color: var(--text); outline: none; transition: all 0.18s;
+}
+.add-row select:focus { border-color: var(--green-m); background: white; }
+
+.btn-add {
+  width: 100%; padding: 13px; background: var(--green);
+  color: white; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all 0.18s; letter-spacing: 0.01em;
+}
+.btn-add:active   { transform: scale(0.99); background: var(--green-dark); }
+.btn-add:disabled { background: var(--green-m); cursor: not-allowed; }
+
+/* ── PROCESSING STATE (replaces SSE log) ── */
+.add-processing {
+  display: none; margin-top: 14px;
+  background: var(--bg2); border-radius: 11px; padding: 20px 16px;
+  text-align: center;
+}
+.proc-spinner {
+  width: 36px; height: 36px; margin: 0 auto 12px;
+  border: 3px solid var(--green-l);
+  border-top-color: var(--green); border-radius: 50%;
+  animation: rot 0.8s linear infinite;
+}
+.proc-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.proc-sub   { font-size: 12px; color: var(--text3); }
+
+/* ── PAIRING CODE BOX ── */
+.pair-box {
+  display: none; margin-top: 14px;
+  background: linear-gradient(135deg, var(--green-l), #e8f5ee);
+  border: 1.5px solid var(--green-m); border-radius: 14px; padding: 20px 16px;
+  text-align: center;
+}
+.pair-label  { font-size: 10px; font-weight: 800; color: var(--green); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+.pair-code-wrap {
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;
+}
+.pair-code {
+  font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 600;
+  color: var(--green); letter-spacing: 0.18em;
+}
+.pair-copy-btn {
+  background: var(--green); color: white; border: none;
+  border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.pair-copy-btn:active { background: var(--green-dark); transform: scale(0.96); }
+.pair-copy-btn.copied { background: #1a7a4a; }
+.pair-timer { font-size: 12px; color: var(--text2); margin-bottom: 10px; font-weight: 500; }
+.pair-timer.expiring { color: var(--red); }
+.pair-hint {
+  font-size: 12px; color: var(--text2); padding: 10px 12px;
+  background: white; border-radius: 9px; line-height: 1.6; text-align: left;
+}
+.pair-hint b { color: var(--green); }
+
+/* ── NUMBER CARDS ── */
+.numbers-list { display: flex; flex-direction: column; gap: 10px; }
+.num-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 15px 16px; transition: box-shadow 0.18s;
+}
+.num-card.is-removed { border-color: #f0c0c0; background: var(--red-l); }
+.num-card.is-pending { border-color: #e8d090; background: var(--yellow-l); }
+.num-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.num-number { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 600; }
+.badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+.badge-active  { background: var(--green-l); color: var(--green); }
+.badge-pending { background: var(--yellow-l); color: var(--yellow); }
+.badge-removed { background: var(--red-l); color: var(--red); }
+.num-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text3); margin-bottom: 10px; }
+.num-meta b { color: var(--text2); }
+.num-actions { display: flex; gap: 8px; }
+.btn-relogin {
+  flex: 1; padding: 9px 12px; background: var(--green-l); color: var(--green);
+  border: 1px solid var(--green-m); border-radius: 9px;
+  font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.18s;
+}
+.btn-relogin:active { background: var(--green); color: white; }
+.btn-rm {
+  padding: 9px 14px; background: white; color: var(--red);
+  border: 1px solid #f0c0c0; border-radius: 9px;
+  font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.18s;
+}
+.btn-rm:active { background: var(--red); color: white; }
+
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; line-height: 1.6; }
+.empty-state .eicon { font-size: 38px; margin-bottom: 10px; }
+
+/* ══════════════════════════════════════
+   TASKS PAGE
+══════════════════════════════════════ */
+.history-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.history-head { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+.task-item { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.task-item:last-child { border-bottom: none; }
+.task-item .ti-num  { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); font-weight: 500; }
+.task-item .ti-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.task-item .ti-earn { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--green); }
+
+/* ══════════════════════════════════════
+   WITHDRAW PAGE
+══════════════════════════════════════ */
+.balance-hero {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+  border-radius: 18px; padding: 24px 22px; color: white;
+  margin-bottom: 18px; position: relative; overflow: hidden;
+}
+.balance-hero::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 130px; height: 130px; background: rgba(255,255,255,0.06); border-radius: 50%;
+}
+.balance-hero::after {
+  content: ''; position: absolute; bottom: -40px; right: 30px;
+  width: 100px; height: 100px; background: rgba(255,255,255,0.04); border-radius: 50%;
+}
+.balance-hero .blabel { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+.balance-hero .bamt  { font-family: 'DM Mono', monospace; font-size: 36px; font-weight: 600; letter-spacing: 0.02em; }
+.balance-hero .bsub  { font-size: 12px; opacity: 0.6; margin-top: 5px; }
+
+.withdraw-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+}
+.withdraw-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.withdraw-card h3 .wicon { width: 30px; height: 30px; background: var(--green-l); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+/* Method grid */
+.method-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.method-opt {
+  padding: 10px 6px; text-align: center;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; transition: all 0.18s;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  user-select: none;
+}
+.method-opt:active { transform: scale(0.96); }
+.method-opt.selected { border-color: var(--green); background: var(--green-l); color: var(--green); }
+.method-opt .micon { font-size: 22px; display: block; margin-bottom: 4px; }
+.method-opt .mname { font-weight: 700; display: block; font-size: 12px; }
+.method-opt .mnet  { font-size: 10px; color: var(--text3); display: block; margin-top: 2px; }
+.method-opt.selected .mnet { color: var(--green-m); }
+.method-loading { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; grid-column: 1/-1; }
+.method-empty   { text-align: center; padding: 24px; color: var(--text3); font-size: 13px; grid-column: 1/-1; }
+
+/* Amount input with BDT label */
+.w-field { margin-bottom: 14px; }
+.w-field label { display: block; font-size: 11px; font-weight: 700; color: var(--text3); margin-bottom: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.w-input-wrap { position: relative; }
+.w-input-wrap input {
+  width: 100%; padding: 12px 50px 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 16px; font-family: 'DM Mono', monospace;
+  background: var(--bg); color: var(--text); outline: none; transition: all 0.18s;
+}
+.w-input-wrap input:focus { border-color: var(--green-m); background: white; }
+.w-currency-badge {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; font-weight: 700; color: var(--text3);
+  font-family: 'DM Mono', monospace; pointer-events: none;
+}
+.w-plain-input {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: inherit;
+  background: var(--bg); color: var(--text); outline: none; transition: all 0.18s;
+}
+.w-plain-input:focus { border-color: var(--green-m); background: white; }
+
+/* Live conversion preview */
+.conversion-box {
+  display: none; background: var(--bg2); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 14px; font-size: 13px; line-height: 1.9;
+}
+.conversion-box .conv-row { display: flex; justify-content: space-between; align-items: center; }
+.conversion-box .conv-label { color: var(--text3); font-size: 12px; }
+.conversion-box .conv-val   { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text); font-size: 13px; }
+.conversion-box .conv-val.green { color: var(--green); }
+.conversion-box .conv-updated { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+.withdraw-info {
+  background: var(--bg2); border-radius: 10px; padding: 12px 14px;
+  font-size: 12.5px; color: var(--text2); line-height: 1.75; margin-top: 14px;
+}
+.withdraw-info b { color: var(--text); }
+
+/* Withdrawal history */
+.history-item {
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item .hi-left .hi-method { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; }
+.history-item .hi-left .hi-date   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.history-item .hi-right            { text-align: right; }
+.history-item .hi-amt  { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 700; color: var(--green); }
+.history-item .hi-sub  { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 1px; }
+.history-item .hi-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 3px; }
+.hi-status.pending   { color: var(--yellow); }
+.hi-status.processed { color: var(--green); }
+.hi-status.rejected  { color: var(--red); }
+
+/* ══════════════════════════════════════
+   SPINNER + TOAST
+══════════════════════════════════════ */
+.spin {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white; border-radius: 50%;
+  animation: rot 0.65s linear infinite; vertical-align: middle; margin-right: 6px;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+#toast {
+  position: fixed; bottom: calc(28px + var(--safe-bottom)); left: 50%;
+  transform: translateX(-50%) translateY(90px);
+  padding: 11px 24px; border-radius: 24px;
+  font-size: 13.5px; font-weight: 600; z-index: 999; white-space: nowrap;
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none;
+  background: var(--text); color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+#toast.show  { transform: translateX(-50%) translateY(0); }
+#toast.green { background: var(--green); }
+#toast.red   { background: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="logo">WS</div>
+      <h1>WTS Platform</h1>
+      <p>Task earning platform</p>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchTab('register')">Register</div>
+      </div>
+
+      <!-- Login -->
+      <div id="login-form">
+        <div class="field">
+          <label>Username or Email</label>
+          <input id="l-user" type="text" placeholder="Username or email address" autocomplete="username" inputmode="email">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <button class="btn-main" id="login-btn" onclick="doLogin()">Sign In</button>
+      </div>
+
+      <!-- Register -->
+      <div id="register-form" style="display:none">
+        <div class="field">
+          <label>Username</label>
+          <input id="r-user" type="text" placeholder="Choose a username" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="r-email" type="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="r-pass" type="password" placeholder="Min 6 characters" autocomplete="new-password"
+            onkeydown="if(event.key==='Enter') doRegister()">
+        </div>
+        <button class="btn-main" id="register-btn" onclick="doRegister()">Create Account</button>
+      </div>
+
+      <div class="auth-msg" id="auth-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TERMS MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="terms-modal">
+  <div class="terms-sheet">
+    <div class="terms-head">
+      <h3>Terms &amp; Conditions</h3>
+      <p>Please scroll to the bottom to continue</p>
+    </div>
+    <div class="terms-body" id="terms-body" onscroll="checkTermsScroll()">
+      Loading terms...
+    </div>
+    <div class="terms-foot">
+      <div class="scroll-note" id="scroll-note">↓ Scroll down to read all terms</div>
+      <button id="agree-btn" disabled onclick="agreeTerms()">I Agree &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP SCREEN
+══════════════════════════════════════ -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="dot">WS</div>
+      <span>WTS Platform</span>
+    </div>
+    <div class="topbar-right">
+      <div class="balance-pill" id="bal-pill" onclick="switchPage('withdraw')" title="Tap to withdraw">$0.000000</div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchPage('home')">📱 Numbers</div>
+    <div class="nav-tab" onclick="switchPage('tasks')">📋 Tasks</div>
+    <div class="nav-tab" onclick="switchPage('withdraw')">💸 Withdraw</div>
+  </div>
+
+  <!-- ── HOME PAGE ── -->
+  <div class="page active" id="page-home">
+    <div class="sec-label">Add New Number</div>
+    <div class="add-card">
+      <div class="add-card-title">📲 WhatsApp Number</div>
+
+      <!-- Country code + number input -->
+      <div class="phone-row">
+        <div class="country-select-wrap">
+          <select id="country-code" onchange="updateNumberPreview()">
+            <option value="880">🇧🇩 +880</option>
+            <option value="91">🇮🇳 +91</option>
+            <option value="92">🇵🇰 +92</option>
+            <option value="94">🇱🇰 +94</option>
+            <option value="977">🇳🇵 +977</option>
+            <option value="95">🇲🇲 +95</option>
+            <option value="60">🇲🇾 +60</option>
+            <option value="62">🇮🇩 +62</option>
+            <option value="63">🇵🇭 +63</option>
+            <option value="66">🇹🇭 +66</option>
+            <option value="84">🇻🇳 +84</option>
+            <option value="65">🇸🇬 +65</option>
+            <option value="971">🇦🇪 +971</option>
+            <option value="966">🇸🇦 +966</option>
+            <option value="20">🇪🇬 +20</option>
+            <option value="234">🇳🇬 +234</option>
+            <option value="254">🇰🇪 +254</option>
+            <option value="255">🇹🇿 +255</option>
+            <option value="256">🇺🇬 +256</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+          </select>
+        </div>
+        <div class="number-input-wrap">
+          <input id="wa-num" type="tel" inputmode="numeric"
+            placeholder="Number without code"
+            oninput="updateNumberPreview()"
+            onkeydown="if(event.key==='Enter') addNumber()">
+        </div>
+      </div>
+      <div class="number-preview" id="number-preview">Full number: <span>—</span></div>
+
+      <div class="add-row">
+        <select id="acc-type">
+          <option value="Personal">👤 Personal</option>
+          <option value="Business">💼 Business</option>
+        </select>
+        <select id="limit-sel">
+          <option value="1">Limit: 1/day</option>
+          <option value="3">Limit: 3/day</option>
+          <option value="5">Limit: 5/day</option>
+          <option value="7">Limit: 7/day</option>
+          <option value="9">Limit: 9/day</option>
+          <option value="10">Limit: 10/day</option>
+          <option value="20">Limit: 20/day</option>
+          <option value="30">Limit: 30/day</option>
+          <option value="50">Limit: 50/day</option>
+          <option value="NoLimit">No Limit</option>
+        </select>
+      </div>
+
+      <button class="btn-add" id="add-btn" onclick="addNumber()">Add Number</button>
+
+      <!-- Processing state (no more SSE log) -->
+      <div class="add-processing" id="add-processing">
+        <div class="proc-spinner"></div>
+        <div class="proc-title" id="proc-title">Connecting...</div>
+        <div class="proc-sub" id="proc-sub">Please wait while we set up your number</div>
+      </div>
+
+      <!-- Pairing code box -->
+      <div class="pair-box" id="pair-box">
+        <div class="pair-label">WhatsApp Pairing Code</div>
+        <div class="pair-code-wrap">
+          <div class="pair-code" id="pair-code">--------</div>
+          <button class="pair-copy-btn" id="copy-btn" onclick="copyPairCode()">
+            📋 Copy
+          </button>
+        </div>
+        <div class="pair-timer" id="pair-timer">Valid for 3:00</div>
+        <div class="pair-hint">
+          <b>How to link:</b> Open WhatsApp → Settings → Linked Devices → Link a Device → Enter this code
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-label">My Numbers (<span id="num-count">0</span>)</div>
+    <div class="numbers-list" id="numbers-list">
+      <div class="empty-state"><div class="eicon">📱</div>Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── TASKS PAGE ── -->
+  <div class="page" id="page-tasks">
+    <div class="sec-label">Task History</div>
+    <div class="history-card" id="tasks-list">
+      <div class="empty-state"><div class="eicon">📋</div>Loading tasks...</div>
+    </div>
+  </div>
+
+  <!-- ── WITHDRAW PAGE ── -->
+  <div class="page" id="page-withdraw">
+    <div class="balance-hero">
+      <div class="blabel">Available Balance</div>
+      <div class="bamt" id="w-balance">$0.000000</div>
+      <div class="bsub" id="w-balance-bdt">≈ ৳0.00</div>
+    </div>
+
+    <div class="withdraw-card">
+      <h3><div class="wicon">💸</div>Request Withdrawal</h3>
+
+      <div class="sec-label" style="margin-bottom:8px">Select Method</div>
+      <div class="method-grid" id="method-grid">
+        <div class="method-loading">Loading methods...</div>
+      </div>
+
+      <div class="w-field">
+        <label id="account-details-label">Account Details</label>
+        <input class="w-plain-input" id="w-addr" type="text" placeholder="Select a method first" disabled>
+      </div>
+
+      <div class="w-field">
+        <label>Amount (BDT ৳)</label>
+        <div class="w-input-wrap">
+          <input id="w-amt-bdt" type="number" inputmode="decimal" placeholder="0" step="1" min="0"
+            oninput="onAmountInput()">
+          <span class="w-currency-badge">BDT</span>
+        </div>
+      </div>
+
+      <!-- Live conversion preview -->
+      <div class="conversion-box" id="conversion-box">
+        <div class="conv-row">
+          <span class="conv-label">USD Value</span>
+          <span class="conv-val green" id="conv-usd">$0.00</span>
+        </div>
+        <div class="conv-row" id="conv-crypto-row" style="display:none">
+          <span class="conv-label" id="conv-crypto-label">You get</span>
+          <span class="conv-val" id="conv-crypto">0</span>
+        </div>
+        <div class="conv-updated" id="conv-updated"></div>
+      </div>
+
+      <button class="btn-main" id="w-btn" onclick="doWithdraw()">Request Withdrawal</button>
+
+      <div class="withdraw-info" id="w-info">
+        Select a method above to see details.
+      </div>
+    </div>
+
+    <div class="sec-label">Withdrawal History</div>
+    <div class="history-card" id="w-history">
+      <div class="empty-state" style="padding:24px">
+        <div class="eicon">💳</div>No withdrawals yet
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+const CF = "https://broken-hat-0702.moeenu001-f36.workers.dev";
+const TG = "https://w5sgg.onrender.com";
+
+let token         = localStorage.getItem("wts_token") || "";
+let userId        = localStorage.getItem("wts_uid")   || "";
+let selMethodId   = null;
+let selMethodData = null;
+let timerInterval = null;
+let withdrawMethods = [];
+let rates = { usd_to_bdt: 0, usd_to_usdt: 1, usd_to_trx: 0, bdt_to_usd: 0 };
+
+// ══════════════════════════════════════
+// PWA SERVICE WORKER REGISTRATION
+// ══════════════════════════════════════
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+window.onload = () => {
+  if (token && userId) {
+    showApp();
+  } else {
+    const last = localStorage.getItem("wts_lastuser");
+    switchTab(last ? "login" : "register");
+    if (last) document.getElementById("l-user").value = last;
+  }
+};
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+function switchTab(tab) {
+  document.getElementById("login-form").style.display    = tab === "login"    ? "block" : "none";
+  document.getElementById("register-form").style.display = tab === "register" ? "block" : "none";
+  document.querySelectorAll(".auth-tab").forEach((t, i) => {
+    t.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "register"));
+  });
+  setAuthMsg("", "");
+}
+
+async function doLogin() {
+  const identifier = document.getElementById("l-user").value.trim();
+  const password   = document.getElementById("l-pass").value;
+  if (!identifier || !password) return setAuthMsg("Fill in all fields", "err");
+
+  const btn = document.getElementById("login-btn");
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Signing in...';
+
+  try {
+    const res  = await fetch(`${CF}/login`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ identifier, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Login failed");
+    saveAuth(data.token, data.user_id, identifier);
+    showApp();
+  } catch(e) {
+    setAuthMsg(e.message, "err");
+  }
+  btn.disabled  = false;
+  btn.innerHTML = "Sign In";
+}
+
+async function doRegister() {
+  const username = document.getElementById("r-user").value.trim();
+  const email    = document.getElementById("r-email").value.trim();
+  const password = document.getElementById("r-pass").value;
+
+  if (!username || !email || !password) return setAuthMsg("Fill in all fields", "err");
+  if (!email.includes("@"))             return setAuthMsg("Enter a valid email", "err");
+  if (password.length < 6)             return setAuthMsg("Password must be 6+ characters", "err");
+
+  const btn = document.getElementById("register-btn");
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Creating account...';
+
+  try {
+    const res  = await fetch(`${CF}/register`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Registration failed");
+    saveAuth(data.token, data.user_id, username);
+    if (!localStorage.getItem("wts_agreed")) {
+      await loadAndShowTerms();
+    } else {
+      showApp();
+    }
+  } catch(e) {
+    setAuthMsg(e.message, "err");
+  }
+  btn.disabled  = false;
+  btn.innerHTML = "Create Account";
+}
+
+function saveAuth(t, uid, identifier) {
+  token = t; userId = uid;
+  localStorage.setItem("wts_token", t);
+  localStorage.setItem("wts_uid", uid);
+  localStorage.setItem("wts_lastuser", identifier);
+}
+
+function setAuthMsg(msg, type) {
+  const el = document.getElementById("auth-msg");
+  el.textContent = msg;
+  el.className   = "auth-msg " + type;
+}
+
+function doLogout() {
+  token = ""; userId = "";
+  localStorage.removeItem("wts_token");
+  localStorage.removeItem("wts_uid");
+  document.getElementById("app-screen").style.display  = "none";
+  document.getElementById("auth-screen").style.display = "flex";
+}
+
+// ══════════════════════════════════════
+// TERMS
+// ══════════════════════════════════════
+async function loadAndShowTerms() {
+  document.getElementById("terms-modal").classList.add("show");
+  const body = document.getElementById("terms-body");
+  body.textContent = "Loading...";
+  try {
+    const res  = await fetch(`${CF}/app-content?key=terms`);
+    const data = await res.json();
+    body.textContent = data.value || "No terms available.";
+  } catch(e) {
+    body.textContent = "Could not load terms. Please try again.";
+  }
+  const btn  = document.getElementById("agree-btn");
+  const note = document.getElementById("scroll-note");
+  btn.disabled = true;
+  btn.classList.remove("ready");
+  note.textContent = "↓ Scroll down to read all terms";
+}
+
+function checkTermsScroll() {
+  const body = document.getElementById("terms-body");
+  const btn  = document.getElementById("agree-btn");
+  const note = document.getElementById("scroll-note");
+  if (body.scrollTop + body.clientHeight >= body.scrollHeight - 15) {
+    btn.disabled = false;
+    btn.classList.add("ready");
+    note.textContent = "✓ You've read all terms";
+  }
+}
+
+function agreeTerms() {
+  localStorage.setItem("wts_agreed", "1");
+  document.getElementById("terms-modal").classList.remove("show");
+  showApp();
+}
+
+// ══════════════════════════════════════
+// APP
+// ══════════════════════════════════════
+function showApp() {
+  document.getElementById("auth-screen").style.display = "none";
+  document.getElementById("app-screen").style.display  = "block";
+  loadAll();
+  loadRates();
+  setInterval(loadAll, 15000);
+  setInterval(loadRates, 5 * 60 * 1000); // refresh rates every 5 mins
+}
+
+async function loadAll() {
+  await Promise.all([loadBalance(), loadNumbers()]);
+}
+
+async function loadBalance() {
+  try {
+    const res  = await fetch(`${CF}/user-data`, { headers: {"Authorization": "Bearer " + token} });
+    const data = await res.json();
+    if (data.balance !== undefined) {
+      const usd = parseFloat(data.balance);
+      document.getElementById("bal-pill").textContent  = `$${usd.toFixed(4)}`;
+      document.getElementById("w-balance").textContent = `$${usd.toFixed(6)}`;
+      // Show BDT equivalent in hero
+      if (rates.usd_to_bdt > 0) {
+        document.getElementById("w-balance-bdt").textContent =
+          `≈ ৳${(usd * rates.usd_to_bdt).toFixed(2)}`;
+      }
+    }
+  } catch(e) {}
+}
+
+async function loadRates() {
+  try {
+    const res  = await fetch(`${CF}/rates`);
+    const data = await res.json();
+    if (data.usd_to_bdt > 0) {
+      rates = data;
+      // Update balance BDT display if already loaded
+      const balEl = document.getElementById("w-balance");
+      const usd   = parseFloat(balEl.textContent.replace("$", "") || "0");
+      if (usd > 0 && rates.usd_to_bdt > 0) {
+        document.getElementById("w-balance-bdt").textContent =
+          `≈ ৳${(usd * rates.usd_to_bdt).toFixed(2)}`;
+      }
+      onAmountInput(); // recalculate conversion if user has typed
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+// COUNTRY CODE + NUMBER PREVIEW
+// ══════════════════════════════════════
+function updateNumberPreview() {
+  const code   = document.getElementById("country-code").value;
+  const num    = document.getElementById("wa-num").value.trim();
+  const prev   = document.getElementById("number-preview");
+  const numStr = num.replace(/\D/g, ""); // digits only
+
+  if (numStr) {
+    prev.innerHTML = `Full number: <span>+${code}${numStr}</span>`;
+  } else {
+    prev.innerHTML = `Full number: <span>—</span>`;
+  }
+}
+
+function getFullNumber() {
+  const code = document.getElementById("country-code").value;
+  const num  = document.getElementById("wa-num").value.trim().replace(/\D/g, "");
+  return num ? `${code}${num}` : null;
+}
+
+// ══════════════════════════════════════
+// ADD NUMBER
+// ══════════════════════════════════════
+async function addNumber() {
+  const fullNumber = getFullNumber();
+  if (!fullNumber) return showToast("Enter a WhatsApp number", "red");
+  if (fullNumber.length < 8) return showToast("Number looks too short", "red");
+
+  const accType = document.getElementById("acc-type").value;
+  const limit   = document.getElementById("limit-sel").value;
+  const btn     = document.getElementById("add-btn");
+  const proc    = document.getElementById("add-processing");
+  const pairBox = document.getElementById("pair-box");
+
+  btn.disabled          = true;
+  btn.innerHTML         = '<span class="spin"></span>Adding...';
+  proc.style.display    = "block";
+  pairBox.style.display = "none";
+  document.getElementById("proc-title").textContent = "Connecting to server...";
+  document.getElementById("proc-sub").textContent   = "Setting up your WhatsApp number";
+  clearInterval(timerInterval);
+
+  try {
+    const res = await fetch(`${TG}/add-number`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        whatsapp_number: fullNumber,
+        account_type: accType,
+        limit,
+        user_id: userId
+      })
+    });
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let lastEvt   = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value);
+      for (const line of text.split("\n")) {
+        if (line.startsWith("event:")) lastEvt = line.replace("event:", "").trim();
+        if (line.startsWith("data:")) {
+          const d = line.replace("data:", "").trim();
+
+          if (lastEvt === "status") {
+            // Show clean status messages instead of raw log
+            document.getElementById("proc-title").textContent = d;
+
+          } else if (lastEvt === "pairing_code") {
+            proc.style.display    = "none";
+            pairBox.style.display = "block";
+            document.getElementById("pair-code").textContent = d;
+            document.getElementById("copy-btn").textContent  = "📋 Copy";
+            document.getElementById("copy-btn").classList.remove("copied");
+            startPairTimer(180);
+
+          } else if (lastEvt === "success") {
+            proc.style.display    = "none";
+            pairBox.style.display = "none";
+            clearInterval(timerInterval);
+            showToast("Number added successfully! ✓", "green");
+            document.getElementById("wa-num").value = "";
+            updateNumberPreview();
+            setTimeout(loadNumbers, 2000);
+
+          } else if (lastEvt === "error") {
+            proc.style.display    = "none";
+            pairBox.style.display = "none";
+            clearInterval(timerInterval);
+            showToast(d, "red");
+          }
+        }
+      }
+    }
+  } catch(e) {
+    proc.style.display = "none";
+    showToast("Connection error: " + e.message, "red");
+  }
+
+  btn.disabled  = false;
+  btn.innerHTML = "Add Number";
+}
+
+function startPairTimer(secs) {
+  clearInterval(timerInterval);
+  let remaining = secs;
+  const el = document.getElementById("pair-timer");
+  el.classList.remove("expiring");
+
+  timerInterval = setInterval(() => {
+    remaining--;
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    el.textContent = `Valid for ${m}:${String(s).padStart(2, "0")}`;
+
+    if (remaining <= 30) el.classList.add("expiring");
+
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      el.textContent = "⚠️ Code expired — please try again";
+      document.getElementById("pair-box").style.display = "none";
+      document.getElementById("add-btn").disabled       = false;
+      document.getElementById("add-btn").innerHTML      = "Add Number";
+    }
+  }, 1000);
+}
+
+function copyPairCode() {
+  const code = document.getElementById("pair-code").textContent;
+  const btn  = document.getElementById("copy-btn");
+  if (!code || code === "--------") return;
+
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = "✓ Copied!";
+    btn.classList.add("copied");
+    showToast("Code copied!", "green");
+    setTimeout(() => {
+      btn.textContent = "📋 Copy";
+      btn.classList.remove("copied");
+    }, 2500);
+  }).catch(() => {
+    // Fallback for older browsers
+    const el = document.createElement("textarea");
+    el.value = code;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    document.body.removeChild(el);
+    btn.textContent = "✓ Copied!";
+    btn.classList.add("copied");
+    showToast("Code copied!", "green");
+    setTimeout(() => {
+      btn.textContent = "📋 Copy";
+      btn.classList.remove("copied");
+    }, 2500);
+  });
+}
+
+// ══════════════════════════════════════
+// NUMBERS
+// ══════════════════════════════════════
+async function loadNumbers() {
+  try {
+    const res  = await fetch(`${CF}/numbers`, { headers: {"Authorization": "Bearer " + token} });
+    const data = await res.json();
+    renderNumbers(Array.isArray(data) ? data : []);
+  } catch(e) {}
+}
+
+function renderNumbers(nums) {
+  const list = document.getElementById("numbers-list");
+  document.getElementById("num-count").textContent = nums.length;
+
+  if (!nums.length) {
+    list.innerHTML = `<div class="empty-state"><div class="eicon">📱</div>No numbers added yet.<br>Add your first number above.</div>`;
+    return;
+  }
+  list.innerHTML = nums.map(n => {
+    const removed = n.is_removed || n.status === "failed";
+    const pending = n.status === "pending" && !removed;
+    const cardCls = removed ? "is-removed" : pending ? "is-pending" : "";
+    const badge   = removed ? `<span class="badge badge-removed">Disconnected</span>`
+                  : pending ? `<span class="badge badge-pending">Pending</span>`
+                  :           `<span class="badge badge-active">Active</span>`;
+    const lim   = n.daily_limit === 999 || n.daily_limit === "NoLimit" ? "No Limit" : `${n.daily_limit}/day`;
+    const added = n.added_at ? new Date(n.added_at).toLocaleDateString() : "—";
+    return `
+      <div class="num-card ${cardCls}">
+        <div class="num-top">
+          <div class="num-number">+${n.whatsapp_number}</div>
+          ${badge}
+        </div>
+        <div class="num-meta">
+          <span><b>Type:</b> ${n.account_type || "—"}</span>
+          <span><b>Limit:</b> ${lim}</span>
+          <span><b>Added:</b> ${added}</span>
+        </div>
+        ${removed ? `
+          <div class="num-actions">
+            <button class="btn-relogin" onclick="reloginNumber('${n.whatsapp_number}','${n.account_type}',${n.daily_limit})">🔄 Re-login</button>
+            <button class="btn-rm" onclick="removeNumber('${n.id}')">🗑 Remove</button>
+          </div>` : ""}
+      </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════
+// PAGE NAV
+// ══════════════════════════════════════
+function switchPage(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(`page-${page}`).classList.add("active");
+  const idx = ["home","tasks","withdraw"].indexOf(page);
+  document.querySelectorAll(".nav-tab")[idx]?.classList.add("active");
+  if (page === "tasks")    loadTasks();
+  if (page === "withdraw") { loadWithdrawMethods(); loadWithdrawHistory(); loadRates(); }
+}
+
+// ══════════════════════════════════════
+// RELOGIN + REMOVE
+// ══════════════════════════════════════
+function reloginNumber(number, accType, limit) {
+  switchPage("home");
+  // Parse country code from number
+  const str = String(number);
+  // Try to match known codes (longest first to avoid partial matches)
+  const knownCodes = ["880","977","971","966","234","256","255","254","91","92","94","95","60","62","63","66","84","65","20","44","1"];
+  let matched = false;
+  for (const code of knownCodes) {
+    if (str.startsWith(code)) {
+      document.getElementById("country-code").value = code;
+      document.getElementById("wa-num").value = str.slice(code.length);
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) {
+    document.getElementById("wa-num").value = str;
+  }
+
+  document.getElementById("acc-type").value  = accType;
+  const limitVal = (limit === 999 || limit === "999") ? "NoLimit" : String(limit);
+  document.getElementById("limit-sel").value = limitVal;
+  updateNumberPreview();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("Number filled — tap Add Number to re-login", "");
+}
+
+async function removeNumber(numberId) {
+  if (!confirm("Remove this number completely from your account?")) return;
+  try {
+    const res  = await fetch(`${CF}/remove-number?id=${numberId}`, {
+      method: "DELETE",
+      headers: {"Authorization": "Bearer " + token}
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed");
+    showToast("Number removed", "");
+    loadNumbers();
+  } catch(e) {
+    showToast("Failed: " + e.message, "red");
+  }
+}
+
+// ══════════════════════════════════════
+// TASKS
+// ══════════════════════════════════════
+async function loadTasks() {
+  const el = document.getElementById("tasks-list");
+  el.innerHTML = `<div class="empty-state" style="padding:32px"><div class="eicon">⏳</div>Loading...</div>`;
+  try {
+    const res  = await fetch(`${CF}/tasks`, { headers: {"Authorization": "Bearer " + token} });
+    const data = await res.json();
+    if (!data.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:32px"><div class="eicon">📋</div>No tasks yet.<br>Tasks appear here once your numbers complete work.</div>`;
+      return;
+    }
+    const totalEarned = data.reduce((s, t) => s + parseFloat(t.earnings_usd || 0), 0);
+    el.innerHTML =
+      `<div class="history-head">
+        <span>Recent Tasks (${data.length})</span>
+        <span style="color:var(--green);font-family:'DM Mono',monospace">+$${totalEarned.toFixed(4)}</span>
+      </div>` +
+      data.map(t => `
+        <div class="task-item">
+          <div>
+            <div class="ti-num">+${t.whatsapp_number || "—"}</div>
+            <div class="ti-date">${new Date(t.completed_at).toLocaleString()}</div>
+          </div>
+          <div class="ti-earn">+$${parseFloat(t.earnings_usd).toFixed(4)}</div>
+        </div>`).join("");
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:32px"><div class="eicon">❌</div>Failed to load</div>`;
+  }
+}
+
+// ══════════════════════════════════════
+// WITHDRAW METHODS
+// ══════════════════════════════════════
+async function loadWithdrawMethods() {
+  const grid = document.getElementById("method-grid");
+  grid.innerHTML = `<div class="method-loading">Loading methods...</div>`;
+  selMethodId = null; selMethodData = null;
+
+  try {
+    const res = await fetch(`${CF}/withdrawal-methods`);
+    withdrawMethods = await res.json();
+
+    if (!withdrawMethods.length) {
+      grid.innerHTML = `<div class="method-empty">No withdrawal methods available.</div>`;
+      return;
+    }
+
+    grid.innerHTML = withdrawMethods.map(m => {
+      const icons = { usdt: "🪙", trx: "⚡", bdt: "💳", usd: "💵" };
+      const icon  = icons[m.currency_mode] || (m.type === "crypto" ? "🪙" : "💳");
+      return `
+        <div class="method-opt" onclick="selectMethod('${m.id}', this)">
+          <span class="micon">${icon}</span>
+          <span class="mname">${m.name}</span>
+          ${m.network_or_label ? `<span class="mnet">${m.network_or_label}</span>` : ""}
+        </div>`;
+    }).join("");
+  } catch(e) {
+    grid.innerHTML = `<div class="method-empty">Failed to load methods.</div>`;
+  }
+}
+
+function selectMethod(id, el) {
+  selMethodId   = id;
+  selMethodData = withdrawMethods.find(m => m.id === id);
+
+  document.querySelectorAll(".method-opt").forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+
+  const addrInput = document.getElementById("w-addr");
+  const addrLabel = document.getElementById("account-details-label");
+
+  addrInput.disabled = false;
+
+  if (selMethodData) {
+    addrInput.placeholder = selMethodData.placeholder || "Enter your account details";
+    addrLabel.textContent = selMethodData.type === "crypto"
+      ? `${selMethodData.name} Wallet Address${selMethodData.network_or_label ? " (" + selMethodData.network_or_label + ")" : ""}`
+      : `${selMethodData.name} Account Number`;
+
+    const minAmt = parseFloat(selMethodData.min_amount || 1);
+    const minBdt = rates.usd_to_bdt > 0 ? (minAmt * rates.usd_to_bdt).toFixed(0) : "—";
+
+    document.getElementById("w-info").innerHTML = `
+      <b>Method:</b> ${selMethodData.name}${selMethodData.network_or_label ? " — " + selMethodData.network_or_label : ""}<br>
+      <b>Min withdrawal:</b> $${minAmt.toFixed(2)} (≈ ৳${minBdt})<br>
+      <b>Processing:</b> 24–72 hours<br>
+      <b>Note:</b> Always double-check your ${selMethodData.type === "crypto" ? "wallet address" : "account number"} — errors cannot be recovered.
+    `;
+
+    // Update conversion display
+    onAmountInput();
+  }
+}
+
+// ══════════════════════════════════════
+// LIVE CONVERSION
+// ══════════════════════════════════════
+function onAmountInput() {
+  const bdtVal  = parseFloat(document.getElementById("w-amt-bdt").value) || 0;
+  const convBox = document.getElementById("conversion-box");
+  const mode    = selMethodData?.currency_mode || null;
+
+  if (!mode || mode === "bdt") {
+    convBox.style.display = "none";
+    return;
+  }
+
+  if (bdtVal <= 0 || rates.bdt_to_usd <= 0) {
+    convBox.style.display = "none";
+    return;
+  }
+
+  const usdVal = bdtVal * rates.bdt_to_usd;
+  convBox.style.display = "block";
+  document.getElementById("conv-usd").textContent = `$${usdVal.toFixed(4)}`;
+
+  const cryptoRow   = document.getElementById("conv-crypto-row");
+  const cryptoLabel = document.getElementById("conv-crypto-label");
+  const cryptoVal   = document.getElementById("conv-crypto");
+
+  if (mode === "usdt") {
+    cryptoRow.style.display    = "flex";
+    cryptoLabel.textContent    = "You get (USDT)";
+    const usdtAmt              = usdVal * rates.usd_to_usdt;
+    cryptoVal.textContent      = `${usdtAmt.toFixed(4)} USDT`;
+
+  } else if (mode === "trx") {
+    cryptoRow.style.display    = "flex";
+    cryptoLabel.textContent    = "You get (TRX)";
+    const trxAmt               = usdVal * rates.usd_to_trx;
+    cryptoVal.textContent      = `${trxAmt.toFixed(2)} TRX`;
+
+  } else {
+    cryptoRow.style.display = "none";
+  }
+
+  if (rates.updated_at) {
+    const ago = Math.round((Date.now() - new Date(rates.updated_at)) / 60000);
+    document.getElementById("conv-updated").textContent =
+      `Rates updated ${ago < 2 ? "just now" : ago + " mins ago"}`;
+  }
+}
+
+// ══════════════════════════════════════
+// WITHDRAW
+// ══════════════════════════════════════
+async function doWithdraw() {
+  if (!selMethodId)
+    return showToast("Select a withdrawal method", "red");
+
+  const addr   = document.getElementById("w-addr").value.trim();
+  const bdtVal = parseFloat(document.getElementById("w-amt-bdt").value);
+
+  if (!addr)               return showToast("Enter your account details", "red");
+  if (!bdtVal || bdtVal <= 0) return showToast("Enter a valid amount", "red");
+  if (rates.bdt_to_usd <= 0)  return showToast("Exchange rates not loaded yet", "red");
+
+  // Convert BDT to USD for the actual request
+  const usdAmt = parseFloat((bdtVal * rates.bdt_to_usd).toFixed(6));
+  const minAmt = parseFloat(selMethodData?.min_amount || 1);
+
+  if (usdAmt < minAmt)
+    return showToast(`Min withdrawal is $${minAmt.toFixed(2)} (≈ ৳${(minAmt * rates.usd_to_bdt).toFixed(0)})`, "red");
+
+  const btn = document.getElementById("w-btn");
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Submitting...';
+
+  try {
+    const res  = await fetch(`${CF}/withdraw-request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({
+        amount:               usdAmt,
+        withdrawal_method_id: selMethodId,
+        account_details:      addr
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Request failed");
+    showToast("Withdrawal request submitted! ✓", "green");
+    document.getElementById("w-addr").value    = "";
+    document.getElementById("w-amt-bdt").value = "";
+    document.getElementById("conversion-box").style.display = "none";
+    loadBalance();
+    loadWithdrawHistory();
+  } catch(e) {
+    showToast(e.message, "red");
+  }
+  btn.disabled  = false;
+  btn.innerHTML = "Request Withdrawal";
+}
+
+// ══════════════════════════════════════
+// WITHDRAW HISTORY
+// ══════════════════════════════════════
+async function loadWithdrawHistory() {
+  const el = document.getElementById("w-history");
+  try {
+    const res  = await fetch(`${CF}/withdraw-history`, { headers: {"Authorization": "Bearer " + token} });
+    const data = await res.json();
+    if (!data.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:28px"><div class="eicon">💳</div>No withdrawals yet</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="history-head"><span>History (${data.length})</span></div>` +
+      data.map(w => {
+        const mode = w.currency_mode || "usd";
+        let subLine = "";
+        if (mode === "usdt" && w.crypto_amount)
+          subLine = `≈ ${w.crypto_amount} USDT`;
+        else if (mode === "trx" && w.crypto_amount)
+          subLine = `≈ ${w.crypto_amount} TRX`;
+        else if (mode === "bdt" && w.bdt_amount)
+          subLine = `≈ ৳${w.bdt_amount}`;
+
+        return `
+          <div class="history-item">
+            <div class="hi-left">
+              <div class="hi-method">${w.crypto_type || "—"}${w.network_or_label ? " · " + w.network_or_label : ""}</div>
+              <div class="hi-date">${new Date(w.requested_at).toLocaleString()}</div>
+            </div>
+            <div class="hi-right">
+              <div class="hi-amt">$${parseFloat(w.amount).toFixed(4)}</div>
+              ${subLine ? `<div class="hi-sub">${subLine}</div>` : ""}
+              <div class="hi-status ${w.status}">${w.status}</div>
+            </div>
+          </div>`;
+      }).join("");
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:28px"><div class="eicon">❌</div>Failed to load</div>`;
+  }
+}
+
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function showToast(msg, type) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className   = "show " + (type || "");
+  setTimeout(() => t.className = "", 3500);
+}
+</script>
+</body>
+</html>

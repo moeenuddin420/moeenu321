@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>G-Zone Admin (Fun Mode)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f3; padding: 20px; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: #01875f; border-bottom: 3px solid #01875f; padding-bottom: 10px; }
+        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #01875f; }
+        label { display: block; font-weight: bold; margin-top: 10px; color: #555; }
+        input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background: #01875f; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; width: 100%; margin-top: 10px; }
+        button:hover { background: #016b4a; transform: translateY(-2px); }
+        .review-box { background: white; border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px; position: relative; }
+        .del-btn { width: auto; background: #ff4d4d; padding: 5px 10px; font-size: 12px; position: absolute; top: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 G-Zone Admin (No Password)</h1>
+
+    <div class="card">
+        <h3>📱 App Identity</h3>
+        <label>Name</label><input type="text" id="appName">
+        <label>Icon Link</label><input type="text" id="appIcon">
+        <label>Rating</label><input type="text" id="appRating">
+        <label>Reviews Count</label><input type="text" id="appReviewCount">
+        <label>Downloads</label><input type="text" id="appDownloads">
+        <button onclick="saveCore()">Update App Info</button>
+    </div>
+
+    <div class="card">
+        <h3>🖼️ Preview Screenshots</h3>
+        <label>One URL per line</label>
+        <textarea id="appScreens" rows="4" placeholder="https://image1.jpg&#10;https://image2.jpg"></textarea>
+        <button onclick="saveScreens()">Update Screenshots</button>
+    </div>
+
+    <div class="card">
+        <h3>⭐ Custom Reviews</h3>
+        <div id="reviewsList"></div>
+        <hr>
+        <h4>Add New Fake Review</h4>
+        <input type="text" id="revName" placeholder="Reviewer Name">
+        <input type="text" id="revImg" placeholder="Profile Pic URL">
+        <input type="number" id="revStars" placeholder="Stars (1-5)">
+        <input type="text" id="revDate" placeholder="Date (e.g. Yesterday)">
+        <textarea id="revText" placeholder="Review message..."></textarea>
+        <button style="background:#444" onclick="addReview()">Add to list</button>
+        <button onclick="saveReviews()">Save All Reviews to Cloud</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://downloadpagr.moeenu001-f36.workers.dev/";
+    let currentReviews = [];
+
+    async function load() {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        document.getElementById('appName').value = data.app_name;
+        document.getElementById('appIcon').value = data.icon;
+        document.getElementById('appRating').value = data.rating;
+        document.getElementById('appReviewCount').value = data.reviews_count;
+        document.getElementById('appDownloads').value = data.downloads;
+        document.getElementById('appScreens').value = data.screenshots.join('\n');
+        currentReviews = data.reviews;
+        renderReviews();
+    }
+
+    function renderReviews() {
+        const list = document.getElementById('reviewsList');
+        list.innerHTML = currentReviews.map((r, i) => `
+            <div class="review-box">
+                <b>${r.name}</b> (${r.stars}⭐)<br><small>${r.text}</small>
+                <button class="del-btn" onclick="delReview(${i})">X</button>
+            </div>
+        `).join('');
+    }
+
+    function addReview() {
+        currentReviews.push({
+            name: document.getElementById('revName').value,
+            img: document.getElementById('revImg').value,
+            stars: document.getElementById('revStars').value,
+            date: document.getElementById('revDate').value,
+            text: document.getElementById('revText').value
+        });
+        renderReviews();
+    }
+
+    function delReview(i) { currentReviews.splice(i, 1); renderReviews(); }
+
+    async function send(type, payload) {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ type, payload })
+        });
+        const resData = await res.json();
+        if(resData.success) alert("Done! Changes are live.");
+    }
+
+    function saveCore() {
+        send("UPDATE_CORE", {
+            app_name: document.getElementById('appName').value,
+            icon: document.getElementById('appIcon').value,
+            rating: document.getElementById('appRating').value,
+            reviews_count: document.getElementById('appReviewCount').value,
+            downloads: document.getElementById('appDownloads').value
+        });
+    }
+
+    function saveScreens() {
+        const urls = document.getElementById('appScreens').value.split('\n').filter(u => u.trim() !== "");
+        send("UPDATE_SCREENSHOTS", urls);
+    }
+
+    function saveReviews() { send("UPDATE_REVIEWS", currentReviews); }
+
+    load();
+</script>
+</body>
+</html>

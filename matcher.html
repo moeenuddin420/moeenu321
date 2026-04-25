@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Template Matcher</title>
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+</head>
+<body>
+
+<h2>Upload Captcha</h2>
+<input type="file" id="inputImage">
+
+<h3>Upload Templates</h3>
+<input type="file" id="templates" multiple>
+
+<br><br>
+<button onclick="runMatch()">Run Match</button>
+
+<br><br>
+<canvas id="canvas"></canvas>
+
+<p id="result"></p>
+
+<script>
+let srcMat = null;
+
+document.getElementById("inputImage").onchange = function(e) {
+    let img = new Image();
+    img.src = URL.createObjectURL(e.target.files[0]);
+
+    img.onload = function() {
+        let canvas = document.getElementById("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        srcMat = cv.imread(canvas);
+    };
+};
+
+// Rotate image
+function rotateMat(mat, angle) {
+    let center = new cv.Point(mat.cols/2, mat.rows/2);
+    let M = cv.getRotationMatrix2D(center, angle, 1.0);
+    let dst = new cv.Mat();
+    let dsize = new cv.Size(mat.cols, mat.rows);
+    cv.warpAffine(mat, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+    return dst;
+}
+
+async function runMatch() {
+    if (!srcMat) {
+        alert("Upload captcha first");
+        return;
+    }
+
+    let files = document.getElementById("templates").files;
+
+    let bestScore = 0;
+    let secondBest = 0;
+    let bestLoc = {x:0, y:0};
+    let bestName = "";
+    let bestW = 0;
+    let bestH = 0;
+
+    for (let file of files) {
+
+        let img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        await new Promise(resolve => {
+            img.onload = function() {
+
+                let tmpCanvas = document.createElement("canvas");
+                tmpCanvas.width = img.width;
+                tmpCanvas.height = img.height;
+                let ctx = tmpCanvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+
+                let baseTpl = cv.imread(tmpCanvas);
+
+                let angles = [0, 45, 90, 135, 180];
+                let scales = [0.7, 1.0, 1.3];
+
+                for (let angle of angles) {
+
+                    let rotated = rotateMat(baseTpl, angle);
+
+                    for (let scale of scales) {
+
+                        let newW = Math.floor(rotated.cols * scale);
+                        let newH = Math.floor(rotated.rows * scale);
+
+                        if (newW < 10 || newH < 10) continue;
+                        if (newW > srcMat.cols || newH > srcMat.rows) continue;
+
+                        let resized = new cv.Mat();
+                        cv.resize(rotated, resized, new cv.Size(newW, newH));
+
+                        let result = new cv.Mat();
+                        cv.matchTemplate(srcMat, resized, result, cv.TM_CCOEFF_NORMED);
+
+                        let minMax = cv.minMaxLoc(result);
+
+                        let score = minMax.maxVal;
+
+                        if (score > bestScore) {
+                            secondBest = bestScore;
+
+                            bestScore = score;
+                            bestLoc = minMax.maxLoc;
+                            bestName = file.name;
+
+                            bestW = newW;
+                            bestH = newH;
+
+                        } else if (score > secondBest) {
+                            secondBest = score;
+                        }
+
+                        result.delete();
+                        resized.delete();
+                    }
+
+                    rotated.delete();
+                }
+
+                baseTpl.delete();
+                resolve();
+            };
+        });
+    }
+
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+
+    // redraw original
+    cv.imshow("canvas", srcMat);
+
+    let centerX = bestLoc.x + bestW / 2;
+    let centerY = bestLoc.y + bestH / 2;
+
+    // draw rectangle
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bestLoc.x, bestLoc.y, bestW, bestH);
+
+    // draw center
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 6, 0, 2*Math.PI);
+    ctx.fill();
+
+    let confidence = bestScore - secondBest;
+
+    document.getElementById("result").innerText =
+        "Template: " + bestName +
+        " | Score: " + bestScore.toFixed(3) +
+        " | Second: " + secondBest.toFixed(3) +
+        " | Diff: " + confidence.toFixed(3) +
+        " | X: " + Math.round(centerX) +
+        " | Y: " + Math.round(centerY);
+}
+</script>
+
+</body>
+</html>

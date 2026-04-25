@@ -1,0 +1,3113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - G-Zone</title>
+<!-- Library for FCM v1 Security -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.24/jsrsasign-all-min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary: #4361ee; --primary-hover: #3a56d4; 
+            --secondary: #3f37c9; 
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6;
+            --dark: #0f172a; --sidebar-bg: #1e293b; 
+            --light: #f8fafc; --border: #e2e8f0; --text: #334155; --text-muted: #64748b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
+        body { display: flex; height: 100vh; background: #f1f5f9; color: var(--text); overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: linear-gradient(180deg, var(--sidebar-bg) 0%, #0f172a 100%); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.1); z-index: 10; }
+        .brand { padding: 30px 25px; font-size: 22px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 12px; letter-spacing: 0.5px; color: #fff; }
+        .brand i { color: var(--primary); }
+        .menu { flex: 1; overflow-y: auto; padding: 20px 15px; }
+        .menu-item { padding: 14px 20px; margin-bottom: 5px; cursor: pointer; color: #94a3b8; display: flex; align-items: center; gap: 15px; transition: all 0.3s ease; font-weight: 500; border-radius: 10px; font-size: 14px; }
+        .menu-item:hover { background: rgba(255,255,255,0.08); color: #fff; transform: translateX(5px); }
+        .menu-item.active { background: var(--primary); color: #fff; box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4); }
+
+        /* CONTENT */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .header { background: #fff; padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .content-area { flex: 1; overflow-y: auto; padding: 30px; background: #f8fafc; }
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* UI ELEMENTS */
+        .card { background: #fff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid var(--border); transition: transform 0.2s; }
+        .card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .card-title { font-size: 18px; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 10px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select, textarea { width: 100%; padding: 12px 15px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; transition: 0.3s; background: #f8fafc; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1); }
+
+        /* BUTTONS */
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; color: white; text-decoration: none; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3); } .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--success); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .btn-danger { background: var(--danger); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-dark { background: var(--dark); }
+        .btn-info { background: var(--info); }
+        
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-icon { padding: 8px; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 6px; }
+
+        /* TABLES */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; font-size: 14px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); text-transform: uppercase; font-size: 12px; }
+        td { padding: 15px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f8fafc; }
+
+        .status-badge { padding: 5px 12px; border-radius: 30px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+        .badge-active { background: #dcfce7; color: #15803d; }
+        .badge-blocked { background: #fee2e2; color: #b91c1c; }
+        .badge-paid { background: #dcfce7; color: #15803d; }
+        .badge-pending { background: #fef3c7; color: #b45309; }
+
+        /* ACTION GROUPS */
+        .action-group { display: flex; gap: 8px; align-items: center; }
+        
+        /* CUSTOM TOGGLES */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8fafc; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); transition: 0.2s; }
+        .toggle-row:hover { border-color: var(--primary); background: #fff; }
+        .switch-btn { width: 60px; padding: 6px; text-align: center; border-radius: 30px; cursor: pointer; font-weight: bold; font-size: 11px; border: none; transition: 0.3s; }
+        .switch-on { background: #dcfce7; color: #15803d; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); } 
+        .switch-off { background: #fee2e2; color: #b91c1c; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); }
+        
+        /* MATCH LIST CARD */
+        .match-item { background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--border); padding: 15px; margin-bottom: 15px; border-radius: 8px; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .match-item:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .match-active { border-left-color: var(--success); }
+        .match-ongoing { border-left-color: var(--warning); }
+        .match-completed { border-left-color: var(--text-muted); }
+        
+        /* MODALS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal { background: #fff; width: 600px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; max-height: 90vh; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { padding: 20px 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 16px 16px 0 0; }
+        .modal-body { padding: 25px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 20px 25px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: flex-end; gap: 10px; border-radius: 0 0 16px 16px; }
+
+        /* ✅ UPDATED JUDGE SECTION STYLING */
+        .judge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .judge-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fcfcfc; transition: 0.2s; }
+        .judge-card:hover { border-color: var(--primary); background: #fff; }
+        .judge-user-header { border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 10px; }
+        .j-app-name { font-weight: 800; font-size: 14px; display: block; color: var(--dark); }
+        .j-game-name { font-size: 12px; color: var(--primary); font-weight: 600; }
+        .j-uid { font-size: 11px; color: var(--text-muted); font-family: monospace; display: block; margin-top: 2px; }
+        .j-input-wrapper { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 10px; border-radius: 8px; }
+        .j-input-wrapper label { margin: 0; font-size: 10px; }
+        .judge-inp { width: 100% !important; background: #fff !important; text-align: center; font-weight: 800; color: var(--primary); }
+
+        /* PARTICIPANTS VIEW STYLING */
+        .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .team-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; }
+        .team-header { background: #f8fafc; padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .team-code { font-size: 11px; background: #eff6ff; color: var(--primary); padding: 2px 6px; border-radius: 4px; }
+        .slot { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; border-bottom: 1px solid #f1f5f9; }
+        .slot:last-child { border-bottom: none; }
+        .leader-badge { color: #f59e0b; margin-right: 5px; font-size: 12px; }
+        .user-uid { color: var(--text-muted); font-size: 11px; font-family: monospace; }
+        .game-name-txt { color: var(--primary); font-weight: 600; font-size: 12px; }
+
+        /* Helper */
+        .text-primary { color: var(--primary); }
+        .text-monospace { font-family: monospace; background: #eff6ff; padding: 2px 6px; border-radius: 4px; color: var(--primary); }
+/* ==========================================
+           ADVANCED MESSAGE CENTER PREVIEW & HISTORY
+        ========================================== */
+        
+        /* The Phone Preview Box */
+        #mc-preview-phone {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        /* The Animation for the Popup inside the phone */
+        #mc-preview-content {
+            animation: mcPopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(6, 182, 212, 0.3) !important;
+        }
+
+        @keyframes mcPopIn {
+            from { transform: scale(0.8) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* Styling for the Sent Messages History cards */
+        #active-mc-list .card {
+            padding: 15px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #active-mc-list .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+
+        #active-mc-list h4 {
+            margin-top: 10px;
+            font-weight: 700;
+            color: var(--dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #active-mc-list small {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 10px;
+        }
+
+        /* Custom scrollbar for the message list if it gets long */
+        #active-mc-list {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 5px;
+        }    
+   </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><i class="fa-solid fa-gamepad"></i> G-ZONE ADMIN</div>
+        <div class="menu">
+            <div class="menu-item active" onclick="nav('users', this)"><i class="fa-solid fa-users"></i> Users</div>
+            <div class="menu-item" onclick="nav('tournaments', this)"><i class="fa-solid fa-trophy"></i> Tournaments</div>
+            <div class="menu-item" onclick="nav('withdrawals', this)"><i class="fa-solid fa-money-bill-wave"></i> Withdrawals</div>
+            <div class="menu-item" onclick="nav('message-center', this)"><i class="fa-solid fa-envelope"></i> Message Center</div>
+            <div class="menu-item" onclick="nav('settings', this)"><i class="fa-solid fa-sliders"></i> Settings</div>
+            <div class="menu-item" onclick="nav('sounds', this)"><i class="fa-solid fa-volume-high"></i> Sounds</div>
+            <div class="menu-item" onclick="nav('broadcast', this)"><i class="fa-solid fa-video"></i> Broadcasts</div>
+            <div class="menu-item" onclick="nav('coupons', this)"><i class="fa-solid fa-ticket"></i> Coupons</div>
+            <div class="menu-item" onclick="nav('shop-manager', this)"><i class="fa-solid fa-cart-shopping"></i> Shop Manager</div>
+            <div class="menu-item" onclick="nav('sliders', this)"><i class="fa-solid fa-images"></i> Sliders</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h2 id="page-title" style="color:var(--dark); font-weight:700;">User Management</h2> 
+            <button class="btn btn-sm btn-dark" onclick="location.reload()"><i class="fa fa-sync"></i> Refresh</button>
+        </div>
+        
+        <div class="content-area">
+
+            <!-- 1. USERS -->
+            <div id="users" class="section active">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa fa-users text-primary"></i> All Users</span>
+                        <span id="user-count" class="status-badge badge-active">0 Users</span>
+                    </div>
+<div class="form-group" style="display:flex; gap:10px;">
+    <input type="text" id="search-user" placeholder="Enter Numeric ID, Email or Firebase UID..." style="flex:1;">
+    <!-- বাটনটি নিশ্চিত করুন onclick="searchSpecificUser()" কল করছে -->
+    <button class="btn btn-primary" onclick="searchSpecificUser()">
+        <i class="fa fa-search"></i> Search User
+    </button>
+</div>
+<div class="card-header">
+    <span class="card-title"><i class="fa fa-users text-primary"></i> All Users</span>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <!-- New All User Voice Button -->
+        <button class="btn btn-sm btn-primary" onclick="openVoiceModal('all', 'All Users')">
+            <i class="fa fa-microphone"></i> Mass Voice
+        </button>
+        <span id="user-count" class="status-badge badge-active">0 Users</span>
+    </div>
+</div>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead><tr><th>User Details</th><th>Numeric UID</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TOURNAMENTS -->
+            <div id="tournaments" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-plus-circle text-primary"></i> Create Tournament</span></div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="t-type">
+                                <option value="Solo">Solo</option>
+                                <option value="Squad">Squad</option>
+                                <option value="Duo">Duo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="t-category">
+                                <option value="BR">Battle Royale (BR)</option>
+                                <option value="CS">Clash Squad (CS)</option>
+                                <option value="LW">Lone Wolf (LW)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>ID</label><input type="text" id="t-custom-id" placeholder="GAME-101"></div>
+                        <div class="form-group"><label>Title</label><input type="text" id="t-title" placeholder="Ex: Daily Match 1"></div>
+                        <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="t-date-picker"></div>
+                        <div class="form-group"><label>Fee</label><input type="number" id="t-fee" placeholder="Entry Fee"></div>
+                        <div class="form-group"><label>Slots</label><input type="number" id="t-total" placeholder="Total Players"></div>
+                        <div class="form-group"><label>Image</label><input type="text" id="t-img" placeholder="Image URL"></div>
+                    </div>
+                    <div class="form-group"><label>Details</label><textarea id="t-details" rows="2" placeholder="Rules and info..."></textarea></div>
+                    <button class="btn btn-primary" onclick="createMatch()"><i class="fa fa-paper-plane"></i> Publish Match</button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-list text-primary"></i> Active Matches</span></div>
+                    <div id="match-list"></div>
+                </div>
+            </div>
+
+            <!-- 3. WITHDRAWALS -->
+            <!-- 3. WITHDRAWALS (DYNAMIC SYSTEM) -->
+<div id="withdrawals" class="section">
+    
+    <!-- TOP CARD: ADD & MANAGE METHODS -->
+    <div class="card" style="border-top: 4px solid var(--primary);">
+        <div class="card-header">
+            <span class="card-title"><i class="fa fa-plus-circle text-primary"></i> Add/Edit Payment Method</span>
+        </div>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Method Name</label>
+                <input type="text" id="m-name" placeholder="Ex: Bkash, Rocket, Binance">
+            </div>
+            <div class="form-group">
+                <label>Logo URL</label>
+                <input type="text" id="m-logo" placeholder="Paste image link here">
+            </div>
+            <div class="form-group">
+                <label>Input Label (Shown to User)</label>
+                <input type="text" id="m-label" placeholder="Ex: Enter Bkash Number">
+            </div>
+            <div class="form-group">
+                <label>Min Withdraw</label>
+                <input type="number" id="m-min" value="100">
+            </div>
+            <div class="form-group">
+                <label>Max Withdraw</label>
+                <input type="number" id="m-max" value="10000">
+            </div>
+            <div class="form-group">
+                <label>Rate (1 = Cash, 115 = $1)</label>
+                <input type="number" id="m-rate" value="1" step="0.1">
+            </div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="saveWithdrawMethod()">
+            <i class="fa fa-save"></i> Save Method
+        </button>
+
+        <!-- Dynamic List of Active Methods -->
+        <div style="margin-top:20px; padding-top:15px; border-top:1px solid var(--border);">
+            <label style="margin-bottom:10px;">Active Methods (Click ❌ to delete):</label>
+            <div id="admin-methods-list" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <!-- Methods like Bkash, Nagad appear here as badges -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MIDDLE CARD: FILTER BAR -->
+    <div class="card" style="padding: 15px 25px;">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Filter:</span>
+            <div id="dynamic-filter-bar" style="display:flex; gap:8px; flex-wrap:wrap;">
+                <!-- Dynamic buttons: All, Bkash, Rocket, etc. appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM CARD: PENDING REQUESTS TABLE -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="fa fa-clock text-warning"></i> Pending Requests</span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Info</th>
+                        <th>Method</th>
+                        <th>Target Details</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="withdraw-table-body">
+                    <!-- Withdrawal requests will load here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+   <!-- 4. SETTINGS (RESTORED) -->
+            <div id="settings" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-cog text-primary"></i> App Configuration</span></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Niva Coin Price (1000=X)</label><input type="number" id="coin-price"></div>
+                        <div class="form-group"><label>Payeer Rate (1$=X)</label><input type="number" id="payeer-rate"></div>
+                        <div class="form-group"><label>Min Withdraw</label><input type="number" id="min-w"></div>
+                        <div class="form-group"><label>Max Withdraw</label><input type="number" id="max-w"></div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Support Link</label><input type="text" id="tg-support-link"></div>
+                        <div class="form-group"><label>Channel Link</label><input type="text" id="tg-channel-link"></div>
+                        <div class="form-group"><label>Proof Link</label><input type="text" id="tg-proof-link"></div>
+                    </div>
+                    <button class="btn btn-success" onclick="updateSettings()"><i class="fa fa-save"></i> Save Settings</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-toggle-on text-primary"></i> Toggle Extra Features</span></div>
+                    <div id="method-toggles">
+                        <!-- Spin Wheel and other toggles stay here -->
+                        <div class="toggle-row">
+                            <span>Spin Wheel Feature</span>
+                            <div id="spin-wheel-toggle-area"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<!-- ✅ ADVANCED MESSAGE CENTER (SMART POPUP SYSTEM) -->
+            <div id="message-center" class="section">
+                <div style="display: grid; grid-template-columns: 1fr 350px; gap: 25px; align-items: start; margin-bottom: 30px;">
+                    
+                    <!-- Left: Creation Panel -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fa fa-paper-plane text-primary"></i> Dispatch Smart Message</span></div>
+                        
+                        <!-- Target & Expiry -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                            <div class="form-group">
+                                <label>Target Audience</label>
+                                <select id="mc-target-logic">
+                                    <option value="all">All Users (Popup + Push)</option>
+                                    <option value="receivers">Only Those Who Get Push (Strict)</option>
+                                    <option value="single">Single User (Enter UID below)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Expiry / Validation (Until when?)</label>
+                                <input type="datetime-local" id="mc-expiry">
+                            </div>
+                        </div>
+
+                        <!-- Single UID Input (Hidden by default) -->
+                        <div class="form-group" id="mc-single-uid-box" style="display:none;">
+                            <label>Target User UID</label>
+                            <input type="text" id="mc-target-uid" placeholder="Paste User Numeric UID here...">
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                            <!-- Layer 1: Push Info -->
+                            <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid var(--border);">
+                                <h4 style="font-size:11px; margin-bottom:10px; color:var(--primary); font-weight:800;">LAYER 1: NOTIFICATION (Phone Tray)</h4>
+                                <div class="form-group">
+                                    <input type="text" id="mc-push-title" placeholder="Short Alert Title" oninput="updateMCPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <textarea id="mc-push-body" rows="2" placeholder="Short push description..." oninput="updateMCPreview()"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Layer 2: Popup Info -->
+                            <div style="background:#f0f9ff; padding:15px; border-radius:12px; border:1px solid #bae6fd;">
+                                <h4 style="font-size:11px; margin-bottom:10px; color:var(--secondary); font-weight:800;">LAYER 2: APP POPUP (Inside App)</h4>
+                                <div class="form-group">
+                                    <input type="text" id="mc-pop-title" placeholder="Big Popup Headline" oninput="updateMCPreview()">
+                                </div>
+                                <div class="form-group">
+                                    <textarea id="mc-pop-body" rows="2" placeholder="Full update/message details..." oninput="updateMCPreview()"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mode Selection -->
+                        <div class="form-group" style="margin-top:15px;">
+                            <label>Display Behavior</label>
+                            <select id="mc-mode">
+                                <option value="once">Temporary (User sees it once then it's gone)</option>
+                                <option value="always">Persistent (Shows every time they open app until expiry)</option>
+                            </select>
+                        </div>
+
+                        <!-- Buttons Section -->
+                        <div id="mc-buttons-container" style="margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="margin:0;">Interactive Buttons (Max 2)</label>
+                                <button class="btn btn-sm btn-dark" onclick="addMCButton()"><i class="fa fa-plus"></i> Add Button</button>
+                            </div>
+                            <div id="mc-btn-list" style="margin-top:10px; display:flex; flex-direction:column; gap:10px;"></div>
+                        </div>
+
+                        <button class="btn btn-primary" style="margin-top:25px; width:100%; height:50px; font-size:16px;" id="btn-dispatch-mc" onclick="dispatchSmartMessage()">
+                            <i class="fa fa-paper-plane"></i> Send to Users
+                        </button>
+                    </div>
+
+                    <!-- Right: Live User View Preview -->
+                    <div style="position: sticky; top: 10px;">
+                        <label style="text-align:center; display:block; margin-bottom:10px; font-weight:800; color:var(--text-muted); font-size:12px;">LIVE APP POPUP PREVIEW</label>
+                        <div id="mc-preview-phone" style="width:100%; height:550px; background:#0f172a; border-radius:35px; border:8px solid #334155; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; padding:15px;">
+                            <!-- Mockup Modal Content -->
+                            <div id="mc-preview-content" style="background:#1e293b; width:100%; border-radius:24px; padding:25px; border:1px solid rgba(255,255,255,0.08); text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+                                <i class="fa fa-bell" style="font-size:2.5rem; color:#06b6d4; margin-bottom:15px; display:block;"></i>
+                                <h3 id="mprev-pop-title" style="color:#fff; font-size:1.3rem; margin-bottom:10px; font-family:'Inter', sans-serif;">Popup Headline</h3>
+                                <p id="mprev-pop-body" style="color:#94a3b8; font-size:0.9rem; line-height:1.5; margin-bottom:20px;">Your message content will appear here exactly like this.</p>
+                                <div id="mprev-pop-btns" style="display:flex; flex-direction:column; gap:10px;">
+                                    <!-- Buttons show here -->
+                                    <button class="btn btn-primary btn-sm" style="pointer-events:none; opacity:0.6;">Dismiss</button>
+                                </div>
+                            </div>
+                            <!-- Mockup Bottom Nav Bar -->
+                            <div style="position:absolute; bottom:15px; width:60px; height:4px; background:gray; border-radius:10px; left:50%; transform:translateX(-50%); opacity:0.3;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active History List -->
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-history text-primary"></i> Active Sent Messages</span></div>
+                    <div id="active-mc-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
+                        <p style="color:var(--text-muted); padding:20px;">Checking for active messages...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ NEW: SOUNDS SECTION -->
+            <div id="sounds" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-volume-high text-primary"></i> Sound Management</span></div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Theme Song</label>
+                            <select id="snd-active-theme">
+                                <option value="1">Theme 01 (Epic)</option>
+                                <option value="2">Theme 02 (Gaming)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Theme Volume (<span id="vol-theme-val">50</span>%)</label>
+                            <input type="range" id="snd-theme-vol" min="0" max="1" step="0.1" oninput="document.getElementById('vol-theme-val').innerText = Math.round(this.value * 100)">
+                        </div>
+                        <div class="form-group">
+                            <label>Effects Volume (<span id="vol-effect-val">70</span>%)</label>
+                            <input type="range" id="snd-effect-vol" min="0" max="1" step="0.1" oninput="document.getElementById('vol-effect-val').innerText = Math.round(this.value * 100)">
+                        </div>
+                    </div>
+                    
+                    <div class="toggle-row">
+                        <span>Background Theme Music</span>
+                        <button id="btn-toggle-theme" class="switch-btn switch-on" onclick="toggleSoundConfig('themeEnabled')">ON</button>
+                    </div>
+                    <div class="toggle-row">
+                        <span>Sound Effects (Redeem/Alert)</span>
+                        <button id="btn-toggle-effects" class="switch-btn switch-on" onclick="toggleSoundConfig('effectsEnabled')">ON</button>
+                    </div>
+
+                    <button class="btn btn-success" style="margin-top:10px" onclick="updateSoundSettings()"><i class="fa fa-save"></i> Save Sound Config</button>
+                </div>
+            </div>
+
+            <!-- 5. BROADCAST -->
+            <div id="broadcast" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-video text-primary"></i> Add Video</span></div>
+                    <div class="form-group"><input type="text" id="v-title" placeholder="Video Title"></div>
+                    <div class="form-group"><input type="text" id="v-link" placeholder="Embed Link / YouTube URL"></div>
+                    <button class="btn btn-primary" onclick="addVideo()"><i class="fa fa-plus"></i> Add Video</button>
+                    <div id="video-list" style="margin-top:20px"></div>
+                </div>
+            </div>
+
+            <!-- 6. COUPONS -->
+            <div id="coupons" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-ticket text-primary"></i> Coupons</span></div>
+                    <div class="form-grid">
+                        <input type="text" id="c-code" placeholder="Code">
+                        <input type="number" id="c-bonus" placeholder="Bonus Amount">
+                        <input type="number" id="c-max" placeholder="Max Users">
+                        <select id="c-type"><option value="public">Public</option><option value="private">Private</option></select>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top:15px" onclick="createCoupon()"><i class="fa fa-plus"></i> Create Coupon</button>
+                    <div id="coupon-list" style="margin-top:20px; border-top:1px solid var(--border);"></div>
+                </div>
+            </div>
+
+            <!-- 7. SLIDERS -->
+            <div id="sliders" class="section">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa fa-images text-primary"></i> Sliders</span></div>
+                    <div class="form-group"><input type="text" id="s-url" placeholder="Image URL"></div>
+                    <button class="btn btn-primary" onclick="addSlider()"><i class="fa fa-upload"></i> Add Slider</button>
+                    <div id="slider-list" style="margin-top:20px; display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:10px;"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<!-- SECTION: SHOP MANAGER -->
+<div id="shop-manager" class="section">
+    <div class="card" style="border-top: 4px solid var(--primary);">
+        <div class="card-header">
+            <span class="card-title"><i class="fa fa-gem text-primary"></i> Pending Diamond Redemptions</span>
+            <button class="btn btn-sm btn-dark" onclick="loadShopRequests()"><i class="fa fa-sync"></i> Refresh List</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Info</th>
+                        <th>Game Player UID</th>
+                        <th>Package</th>
+                        <th>Tokens Used</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="shop-table-body">
+                    <tr><td colspan="5" style="text-align:center; padding:20px; color:gray;">Loading requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    <!-- MODALS -->
+<!-- Voice Alarm Modal -->
+<div id="voice-modal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="voice-modal-title">Send Voice Alarm</h3>
+            <i class="fa fa-times" onclick="closeModal('voice-modal')" style="cursor:pointer"></i>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="voice-target-uid">
+            <p id="voice-modal-user" style="margin-bottom:15px; font-weight:bold; color:var(--primary); background:#eff6ff; padding:10px; border-radius:8px;"></p>
+            
+            <div class="form-group">
+                <label>1. Select Voice File (.mp3)</label>
+                <input type="file" id="voice-file-input" accept="audio/*">
+            </div>
+
+            <div class="form-group">
+                <label>2. Notification Title</label>
+                <input type="text" id="voice-title" placeholder="e.g. Wake Up! Emergency">
+            </div>
+
+            <div class="form-group">
+                <label>3. Notification Body (Optional)</label>
+                <textarea id="voice-body" rows="2" placeholder="Short description..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('voice-modal')">Cancel</button>
+            <button class="btn btn-primary" id="btn-dispatch-voice" onclick="submitVoiceAlarm()">
+                <i class="fa fa-microphone"></i> Send Voice Now
+            </button>
+        </div>
+    </div>
+</div>
+    <!-- Balance Modal -->
+    <div id="balance-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="bal-modal-title">Manage Balance</h3>
+                <i class="fa fa-times" onclick="closeModal('balance-modal')" style="cursor:pointer; font-size:1.2rem;"></i>
+            </div>
+            <div class="modal-body">
+                <p id="bal-modal-user" style="margin-bottom:15px; color:#64748b; font-weight:600; background:#f1f5f9; padding:10px; border-radius:8px;">User: ...</p>
+                <input type="hidden" id="bal-uid">
+                <input type="hidden" id="bal-type">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="bal-amount" placeholder="Enter Amount">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('balance-modal')">Cancel</button>
+                <button class="btn btn-success" onclick="submitBalance()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal (User Specific) -->
+    <div id="msg-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header"><h3>Send Notification</h3><i class="fa fa-times" onclick="closeModal('msg-modal')" style="cursor:pointer"></i></div>
+            <div class="modal-body">
+                <input type="hidden" id="msg-uid">
+                <p id="msg-modal-user" style="margin-bottom:15px; font-weight:bold; color:var(--primary);">...</p>
+                <div class="form-group"><label>Title</label><input type="text" id="msg-title" placeholder="Notification Title"></div>
+                <div class="form-group"><label>Message</label><textarea id="msg-body" rows="4" placeholder="Write message..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="submitMessage()">Send</button></div>
+        </div>
+    </div>
+
+    <!-- ✅ UPDATED JUDGE MODAL -->
+    <div id="judge-modal" class="modal-overlay">
+        <div class="modal" style="width: 800px; max-width: 95%;">
+            <div class="modal-header"><h3>Judge & Reward</h3><i class="fa fa-times" onclick="closeModal('judge-modal')" style="cursor:pointer"></i></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Rate Per Kill (Reward Amount)</label><input type="number" id="per-kill-rate" value="10" placeholder="Rate/Kill"></div>
+                <div id="judge-list" class="judge-grid" style="margin-top:15px; border-top:1px solid #eee; padding-top: 15px;"></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-success" onclick="confirmRewards()">Distribute Rewards</button></div>
+        </div>
+    </div>
+    
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header"><h3>Edit Tournament</h3><i class="fa fa-times" onclick="closeModal('edit-modal')" style="cursor:pointer"></i></div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-id">
+                <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="edit-date-picker"></div>
+                <div class="form-group"><label>Category</label>
+                    <select id="edit-category">
+                        <option value="BR">Battle Royale (BR)</option>
+                        <option value="CS">Clash Squad (CS)</option>
+                        <option value="LW">Lone Wolf (LW)</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Title</label><input type="text" id="edit-title" placeholder="Title"></div>
+                <div class="form-group"><label>Details</label><textarea id="edit-details" rows="3"></textarea></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="saveEdit()">Save Changes</button></div>
+        </div>
+    </div>
+    
+    <!-- View Participants Modal -->
+    <div id="part-modal" class="modal-overlay">
+        <div class="modal" style="width:900px; max-width:95%;">
+            <div class="modal-header"><h3>Participants / Teams</h3><i class="fa fa-times" onclick="closeModal('part-modal')" style="cursor:pointer"></i></div>
+            <div class="modal-body" id="part-view-area"></div>
+        </div>
+    </div>
+
+    <!-- Send Credentials Modal -->
+    <div id="cred-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Send Credentials</h3>
+                <i class="fa fa-times" onclick="closeModal('cred-modal')" style="cursor:pointer"></i>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cred-match-id">
+                <input type="hidden" id="cred-target-id">
+                <input type="hidden" id="cred-type">
+                
+                <p id="cred-target-name" style="margin-bottom:15px; font-weight:bold; color:var(--primary); background:#eff6ff; padding:12px; border-radius:8px; border:1px solid #bfdbfe;"></p>
+                
+                <div class="form-group">
+                    <label>Room ID</label>
+                    <input type="text" id="cred-room-id" placeholder="Enter Room ID">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="text" id="cred-pass" placeholder="Enter Password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('cred-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitPrivateCreds()"><i class="fa fa-paper-plane"></i> Send Now</button>
+            </div>
+        </div>
+    </div>
+<!-- User Full Details Modal -->
+<div id="user-details-modal" class="modal-overlay">
+    <div class="modal" style="width: 800px; max-width: 95%;">
+        <div class="modal-header">
+            <h3>User Full Profile & History</h3>
+            <i class="fa fa-times" onclick="closeModal('user-details-modal')" style="cursor:pointer"></i>
+        </div>
+        <div class="modal-body" id="user-full-data-content">
+            <!-- JS will inject all fields here -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-dark" onclick="closeModal('user-details-modal')">Close View</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+// ১. ইমপোর্ট গুলো সবার উপরে থাকতে হবে (Module rules)
+import 'https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.24/jsrsasign-all-min.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs, setDoc, serverTimestamp, increment, arrayUnion , arrayRemove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// ২. কনফিগারেশন এবং ইনিশিয়ালাইজেশন (একবারই ঘোষণা করা হয়েছে)
+const SUPABASE_URL = "https://hjzwndttkhhicvlookhb.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqenduZHR0a2hoaWN2bG9va2hiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NDY1NzgsImV4cCI6MjA4NDMyMjU3OH0.5SUDbHahV1NEKe9NAWe4Al4lGBjEwXJzixQY9SEWfew";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAafXkJwyZ5F7Xuax0VktZ9cpqWD4oCvxU",
+  authDomain: "tournament-97743.firebaseapp.com",
+  projectId: "tournament-97743",
+  storageBucket: "tournament-97743.appspot.com",
+  messagingSenderId: "584797187828",
+  appId: "1:584797187828:web:4c643f83dfd9b700adb8a1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// সব টুর্নামেন্ট এই একটি ডক-এ জমা থাকবে
+const tournamentHubRef = doc(db, "game_data", "tournament_hub");
+
+// আপনার KV Worker লিঙ্ক
+const WORKER_URL = "https://dbsharding.moeenu321.workers.dev/";
+const KB_URL = "https://steep-mountain-a50f.moeenu321.workers.dev/"; 
+const METADATA_WORKER_URL = "https://email.moeenu321.workers.dev/";
+
+// --- VOICE ALARM SYSTEM LOGIC ---
+const VOICE_WORKER_URL = "https://voicedepartment.moeenu321.workers.dev/";
+
+window.openVoiceModal = (uid, name) => {
+    document.getElementById('voice-target-uid').value = uid;
+    document.getElementById('voice-modal-user').innerText = `Target: ${name}`;
+    document.getElementById('voice-modal').style.display = 'flex';
+    
+    // Clear previous inputs
+    document.getElementById('voice-file-input').value = "";
+    document.getElementById('voice-title').value = "Emergency Voice Alert";
+};
+
+window.submitVoiceAlarm = async () => {
+    const fileInput = document.getElementById('voice-file-input');
+    const targetUid = document.getElementById('voice-target-uid').value;
+    const title = document.getElementById('voice-title').value.trim();
+    const body = document.getElementById('voice-body').value.trim();
+    const btn = document.getElementById('btn-dispatch-voice');
+
+    if (!fileInput.files[0]) return alert("Please select an audio file first!");
+    if (!title) return alert("Please enter a title!");
+
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa fa-spinner fa-spin"></i> Dispatching...`;
+
+    try {
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("uids", targetUid); // 'all' or specific firebase_uid
+        formData.append("title", title);
+        formData.append("body", body);
+        formData.append("type", "VOICE_ALARM"); // This tells your app it's an alarm
+
+        const response = await fetch(VOICE_WORKER_URL, {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`✅ Voice successfully sent to ${result.notified_count || 'requested'} user(s)!`);
+            closeModal('voice-modal');
+        } else {
+            throw new Error(result.error || "Worker failed to process request");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("❌ Error: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa fa-microphone"></i> Send Voice Now`;
+    }
+};
+// এই ফাংশনটি কল করলে ওয়ার্কার ফায়ারস্টোর থেকে ডাটা নিয়ে KV আপডেট করবে
+async function triggerKVSync(type, directData = null, targetUrl = WORKER_URL) {
+    try {
+        const payload = { sync_type: type };
+        if (directData) payload.direct_data = directData; 
+
+        // ✅ ৫টি জিনিসের জন্য অটোমেটিক নতুন লিংক সিলেক্ট করা
+        const metaTypes = ['sliders', 'videos', 'withdraw_methods', 'app_settings', 'state'];
+        let finalUrl = targetUrl;
+        
+        if (metaTypes.includes(type)) {
+            finalUrl = METADATA_WORKER_URL;
+        }
+
+        const res = await fetch(finalUrl, { 
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await res.json();
+        if (result.success) {
+            console.log(`✅ [${type}] Updated on ${finalUrl === METADATA_WORKER_URL ? 'Metadata Worker' : 'Old Worker'}`);
+            return true;
+        }
+    } catch (e) {
+        console.error("❌ Sync Failed:", e);
+        return false;
+    }
+}
+let allUsers = []; // এটি গ্লোবাল ভেরিয়েবল হিসেবে কাজ করবে
+// ১-রিড গোল: মেমোরিতে সব টুর্নামেন্টের ডাটা রাখার জন্য গ্লোবাল ভেরিয়েবল
+let tournamentsMap = {};
+  /* ==========================================
+   PUSH NOTIFICATION & ADMIN UI HELPERS
+   ========================================== */
+
+// --- PUSH NOTIFICATION SYSTEM (FIXED SYNC) ---
+// --- DIRECT FCM V1 CONFIGURATION ---
+const SERVICE_ACCOUNT = {
+  "project_id": "tournament-97743",
+  "private_key": `-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDhCz3nuI8E4RZG\nOkBg5NbJFuxi9gAWUCqVim8jpJugm4g2uGIpT6udOVRTuRODX+4JkoKlE3w5tMk+\n9Om77/D9mV+xXzQcLu25WuUGV80vPP0QghIK4eBtH98grACE9BfcU4DCFBYQ+2+y\ntw4B+NWGbtsMvbHvsCvNgXG3jMuj7Mf+eLUwpxtx4bw6cFIxsuu01U3HrXglOJuO\ntSb5UePwDjrra9SNhh+w2Bld5dn3mmux/5+tSoKX/sXA31Gn6wWy3ApyBvQEAMKj\nXllf8jVZPn/6N0vVBxzsprN6jV27Xt/lpIg+BjAFX8/MPK1IYObrDN1yqvmOgTn0\nCLe7GwsxAgMBAAECggEAIiwCVO7d7Lg/GR/cSbpF8RgFggtnvPukU7vHH4rtxMgJ\nOYHrCenanc+oQeRPFbpZ22M/alCYouyUSHaJDWwkVGXXNYhG0ebAW051i26Grh8d\nMEYH9lYRLZDS4VOs6oNkIiUd3pqNNTvw3JrWSi9eQQERSxB89e/y3sxCl8QN4hCX\n6rJjANp2RXUygw3z5T0VjDXHsK1uOU8iAxB90ZSqwHAs+bwFzmxD4LKmV4hAGj4Y\n8pSpfHSWvvtnkHkE/3bxVJ8IN9PElr8BilUua7dijDRcCwckiFWkxPqJpC6CLlBS\nhZfHc664RfbcRkX7T3YU7hoiq1kwl1z6/FO54p15hwKBgQD3PzZWWFxf5k7ZOkli\nwDEnZxhIUJzhK32qctMvpoRJRezWGejdl3gwHLmrkApuLTc4BsD9jzXD+rkgFF12\n27CH5b/CpOnzqRwc5YsF03caeTZkOUqyMxzqg53cSCcmM5Z4njSp11pz5QS23V3b\nxmRb88+AKepL6NCyfalYnpD2MwKBgQDpAs3/1k/f1QGEUGoNckd3lbh/ETEOk56V\nur7x4XxlN/qJ7b6bREGBmy36gETTJyIMiXcY7+p/1MuLGnPmVfKR+wuqmc47/BUD\n9m1YzJrXsU4WFY3NhRk7YpUj8Om9AgbeDW7Jg3cdshiXvWhuTTpPkAR0SFTxzbpz\nLvE5uYCtCwKBgH38rQCUqAWKAvW4OLrkOmfcpcf7o+UtVyyqtChczp3TztpOe5Wm\n4GyLxqTAkkAQNEoNTvwlpH0H3puVJQcy7SJilTNm+3vY2WV0JkJCvjc0Ot4ZP5HM\nb9ikVqVv8tsJgIxX+XfuL75Mnflclb4uuucMNtkVArnJmcbKN6fbrPx3AoGBAN8Z\nNV34t7+LdglW6UP4oF7qdp0LO9pGEzgvdrWnfPB5GaRIgxCs2L+ccfiAKeW2eU5h\nrCuvQuqkN0L3z/LBZiDJqtDstN8QLJr/rpCwTq2ocSiJ+JzIDHGkoUGpYFL9BtBD\nMkk1W66OICfhTYUW4nbdYLZprxNaNGQmlQb9CywjAoGARL0GWcrxhxbPpUvJobOt\n7WZrcA6YoKWGxPJFBfLfSMzAABUbpmIEIhmRfLKoPEg/xtIq3s41Q8DkTipqeWox\npCDishOyjC4HImFe+lLjhXgWDs5vr4ChrgmjMzmgo7Fqkh8nrzCPOC98woB0ozGL\nwDEjOE9jWtxrvD85k7Bc0ks=\n-----END PRIVATE KEY-----`.replace(/\\n/g, '\n'),
+  "client_email": "firebase-adminsdk-fbsvc@tournament-97743.iam.gserviceaccount.com"
+};
+
+let cachedFCMToken = { val: null, exp: 0 };
+
+async function getFCMV1AccessToken() {
+    const now = Math.floor(Date.now() / 1000);
+    if (cachedFCMToken.val && now < cachedFCMToken.exp) return cachedFCMToken.val;
+
+    const header = { alg: 'RS256', typ: 'JWT' };
+    const payload = {
+        iss: SERVICE_ACCOUNT.client_email,
+        sub: SERVICE_ACCOUNT.client_email,
+        aud: "https://oauth2.googleapis.com/token",
+        iat: now,
+        exp: now + 3600,
+        scope: "https://www.googleapis.com/auth/firebase.messaging"
+    };
+
+    const jwt = KJUR.jws.JWS.sign("RS256", JSON.stringify(header), JSON.stringify(payload), SERVICE_ACCOUNT.private_key);
+
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+    });
+
+    const data = await res.json();
+    cachedFCMToken = { val: data.access_token, exp: now + 3500 };
+    return data.access_token;
+}
+
+/* ============================================================
+   🚀 UNIVERSAL PUSH NOTIFICATION SYSTEM (FIXED)
+   ============================================================ */
+
+// Find this line and replace the URL with your actual Cloudflare Worker URL
+const PUSH_GATEWAY_URL = "https://pushsystem.moeenu321.workers.dev/"; 
+
+async function sendAutomatedPush(userId, title, body) {
+    try {
+        // Maintain your old title-split logic
+        let fTitle = title, fBody = body || "";
+        if (title.includes('\n')) {
+            const parts = title.split('\n');
+            fTitle = parts[0];
+            fBody = parts.slice(1).join('\n') + (fBody ? ' ' + fBody : "");
+        }
+
+        const payload = {
+            target: userId === 'all' ? 'all' : 'specific',
+            uids: userId === 'all' ? null : (Array.isArray(userId) ? userId : [userId]),
+            title: fTitle,
+            body: fBody
+        };
+
+        console.log(`Sending push to: ${userId}...`);
+
+        const response = await fetch(PUSH_GATEWAY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log(`✅ Push Sent to ${result.count} devices.`);
+        } else {
+            console.error("❌ Gateway Error:", result.error);
+        }
+        return result.success;
+    } catch (e) {
+        console.error("❌ Network Error:", e);
+        return false;
+    }
+}
+
+const titles = {
+    TOURNAMENT: ["টুর্নামেন্ট তথ্য\nনতুন টুর্নামেন্ট আপলোড করা হয়েছে।", "নতুন ম্যাচ\nটুর্নামেন্টে অংশগ্রহণ শুরু হয়েছে।"],
+    ADD_MONEY: ["ব্যালান্স আপডেট\nআপনার একাউন্টে টাকা যোগ করা হয়েছে।", "টাকা যোগ হয়েছে\nএখন আপনি ম্যাচে অংশ নিতে পারবেন।"],
+    DEDUCT_MONEY: ["ব্যালান্স কাটা হয়েছে\nআপনার একাউন্ট থেকে টাকা ডিডাক্ট করা হয়েছে।", "লেনদেন সম্পন্ন\nসাম্প্রতিক কার্যক্রম অনুযায়ী ব্যালান্স আপডেট হয়েছে।"],
+    WITHDRAW_PAID: ["উইথড্র সফল\nআপনার টাকা পাঠানো হয়েছে।", "পেমেন্ট সম্পন্ন\nউইথড্র রিকুয়েস্ট সফলভাবে শেষ হয়েছে।"],
+    WITHDRAW_REJECT: ["উইথড্র বাতিল\nআপনার উইথড্র রিকুয়েস্ট গ্রহণ করা হয়নি।", "রিফান্ড দেওয়া হয়েছে\nটাকা পুনরায় আপনার ব্যালান্সে যোগ হয়েছে।"],
+    CREDENTIALS: ["ম্যাচ তথ্য পাঠানো হয়েছে\nরুম আইডি ও পাসওয়ার্ড অ্যাপে দেখুন।", "রুম ডিটেইলস প্রস্তুত\nম্যাচে যোগ দেওয়ার তথ্য পাওয়া গেছে।"],
+    PUBLIC_ROOM: ["পাবলিক রুম চালু\nম্যাচের রুম আইডি প্রকাশ করা হয়েছে।", "ম্যাচ রুম লাইভ\nসবাই এখন রুমে যোগ দিতে পারবেন।"],
+    REWARD: ["রিওয়ার্ড যোগ হয়েছে\nআপনার একাউন্টে পুরস্কার যুক্ত হয়েছে।", "পুরস্কার প্রদান\nআপনার ব্যালান্স আপডেট হয়েছে।"]
+};
+
+function getRandomTitle(type) { 
+    const list = titles[type]; 
+    return list ? list[Math.floor(Math.random() * list.length)] : "New Notification"; 
+}
+
+// --- NAVIGATION ---
+window.nav = (id, el) => { 
+    // ১. সব সেকশন হাইড করা (পুরানো লজিক অপরিবর্তিত)
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); 
+    
+    // ২. টার্গেট সেকশন শো করা
+    const section = document.getElementById(id);
+    if (section) section.classList.add('active'); 
+    
+    // ৩. মেনু আইটেম হাইলাইট করা (পুরানো লজিক অপরিবর্তিত)
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active')); 
+    if (el) el.classList.add('active'); 
+    
+    // ৪. পেজ টাইটেল আপডেট করা
+    const titleEl = document.getElementById('page-title');
+    if (titleEl) {
+        titleEl.innerText = el ? el.innerText : "Dashboard"; 
+    }
+
+    // ৫. ডাটা লোডার সিঙ্ক (FIXED: অটো-লোড বন্ধ এবং অন্যান্য লোডার চালু)
+    
+    // ✅ ইউজার সেকশনে গেলে ১০০০ ইউজার লোড না করে শুধু একটি মেসেজ দেখাবে
+    if (id === 'users') {
+        const tableBody = document.getElementById('user-table-body');
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:gray;">ইউজার খুঁজে পেতে উপরে আইডি, ইমেইল বা ইউআইডি দিয়ে সার্চ করুন।</td></tr>`;
+        }
+    }
+
+    if (id === 'tournaments') loadTournaments();
+    
+    if (id === 'withdrawals') {
+        loadWithdrawMethods(); 
+        loadPendingWithdrawals();
+    }
+    
+    if (id === 'shop-manager') loadShopRequests();
+    if (id === 'sliders') loadSliders();
+    if (id === 'broadcast') loadVideos();
+    if (id === 'coupons') loadCoupons();
+    if (id === 'message-center') loadMCHistory();
+};
+
+window.closeModal = (id) => { 
+    const el = document.getElementById(id); 
+    if (el) el.style.display = 'none'; 
+};
+
+// --- ADVANCED MESSAGE CENTER UI ---
+window.toggleMCInput = () => {
+    const val = document.getElementById('mc-target-logic').value;
+    const uidBox = document.getElementById('mc-single-uid-box');
+    if (uidBox) uidBox.style.display = (val === 'single') ? 'block' : 'none';
+};
+
+window.addMCButton = () => {
+    if (window.mcButtons.length >= 2) return alert("Max 2 buttons allowed.");
+    const btnId = Date.now();
+    window.mcButtons.push({ id: btnId, text: '', link: '' });
+    renderMCButtonInputs();
+    updateMCPreview();
+};
+
+function renderMCButtonInputs() {
+    const container = document.getElementById('mc-btn-list');
+    if (!container) return;
+    container.innerHTML = window.mcButtons.map((btn) => `
+        <div style="background:#f1f5f9; padding:10px; border-radius:8px; display:flex; gap:10px; align-items:center;">
+            <div style="flex:1;">
+                <input type="text" placeholder="Button Text" style="margin-bottom:5px;" value="${btn.text}" oninput="updateBtnData(${btn.id}, 'text', this.value)">
+                <input type="text" placeholder="Link (or 'close')" value="${btn.link}" oninput="updateBtnData(${btn.id}, 'link', this.value)">
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="removeMCButton(${btn.id})"><i class="fa fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+window.updateBtnData = (id, key, val) => {
+    const btn = window.mcButtons.find(b => b.id === id);
+    if (btn) btn[key] = val;
+    updateMCPreview();
+};
+
+window.removeMCButton = (id) => {
+    window.mcButtons = window.mcButtons.filter(b => b.id !== id);
+    renderMCButtonInputs();
+    updateMCPreview();
+};
+
+window.updateMCPreview = () => {
+    const popTitle = document.getElementById('mc-pop-title')?.value || "Popup Headline";
+    const popBody = document.getElementById('mc-pop-body')?.value || "Your message content will appear here.";
+    const titleEl = document.getElementById('mprev-pop-title');
+    const bodyEl = document.getElementById('mprev-pop-body');
+    if (titleEl) titleEl.innerText = popTitle;
+    if (bodyEl) bodyEl.innerText = popBody;
+    
+    const btnPreviewContainer = document.getElementById('mprev-pop-btns');
+    if (btnPreviewContainer) {
+        if (window.mcButtons.length === 0) {
+            btnPreviewContainer.innerHTML = `<button class="btn btn-primary btn-sm" style="opacity:0.6;">Dismiss</button>`;
+        } else {
+            btnPreviewContainer.innerHTML = window.mcButtons.map(btn => `<button class="btn btn-primary btn-sm" style="margin-bottom:5px;">${btn.text || 'Button Text'}</button>`).join('');
+        }
+    }
+};
+// Admin Panel: Dispatch Smart Message to KV
+window.dispatchSmartMessage = async () => {
+    const targetLogic = document.getElementById('mc-target-logic').value;
+    const expiryInput = document.getElementById('mc-expiry').value;
+    const expiry = new Date(expiryInput).getTime();
+    const singleUid = document.getElementById('mc-target-uid').value.trim();
+    const popTitle = document.getElementById('mc-pop-title').value.trim();
+    const popBody = document.getElementById('mc-pop-body').value.trim();
+    const mode = document.getElementById('mc-mode').value;
+
+    // ১. ভ্যালিডেশন (অপরিবর্তিত)
+    if (!expiryInput || !popTitle || !popBody) return alert("Fill all popup fields!");
+
+    const btnSend = document.getElementById('btn-dispatch-mc');
+    btnSend.disabled = true;
+    btnSend.innerText = "Dispatching...";
+
+    try {
+        // ২. KV থেকে বর্তমান লিস্ট আনা (অপরিবর্তিত)
+        const res = await fetch(KB_URL + "smart_messages");
+        let messages = await res.json() || [];
+
+        // ৩. নতুন মেসেজ অবজেক্ট তৈরি (অপরিবর্তিত)
+        const newMessage = {
+            id: "msg_" + Date.now(),
+            target_logic: targetLogic,
+            target_uid: targetLogic === 'single' ? singleUid : null,
+            expiry: expiry,
+            pop_title: popTitle,
+            pop_body: popBody,
+            display_mode: mode,
+            buttons: window.mcButtons || [],
+            created_at: Date.now()
+        };
+
+        // ৪. শেষ ৫টি মেসেজ রাখা (অপরিবর্তিত)
+        messages = [newMessage, ...messages].slice(0, 5);
+
+        // ৫. KV সিঙ্ক করা (সংশোধিত triggerKVSync কল)
+        const ok = await triggerKVSync('smart_messages', messages, KB_URL);
+        
+        if (ok) {
+            // ✅ ৬. পুশ নোটিফিকেশন ইঞ্জিন কল করা
+            // যদি targetLogic 'single' হয় তবে Firebase UID পাঠাবে, নাহলে 'all'
+            const pushTarget = targetLogic === 'single' ? singleUid : 'all';
+            
+            // এখানে sendAutomatedPush সরাসরি সুপাবেস থেকে টোকেন নিয়ে মেসেজ পাঠাবে
+            await sendAutomatedPush(pushTarget, popTitle, popBody);
+            
+            alert("✅ Smart Message & Push Notification Dispatched!");
+            location.reload();
+        } else {
+            throw new Error("Failed to sync with KV storage.");
+        }
+    } catch (error) {
+        alert("Error: " + error.message);
+    } finally {
+        btnSend.disabled = false;
+        btnSend.innerText = "Send to Users";
+    }
+};
+
+// ✅ New Admin Logic: Load Message History from KV
+async function loadMCHistory() {
+    const container = document.getElementById('active-mc-list');
+    if (!container) return;
+
+    try {
+        const res = await fetch(KB_URL + "smart_messages");
+        const data = await res.json();
+        
+        // Save to global variable for deletion
+        window.allKVMessages = Array.isArray(data) ? data : [];
+
+        if (window.allKVMessages.length === 0) {
+            container.innerHTML = `<p style="color:gray; padding:20px;">No active messages in KV.</p>`;
+            return;
+        }
+
+        const now = Date.now();
+        container.innerHTML = window.allKVMessages.map((m, index) => {
+            const isExpired = now > m.expiry;
+            return `
+              <div class="card" style="margin-bottom:0; border:1px solid ${isExpired ? '#fee2e2' : '#dcfce7'}">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                  <span class="status-badge ${isExpired ? 'badge-blocked' : 'badge-active'}">
+                    ${isExpired ? 'Expired' : 'Live'}
+                  </span>
+                  <button class="btn btn-icon btn-danger btn-sm" onclick="deleteSmartMsg(${index})">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </div>
+                <h4 style="margin-top:10px; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.pop_title}</h4>
+                <small style="color:gray">Target: ${m.target_logic} ${m.target_uid ? '('+m.target_uid+')' : ''}</small>
+              </div>`;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = `<p style="color:red; padding:20px;">Error loading KV history.</p>`;
+    }
+}
+// ✅ New Admin Logic: Delete Smart Message from KV
+window.deleteSmartMsg = async (index) => {
+    if (!confirm("Delete this message? Users will no longer see this popup.")) return;
+
+    // Remove from our local array
+    window.allKVMessages.splice(index, 1);
+
+    // Sync updated list to KV
+    const ok = await triggerKVSync('smart_messages', window.allKVMessages);
+
+    if (ok) {
+        alert("Deleted from KV!");
+        loadMCHistory(); // Refresh UI
+    } else {
+        alert("Failed to delete from KV");
+    }
+};
+   loadMCHistory();
+
+        // --- USER MANAGEMENT ---
+window.deleteSmartMsg = async (index) => {
+    if (!confirm("Delete this message? Users will no longer see this popup.")) return;
+
+    // ১. লোকাল অ্যারে থেকে মেসেজটি সরানো (লজিক অপরিবর্তিত)
+    window.allKVMessages.splice(index, 1);
+
+    // ২. ✅ সংশোধিত লাইন: এখানে KB_URL যোগ করা হয়েছে যেন নতুন সার্ভারে আপডেট হয়
+    const ok = await triggerKVSync('smart_messages', window.allKVMessages, KB_URL);
+
+    if (ok) {
+        alert("Deleted from KB!");
+        loadMCHistory(); // UI রিফ্রেশ (লজিক অপরিবর্তিত)
+    } else {
+        alert("Failed to delete from KB");
+    }
+};
+
+// ১-রিড গোল: সরাসরি মেমোরি থেকে বা সার্চ ভিত্তিক লোডিং
+window.searchSpecificUser = async () => {
+    const input = document.getElementById('search-user').value.trim();
+    if (!input) return alert("UID, Email or Firebase UID required");
+    
+    const tableBody = document.getElementById('user-table-body');
+    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Searching...</td></tr>`;
+
+    try {
+        let userDoc = null;
+        // ১. যদি ইনপুট ইমেইল হয়
+        if (input.includes('@')) {
+            const q = query(collection(db, "profile"), where("email", "==", input));
+            const snap = await getDocs(q);
+            if (!snap.empty) userDoc = snap.docs[0];
+        } 
+        // ২. যদি ইনপুট ১১ সংখ্যার আইডি হয়
+        else if (input.length >= 10 && !isNaN(input)) {
+            const q = query(collection(db, "profile"), where("customId", "==", input));
+            const snap = await getDocs(q);
+            if (!snap.empty) userDoc = snap.docs[0];
+        } 
+        // ৩. সরাসরি Firebase UID সার্চ
+        else {
+            const docRef = doc(db, "profile", input);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) userDoc = docSnap;
+        }
+
+        if (userDoc) {
+            const u = { firebase_uid: userDoc.id, ...userDoc.data() };
+            allUsers = [u]; // গ্লোবাল ভেরিয়েবলে ডাটা রাখা হলো
+            renderUsers(allUsers);
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">ইউজার পাওয়া যায়নি!</td></tr>`;
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Search Error: " + e.message);
+    }
+};
+// --- ১. রেন্ডার ইউজার (আই বাটন সহ সব লজিক বজায় রাখা হয়েছে) ---
+function renderUsers(list) {
+    document.getElementById('user-table-body').innerHTML = list.map(u => `
+        <tr>
+            <td><b>${u.fullName || 'N/A'}</b><br><small style="color:#64748b">${u.email}</small></td>
+            <td><span class="text-monospace">${u.customId || 'N/A'}</span></td>
+            <td><b>৳${u.balance || 0}</b></td>
+            <td>${u.isBlocked ? '<span class="status-badge badge-blocked">Blocked</span>' : '<span class="status-badge badge-active">Active</span>'}</td>
+            <td class="action-group">
+                <button class="btn btn-icon btn-info" title="Full View" onclick="viewUserFullData('${u.firebase_uid}')">
+                    <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn btn-icon btn-success" title="Add" onclick="openBalModal('${u.firebase_uid}','${u.fullName}','credit')">
+                    <i class="fa fa-plus"></i>
+                </button>
+<button class="btn btn-icon btn-primary" title="Voice Alarm" onclick="openVoiceModal('${u.firebase_uid}','${u.fullName}')">
+        <i class="fa fa-microphone"></i>
+    </button>
+                <button class="btn btn-icon btn-danger" title="Deduct" onclick="openBalModal('${u.firebase_uid}','${u.fullName}','debit')">
+                    <i class="fa fa-minus"></i>
+                </button>
+                <button class="btn btn-icon btn-info" title="Notify" onclick="openMsgModal('${u.firebase_uid}','${u.fullName}')">
+                    <i class="fa fa-envelope"></i>
+                </button>
+                <button class="btn btn-icon btn-warning" onclick="toggleBlock('${u.firebase_uid}',${!u.isBlocked})">
+                    <i class="fa ${u.isBlocked ? 'fa-unlock' : 'fa-ban'}"></i>
+                </button>
+                <button class="btn btn-icon btn-danger" onclick="delUser('${u.firebase_uid}')">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// --- ২. ব্যালেন্স আপডেট (Firestore-এ ব্যালেন্স + নোটিফিকেশন হিস্টোরি একসাথে আপডেট) ---
+window.submitBalance = async () => {
+    const uid = document.getElementById('bal-uid').value;
+    const type = document.getElementById('bal-type').value;
+    const amt = Number(document.getElementById('bal-amount').value);
+    if (!uid || !amt || amt <= 0) return alert("Invalid amount");
+
+    try {
+        const userRef = doc(db, "profile", uid);
+        const amountChange = type === 'credit' ? amt : -amt;
+        const pushTitle = getRandomTitle(type === 'credit' ? 'ADD_MONEY' : 'DEDUCT_MONEY');
+
+        // ১টি রাইট কলে ইউজারের প্রোফাইলের ব্যালেন্স এবং নোটিফিকেশন আপডেট
+        await updateDoc(userRef, {
+            balance: increment(amountChange),
+            recentNotifications: arrayUnion({
+                title: pushTitle.split('\n')[0],
+                body: `৳${amt} ${type === 'credit' ? 'যোগ' : 'কাটা'} হয়েছে।`,
+                time: new Date().getTime()
+            }),
+            updatedAt: serverTimestamp()
+        });
+
+await sendAutomatedPush("specific", [uid], pushTitle, `৳${amt} ব্যালেন্স আপডেট`);
+        alert("Balance Updated Successfully!");
+        closeModal('balance-modal');
+        searchSpecificUser(); // মেমোরি রিফ্রেশ
+    } catch (e) { alert("Firestore Error: " + e.message); }
+};
+
+window.openBalModal = (uid, name, type) => { 
+    // ইনপুট ফিল্ডগুলোতে ডাটা সেট করা
+    document.getElementById('bal-uid').value = uid; 
+    document.getElementById('bal-type').value = type; 
+    
+    // UI টেক্সট আপডেট
+    document.getElementById('bal-modal-user').innerText = `User: ${name}`; 
+    document.getElementById('bal-modal-title').innerText = type === 'credit' ? 'Add Balance' : 'Deduct Balance'; 
+    
+    // মোডাল দেখানো
+    document.getElementById('balance-modal').style.display = 'flex'; 
+};
+
+window.openMsgModal = (uid, name) => {
+    // ইনপুট ফিল্ডে ডাটা সেট করা
+    document.getElementById('msg-uid').value = uid; 
+    
+    // UI টেক্সট আপডেট
+    document.getElementById('msg-modal-user').innerText = `To: ${name}`; 
+    
+    // মোডাল দেখানো
+    document.getElementById('msg-modal').style.display = 'flex';
+};
+// --- ৩. মেসেজ পাঠানো (ইউজার প্রোফাইলের recentNotifications অ্যারেতে সেভ হবে) ---
+window.submitMessage = async () => {
+    // এখানে msg-uid হিসেবে আমরা ইউজারের Firebase UID পাচ্ছি
+    const firebase_uid = document.getElementById('msg-uid').value; 
+    const title = document.getElementById('msg-title').value.trim();
+    const body = document.getElementById('msg-body').value.trim();
+
+    if (!firebase_uid || !title || !body) {
+        return alert("সব ঘর পূরণ করুন!");
+    }
+
+    try {
+        // ✅ ফায়ারস্টোর আপডেট বন্ধ করা হয়েছে (আপনার চাহিদা অনুযায়ী)
+        // সরাসরি সুপাবেস টোকেন ব্যবহার করে পুশ পাঠানো হচ্ছে
+        await sendAutomatedPush(firebase_uid, title, body); 
+// Note: Our new sendAutomatedPush handles strings by converting them to [uid] automatically. This is safe.
+        
+        alert("নির্দিষ্ট ইউজারকে নোটিফিকেশন পাঠানো হয়েছে!");
+        closeModal('msg-modal');
+    } catch (e) {
+        alert("এরর: " + e.message);
+    }
+};
+// --- ৪. ব্লক এবং ডিলিট (Firestore Collection: profile) ---
+window.toggleBlock = async (uid, isBlockedNow) => {
+    if (!confirm("Are you sure?")) return;
+    try {
+        await updateDoc(doc(db, "profile", uid), { isBlocked: isBlockedNow });
+        alert("User Status Updated!");
+        searchSpecificUser();
+    } catch (e) { alert(e.message); }
+};
+
+window.delUser = async (uid) => {
+    if (!confirm("Delete this user's document permanently?")) return;
+    try {
+        await deleteDoc(doc(db, "profile", uid));
+        alert("User Profile Deleted!");
+        document.getElementById('user-table-body').innerHTML = "";
+    } catch (e) { alert(e.message); }
+};
+
+// --- ৫. ফুল ডাটা ভিউ (মেমোরিতে থাকা সব ফিল্ড অ্যাডমিনকে দেখাবে) ---
+window.viewUserFullData = (uid) => {
+    const user = allUsers.find(u => u.firebase_uid === uid);
+    if (!user) return;
+    
+    document.getElementById('user-details-modal').style.display = 'flex';
+    const area = document.getElementById('user-full-data-content');
+
+    area.innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; background:#f1f5f9; padding:15px; border-radius:12px;">
+            <div><label>💰 Balance</label><p>৳${user.balance || 0}</p></div>
+            <div><label>💎 Shop Tokens</label><p>${user.shopTokens || 0}</p></div>
+            <div><label>👥 Total Refers</label><p>${user.totalRefers || 0}</p></div>
+            <div><label>📱 Device ID</label><p><small>${user.deviceId || 'N/A'}</small></p></div>
+        </div>
+        <div style="margin-top:15px;">
+            <label>🎮 Joined Matches (${user.joinedMatches?.length || 0})</label>
+            <div style="max-height:100px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:8px; background:white; font-size:12px;">
+                ${user.joinedMatches?.map(m => `• ${m.title} [${m.type}] - ${m.date}`).join('<br>') || 'No match history.'}
+            </div>
+        </div>
+        <div style="margin-top:15px;">
+            <label>💸 Withdrawal History</label>
+            <div style="max-height:100px; overflow-y:auto; border:1px solid #ddd; padding:10px; border-radius:8px; background:white; font-size:12px;">
+                ${user.recentWithdrawals?.map(w => `• ৳${w.amount} (${w.method}) - <b>${w.status}</b>`).join('<br>') || 'No withdrawals.'}
+            </div>
+        </div>
+        <div style="margin-top:15px;">
+            <label>🎫 Coupons Used</label>
+            <p style="font-size:12px;">${user.usedCoupons?.join(', ') || 'None'}</p>
+        </div>
+    `;
+};
+        // --- TOURNAMENT LOGIC ---
+        window.createMatch = async () => {
+  try {
+    // 1️⃣ Read inputs (অপরিবর্তিত)
+    const customId = document.getElementById('t-custom-id').value.trim();
+    const title = document.getElementById('t-title').value.trim();
+    const dateRaw = document.getElementById('t-date-picker').value;
+
+    if (!title || !dateRaw) {
+      alert("Title and Date are required");
+      return;
+    }
+
+    const dObj = new Date(dateRaw);
+    const formattedDate = dObj.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+
+    const fee = Number(document.getElementById('t-fee').value || 0);
+    const total = Number(document.getElementById('t-total').value || 0);
+    const image = document.getElementById('t-img').value.trim();
+    const type = document.getElementById('t-type').value;
+    const category = document.getElementById('t-category').value;
+    const extra_details = document.getElementById('t-details').value;
+
+    // 2️⃣ Build row (অপরিবর্তিত)
+    const matchData = {
+        tournament_id: "M-" + Date.now(),
+        title: title,
+        type: type,
+        category: category,
+        match_date: formattedDate,
+        fee: fee,
+        total_slots: total,
+        joined_count: 0,
+        image_url: image,
+        status: "active",
+        participants: [], 
+        teams: [],        
+        extra_details: extra_details,
+        room_id: "",
+        room_password: "",
+        created_at: Date.now() 
+    };
+
+    // 3️⃣ Firestore Save Logic (অপরিবর্তিত)
+    try {
+        await updateDoc(tournamentHubRef, {
+            active_matches: arrayUnion(matchData)
+        });
+        console.log("Match added to Hub");
+    } catch (e) {
+        // যদি ডকুমেন্টটি একদম নতুন হয়, তবে এটি তৈরি করবে
+        await setDoc(tournamentHubRef, { active_matches: [matchData] });
+        console.log("Hub Created & Match added");
+    }
+
+    // 🔥 ৪. পুশ নোটিফিকেশন ট্রিগার (সুপাবেস থেকে সব টোকেনে পাঠানো হবে)
+    // এটি অরিজিনাল লজিক শেষ হওয়ার পর কাজ করবে
+    try {
+const pushTitle = "টুর্নামেন্ট আপডেট! 🏆";
+        const pushBody = `নতুন টুর্নামেন্ট আপলোড করা হয়েছে। এন্ট্রি ফি: ৳${fee}। দ্রুত অ্যাপ চেক করুন!`;
+        
+        // userId 'all' মানে এটি সুপাবেস থেকে সব টোকেন নিয়ে পুশ পাঠাবে
+        await sendAutomatedPush('all', pushTitle, pushBody);
+    } catch (pushErr) {
+        console.warn("Notification failed, but match was saved.", pushErr);
+    }
+
+    alert("✅ Match Published & Notification Sent!");
+
+    // 5️⃣ Reload list & Sync KV (অপরিবর্তিত)
+    loadTournaments(); 
+    triggerKVSync();
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ Error: " + e.message);
+  }
+};
+
+        // --- UPDATED TOURNAMENT LISTENER (WITH START/FINISH TOGGLE) ---
+async function loadTournaments() {
+  const list = document.getElementById('match-list');
+  if (!list) return;
+
+  try {
+    // ১-রিড গোল: Hub ডকুমেন্ট থেকে সব ডাটা একবারেই আনা
+    const snap = await getDoc(tournamentHubRef);
+    
+    if (!snap.exists()) {
+        list.innerHTML = `<p style="text-align:center; padding:20px; color:gray;">কোন টুর্নামেন্ট ডাটাবেসে নেই।</p>`;
+        return;
+    }
+
+    const data = snap.data();
+    const allMatches = data.active_matches || [];
+
+    if (allMatches.length === 0) {
+        list.innerHTML = `<p style="text-align:center; padding:20px; color:gray;">টুর্নামেন্ট লিস্ট এখন খালি।</p>`;
+        return;
+    }
+
+    // সর্টিং ফিক্স: created_at না থাকলে tournament_id দিয়ে সর্ট করবে যাতে এরর না হয়
+    allMatches.sort((a, b) => {
+        const timeA = a.created_at || 0;
+        const timeB = b.created_at || 0;
+        return timeB - timeA;
+    });
+
+    tournamentsMap = {}; 
+
+// ... আগের কোড ...
+    list.innerHTML = allMatches.map(m => {
+      const mId = m.tournament_id;
+      tournamentsMap[mId] = m; 
+
+      let statusClass = m.status === 'active' ? 'match-active' : 
+                        m.status === 'ongoing' ? 'match-ongoing' : 'match-completed';
+
+      return `
+        <div class="match-item ${statusClass}">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <b>${m.title}</b>
+            <span class="status-badge ${m.status === 'active' ? 'badge-pending' : 'badge-active'}" style="font-size:10px;">
+              ${m.status.toUpperCase()}
+            </span>
+            <span>${m.joined_count || 0}/${m.total_slots || 0}</span>
+          </div>
+
+          <div class="action-group" style="margin-top:10px; flex-wrap:wrap;">
+            <input type="text" id="rid-${mId}" value="${m.room_id || ''}" placeholder="ID" style="width:60px;">
+            <input type="text" id="pass-${mId}" value="${m.room_password || ''}" placeholder="Pass" style="width:45px;">
+
+            <button class="btn btn-sm btn-success" onclick="saveCreds('${mId}','${m.title}')">Send</button>
+            <button class="btn btn-sm btn-info" onclick="viewPart('${mId}','${m.type}')">Users</button>
+            <button class="btn btn-sm btn-primary" onclick="openEdit('${mId}')">Edit</button>
+
+            ${m.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="setStatus('${mId}','ongoing')">Start</button>` : 
+              m.status === 'ongoing' ? `<button class="btn btn-sm btn-dark" onclick="finishMatch('${mId}')">Finish</button>` : ''}
+
+            <button class="btn btn-sm btn-success" style="background:#8b5cf6" onclick="openJudge('${mId}','${m.type}')">Judge</button>
+            
+            <!-- ডাস্টবিন বাটনটি এখন রিফান্ড লজিক কল করবে -->
+            <button class="btn btn-sm btn-danger" onclick="deleteAndRefund('${mId}')" title="Delete & Refund All">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+// ... বাকি এরর হ্যান্ডলিং ...
+
+  } catch (err) {
+    console.error("Firestore Hub Load Error:", err);
+    list.innerHTML = `<p style="color:red; text-align:center;">Failed to load tournaments: ${err.message}</p>`;
+  }
+}
+window.saveCreds = async (matchId, title) => {
+  const roomId = document.getElementById(`rid-${matchId}`).value.trim();
+  const password = document.getElementById(`pass-${matchId}`).value.trim();
+
+  if (!roomId || !password) {
+    alert("Room ID and Password required");
+    return;
+  }
+
+  try {
+    // 1️⃣ টুর্নামেন্ট হাব থেকে সব ম্যাচ আনা
+    const hubSnap = await getDoc(tournamentHubRef);
+    if (!hubSnap.exists()) throw new Error("Tournament Hub not found");
+
+    let allMatches = hubSnap.data().active_matches || [];
+    let targetMatch = allMatches.find(m => m.tournament_id === matchId);
+
+    if (!targetMatch) throw new Error("Match not found in Hub");
+
+    // 2️⃣ ওই নির্দিষ্ট ম্যাচের রুম আইডি ও পাসওয়ার্ড আপডেট করা
+    targetMatch.room_id = roomId;
+    targetMatch.room_password = password;
+
+    await updateDoc(tournamentHubRef, { active_matches: allMatches });
+
+    // 3️⃣ নোটিফিকেশন পাঠানোর জন্য ইউজার আইডি সংগ্রহ করা
+    // ১-রিড গোল: আলাদা কুয়েরি না করে সরাসরি ওই ম্যাচের participants/teams অ্যারে থেকে আইডি নেওয়া
+    let userIdsToNotify = [];
+    if (targetMatch.type === 'Solo') {
+      userIdsToNotify = (targetMatch.participants || []).map(p => p.app_uid);
+    } else {
+      // স্কোয়াড/ডুও এর ক্ষেত্রে লিডারদের আইডি
+      userIdsToNotify = (targetMatch.teams || []).map(t => t.leader_uid);
+    }
+
+    const notifTitle = getRandomTitle("PUBLIC_ROOM");
+    const cleanTitle = notifTitle.split('\n')[0]; // টাইটেলের প্রথম লাইন
+
+    // 4️⃣ প্রত্যেক ইউজারের 'profile' ডকুমেন্টে ইন-অ্যাপ নোটিফিকেশন সেভ করা
+    if (userIdsToNotify.length > 0) {
+      for (const uid of userIdsToNotify) {
+        const userRef = doc(db, "profile", uid);
+        try {
+          await updateDoc(userRef, {
+            recentNotifications: arrayUnion({
+              title: cleanTitle,
+              body: `${title} রুম আইডি এবং পাসওয়ার্ড দেওয়া হয়েছে। 'My Match' সেকশনে চেক করুন।`,
+              time: new Date().getTime()
+            })
+          });
+        } catch (err) {
+          console.warn(`User ${uid} profile not found, skipping notification.`);
+        }
+      }
+    }
+
+    // 5️⃣ গ্লোবাল পুশ নোটিফিকেশন পাঠানো (বিদ্যমান লজিক)
+await sendAutomatedPush("specific", userIdsToNotify, notifTitle, `${title} Room Ready!`);
+
+    alert("রুম আইডি ও পাসওয়ার্ড সফলভাবে সেভ হয়েছে এবং ইউজারদের জানানো হয়েছে!");
+    loadTournaments(); // অ্যাডমিন লিস্ট রিফ্রেশ
+    triggerKVSync();
+
+  } catch (e) {
+    console.error("SaveCreds Error:", e);
+    alert("সমস্যা হয়েছে: " + e.message);
+  }
+};
+window.deleteMatch = async (mId) => {
+    if(!confirm("Are you sure?")) return;
+    try {
+        const snap = await getDoc(tournamentHubRef);
+        const allMatches = snap.data().active_matches || [];
+        const filtered = allMatches.filter(m => m.tournament_id !== mId);
+        await updateDoc(tournamentHubRef, { active_matches: filtered });
+        alert("Deleted!");
+        loadTournaments();
+    } catch(e) { alert(e.message); }
+};
+        window.openEdit = (id) => {
+            const t = tournamentsMap[id]; if(!t) return;
+            document.getElementById('edit-id').value = id; document.getElementById('edit-title').value = t.title;
+            document.getElementById('edit-category').value = t.category || 'BR'; document.getElementById('edit-details').value = t.extraDetails || '';
+            document.getElementById('edit-modal').style.display='flex';
+        };
+
+window.saveEdit = async () => {
+    const id = document.getElementById("edit-id").value;
+    try {
+        const hubSnap = await getDoc(tournamentHubRef);
+        let allMatches = hubSnap.data().active_matches || [];
+        
+        const dateRaw = document.getElementById("edit-date-picker").value;
+        let formattedDate = tournamentsMap[id].match_date; // পুরনোটা ডিফল্ট
+        
+        if (dateRaw) {
+            formattedDate = new Date(dateRaw).toLocaleString("en-US", {
+                month: "short", day: "numeric", hour: "numeric", minute: "numeric", hour12: true
+            });
+        }
+
+        const updatedMatches = allMatches.map(m => {
+            if (m.tournament_id === id) {
+                return {
+                    ...m,
+                    title: document.getElementById("edit-title").value.trim(),
+                    category: document.getElementById("edit-category").value,
+                    extra_details: document.getElementById("edit-details").value.trim(),
+                    match_date: formattedDate
+                };
+            }
+            return m;
+        });
+
+        await updateDoc(tournamentHubRef, { active_matches: updatedMatches });
+        alert("Tournament Updated in Hub!");
+        closeModal("edit-modal");
+        loadTournaments();
+        triggerKVSync('tournaments');
+    } catch (e) {
+        alert("Edit Error: " + e.message);
+    }
+};
+
+        
+// --- NEW FINISH LOGIC: DELETE WITHOUT REFUND ---
+window.finishMatch = async (id) => {
+  // ১. মেমোরি থেকে টুর্নামেন্টের ডাটা নেওয়া (আপনার পুরনো লজিক অনুযায়ী)
+  const match = tournamentsMap[id];
+  if (!match) return;
+
+  // ২. আপনার সেই পুরনো কনফার্মেশন মেসেজ
+  const confirmMsg =
+    `আপনি কি "${match.title}" ম্যাচটি শেষ করতে চান?\n\n` +
+    `এই ম্যাচটি ডিলিট হবে এবং কোনো টাকা ফেরত দেওয়া হবে না।`;
+
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    // ৩. ফায়ারস্টোর হাব থেকে লেটেস্ট ডাটা রিড করা
+    const hubSnap = await getDoc(tournamentHubRef);
+    if (!hubSnap.exists()) throw new Error("Tournament Hub not found");
+
+    const allMatches = hubSnap.data().active_matches || [];
+
+    // ৪. ওই নির্দিষ্ট আইডি-র ম্যাচটি ফিল্টার করে বাদ দেওয়া (ডিলিট লজিক)
+    const filteredMatches = allMatches.filter(m => m.tournament_id !== id);
+
+    // ৫. আপডেট করা অ্যারেটি পুনরায় ফায়ারস্টোরে সেভ করা
+    await updateDoc(tournamentHubRef, { active_matches: filteredMatches });
+
+    // ৬. আপনার সেই পুরনো সাকসেস মেসেজ
+    alert("ম্যাচটি সফলভাবে ডিলিট করা হয়েছে (Refund দেওয়া হয়নি)।");
+
+    // ৭. লিস্ট রিফ্রেশ এবং KV সিঙ্ক
+    loadTournaments(); 
+    triggerKVSync('tournaments');
+
+  } catch (e) {
+    console.error(e);
+    alert("Error finishing match: " + e.message);
+  }
+};
+
+        // --- JUDGE SYSTEM ---
+window.openJudge = (id, type) => {
+    // ১. মেমোরি থেকে ওই নির্দিষ্ট টুর্নামেন্টের ডাটা খুঁজে বের করা (Old Logic)
+    const match = tournamentsMap[id];
+    
+    if (!match) {
+        alert("ম্যাচ ডাটা পাওয়া যায়নি! অনুগ্রহ করে রিফ্রেশ দিন।");
+        return;
+    }
+
+    // ২. গ্লোবাল ভেরিয়েবলে আইডি রাখা (Old Logic)
+    window.judgeMatchId = id; 
+    
+    document.getElementById('judge-modal').style.display = 'flex';
+    const area = document.getElementById('judge-list');
+    area.innerHTML = ""; // ক্লিয়ার করা
+
+    // গ্রিড ডিজাইন সেটআপ (মেসি লুক দূর করার জন্য)
+    area.style.display = "grid";
+    area.style.gridTemplateColumns = "repeat(auto-fill, minmax(240px, 1fr))";
+    area.style.gap = "15px";
+
+    // 🧍 SOLO MATCH এর জন্য রেন্ডারিং
+    if (type === 'Solo') {
+        const participants = match.participants || [];
+        
+        if (participants.length === 0) {
+            area.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:20px; color:gray;'>কোন প্লেয়ার এখনো জয়েন করেনি</p>";
+            return;
+        }
+
+        area.innerHTML = participants.map(p => `
+            <div class="judge-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05); transition:0.3s;">
+                <div style="border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:10px;">
+                    <small style="color:#64748b; font-weight:700; font-size:10px; text-transform:uppercase;">App Username</small>
+                    <b style="display:block; color:#0f172a; font-size:14px;">${p.username || 'N/A'}</b>
+                </div>
+                
+                <div style="margin-bottom:10px;">
+                    <small style="color:#4361ee; font-weight:700; font-size:10px; text-transform:uppercase;">In-Game Details</small>
+                    <div style="background:#f0f7ff; padding:8px; border-radius:8px; margin-top:4px;">
+                        <b style="display:block; color:#1e40af; font-size:13px;">${p.ff_name || 'N/A'}</b>
+                        <code style="color:#3b82f6; font-size:12px; font-family:monospace; font-weight:bold;">UID: ${p.ff_uid || 'N/A'}</code>
+                    </div>
+                </div>
+
+                <div style="background:#f8fafc; padding:10px; border-radius:10px; border:1px dashed #cbd5e1;">
+                    <label style="font-size:10px; font-weight:800; color:#64748b; display:block; margin-bottom:5px;">ENTER KILLS:</label>
+                    <input type="number" class="judge-inp" data-uid="${p.app_uid}" value="0" 
+                        style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:8px; text-align:center; font-size:18px; font-weight:800; color:#10b981; background:#fff;">
+                </div>
+            </div>
+        `).join('');
+    } 
+    // 👥 DUO / SQUAD MATCH এর জন্য রেন্ডারিং
+    else {
+        const teams = match.teams || [];
+        
+        if (teams.length === 0) {
+            area.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:20px; color:gray;'>কোন টিম এখনো জয়েন করেনি</p>";
+            return;
+        }
+
+        area.innerHTML = teams.map(t => `
+            <div class="judge-card" style="background:#fdfaff; border:1px solid #e9d5ff; border-radius:12px; padding:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                <div style="border-bottom:1px solid #f3e8ff; padding-bottom:8px; margin-bottom:10px;">
+                    <small style="color:#7c3aed; font-weight:700; font-size:10px; text-transform:uppercase;">Team Name</small>
+                    <b style="display:block; color:#4c1d95; font-size:15px;">${t.team_name}</b>
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    <small style="color:#64748b; font-weight:700; font-size:10px; text-transform:uppercase;">Leader Game Details</small>
+                    <div style="background:#f5f3ff; padding:8px; border-radius:8px; margin-top:4px;">
+                        <b style="display:block; color:#5b21b6; font-size:13px;">${t.leader_ff_name}</b>
+                        <code style="color:#8b5cf6; font-size:12px; font-family:monospace; font-weight:bold;">UID: ${t.leader_ff_uid}</code>
+                    </div>
+                </div>
+
+                <div style="background:#fff; padding:10px; border-radius:10px; border:1px dashed #d8b4fe;">
+                    <label style="font-size:10px; font-weight:800; color:#7c3aed; display:block; margin-bottom:5px;">TOTAL TEAM KILLS:</label>
+                    <input type="number" class="judge-inp" data-uid="${t.leader_uid}" value="0" 
+                        style="width:100%; border:1px solid #ddd6fe; border-radius:6px; padding:8px; text-align:center; font-size:18px; font-weight:800; color:#10b981;">
+                </div>
+            </div>
+        `).join('');
+    }
+};
+        
+window.confirmRewards = async () => {
+  const rate = Number(document.getElementById('per-kill-rate').value);
+  const title = getRandomTitle('REWARD');
+  const inputs = document.querySelectorAll('.judge-inp');
+
+  // ইউজার অ্যাপে নোটিফিকেশন টাইটেল (Newline থাকলে প্রথম লাইন নেওয়া হবে)
+  const cleanTitle = title.split('\n')[0];
+
+  try {
+    // ১. সব প্লেয়ারদের পুরস্কার ডিস্ট্রিবিউশন লুপ
+    for (const i of inputs) {
+      const kills = Number(i.value);
+      const uid = i.getAttribute('data-uid'); // এটি ইউজারের Firebase UID
+
+      if (kills > 0 && uid) {
+        const reward = kills * rate;
+        const userRef = doc(db, "profile", uid);
+
+        // ১-রিড গোল: ১টি রাইট কলে ব্যালেন্স বাড়ানো এবং প্রোফাইলে নোটিফিকেশন সেভ করা
+        await updateDoc(userRef, {
+          balance: increment(reward),
+          recentNotifications: arrayUnion({
+            title: cleanTitle,
+            body: `ম্যাচে ${kills} কিল করার জন্য আপনি ৳${reward} পুরস্কার জিতেছেন!`,
+            time: new Date().getTime()
+          }),
+          updatedAt: serverTimestamp()
+        });
+
+        // পুশ নোটিফিকেশন পাঠানো (এলার্ট হিসেবে)
+await sendAutomatedPush("specific", [uid], title, `আপনি জিতেছেন ৳${reward}`);
+      }
+    }
+
+    // ২. টুর্নামেন্ট হাবে ম্যাচের স্ট্যাটাস 'completed' করা
+    const hubSnap = await getDoc(tournamentHubRef);
+    if (hubSnap.exists()) {
+      const allMatches = hubSnap.data().active_matches || [];
+      
+      // ওই নির্দিষ্ট ম্যাচটি খুঁজে বের করে স্ট্যাটাস আপডেট করা
+      const updatedMatches = allMatches.map(m => {
+        if (m.tournament_id === judgeMatchId) {
+          return { ...m, status: "completed" };
+        }
+        return m;
+      });
+
+      await updateDoc(tournamentHubRef, { active_matches: updatedMatches });
+    }
+
+    alert("পুরস্কার সফলভাবে বিতরণ করা হয়েছে এবং ম্যাচ শেষ হয়েছে!");
+    closeModal('judge-modal');
+    loadTournaments(); // অ্যাডমিন লিস্ট রিফ্রেশ
+
+  } catch (e) {
+    console.error("Reward Distribution Error:", e);
+    alert("পুরস্কার বিতরণে সমস্যা হয়েছে: " + e.message);
+  }
+};
+
+        // --- VIEW PARTICIPANTS & PRIVATE CREDS ---
+window.viewPart = (id, type) => {
+  // মেমোরি থেকে ওই নির্দিষ্ট ম্যাচের ডাটা নেওয়া (০ রিড খরচ)
+  const match = tournamentsMap[id];
+  
+  if (!match) {
+    alert("Match data not found in memory!");
+    return;
+  }
+
+  document.getElementById('part-modal').style.display = 'flex';
+  const area = document.getElementById('part-view-area');
+
+  // 🧍 SOLO MATCH
+  if (type === 'Solo') {
+    const participants = match.participants || [];
+
+    if (participants.length === 0) {
+      area.innerHTML = "<p style='text-align:center; padding:20px;'>কোন প্লেয়ার জয়েন করেনি</p>";
+      return;
+    }
+
+    const rows = participants.map(p => `
+      <tr>
+        <td>${p.username}</td>
+        <td>${p.ff_name}</td> <!-- প্রোফাইল ডক অনুযায়ী ff_name ব্যবহার করা হয়েছে -->
+        <td>${p.ff_uid}</td>
+        <td>
+          <button class="btn btn-sm btn-warning"
+            onclick="sendPrivateCreds(
+              '${id}',
+              '${p.app_uid}', 
+              'Solo',
+              '${p.username}'
+            )">
+            ID/P
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    area.innerHTML = `
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Game Name</th>
+            <th>UID</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  // 👥 DUO / SQUAD MATCH
+  else {
+    const teams = match.teams || [];
+
+    if (teams.length === 0) {
+      area.innerHTML = "<p style='text-align:center; padding:20px;'>কোন টিম জয়েন করেনি</p>";
+      return;
+    }
+
+    area.innerHTML =
+      `<div class="team-grid">` +
+      teams.map(team => {
+        // টিমের মেম্বার লিস্ট রেন্ডার করা
+        const slots = (team.members || []).map(m => `
+          <div class="slot">
+            <b>${m.ff_name}</b><br>
+            <small>${m.ff_uid}</small>
+          </div>
+        `).join('');
+
+        return `
+          <div class="team-card">
+            <div class="team-header">
+              <span>${team.team_name}</span>
+              <button class="btn btn-sm btn-warning"
+                onclick="sendPrivateCreds(
+                  '${id}',
+                  '${team.team_id}',
+                  '${type}',
+                  '${team.team_name}'
+                )">
+                ID/P
+              </button>
+            </div>
+            ${slots}
+          </div>
+        `;
+      }).join('') +
+      `</div>`;
+  }
+};
+
+        window.sendPrivateCreds = (matchId, targetId, type, name) => { 
+            document.getElementById('cred-match-id').value = matchId; 
+            document.getElementById('cred-target-id').value = targetId; 
+            document.getElementById('cred-type').value = type; 
+            document.getElementById('cred-target-name').innerText = `To: ${name}`; 
+            document.getElementById('cred-modal').style.display = 'flex'; 
+        };
+
+        window.submitPrivateCreds = async () => {
+  const matchId = document.getElementById('cred-match-id').value;
+  const targetId = document.getElementById('cred-target-id').value;
+  const type = document.getElementById('cred-type').value;
+  const rid = document.getElementById('cred-room-id').value.trim();
+  const pass = document.getElementById('cred-pass').value.trim();
+
+  if (!rid || !pass) {
+    alert("Room ID and Password required");
+    return;
+  }
+
+  const title = getRandomTitle('CREDENTIALS');
+
+  try {
+    if (type === 'Solo') {
+      // 🔹 Update participant credentials
+      await supabase
+        .from("participants")
+        .update({
+          private_room_id: rid,
+          private_password: pass
+        })
+        .eq("tournament_id", matchId)
+        .eq("user_id", targetId);
+
+      // 🔹 Notify user
+      await supabase.from("notifications").insert([{
+        user_id: targetId,
+        title,
+        body: "Private Room ID & Password Ready",
+        is_read: false,
+        created_at: new Date().toISOString()
+      }]);
+
+      await sendAutomatedPush(targetId, title, "Check Match for ID/Pass");
+
+    } else {
+      // 🔹 Team case
+      const { data: members } = await supabase
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", targetId);
+
+      for (const m of members || []) {
+        await supabase.from("notifications").insert([{
+          user_id: m.user_id,
+          title,
+          body: "Team Room ID & Password Ready",
+          is_read: false,
+          created_at: new Date().toISOString()
+        }]);
+
+        await sendAutomatedPush(m.user_id, title, "Team ID/Pass Ready");
+      }
+    }
+
+    alert("Credentials sent!");
+    closeModal('cred-modal');
+
+  } catch (e) {
+    console.error(e);
+    alert("Failed to send credentials");
+  }
+};
+ 
+// ✅ ১. SET STATUS (START বাটন ফিক্স করার জন্য)
+window.setStatus = async (matchId, newStatus) => {
+    try {
+        const hubSnap = await getDoc(tournamentHubRef);
+        if (!hubSnap.exists()) throw new Error("Hub not found");
+        let allMatches = hubSnap.data().active_matches || [];
+        
+        const updated = allMatches.map(m => {
+            if (m.tournament_id === matchId) return { ...m, status: newStatus };
+            return m;
+        });
+
+        await updateDoc(tournamentHubRef, { active_matches: updated });
+        alert(`Match status changed to ${newStatus.toUpperCase()}`);
+        loadTournaments();
+        triggerKVSync('tournaments');
+    } catch (e) { alert("Error: " + e.message); }
+};
+
+// ✅ ২. LOAD USERS (ইউজার লিস্ট এবং Reference Error ফিক্স করার জন্য)
+window.loadUsers = async () => {
+    const tableBody = document.getElementById('user-table-body');
+    const countEl = document.getElementById('user-count');
+    if (!tableBody) return;
+    try {
+        const snap = await getDocs(collection(db, "profile"));
+        const users = [];
+        snap.forEach(doc => { users.push({ firebase_uid: doc.id, ...doc.data() }); });
+        allUsers = users; 
+        if (countEl) countEl.innerText = `${users.length} Users`;
+        renderUsers(users);
+    } catch (e) { console.error(e); }
+};
+
+// ✅ ৩. DELETE AND REFUND (ম্যাচ ডিলিট করে টাকা ফেরত দেওয়ার জন্য)
+window.deleteAndRefund = async (matchId) => {
+    const match = tournamentsMap[matchId];
+    if (!match) return;
+    if (!confirm(`ম্যাচটি ডিলিট করতে চান? সবাইকে টাকা ফেরত দেওয়া হবে।`)) return;
+
+    try {
+        let uidsToRefund = [];
+        if (match.type === 'Solo') uidsToRefund = (match.participants || []).map(p => p.app_uid);
+        else uidsToRefund = (match.teams || []).map(t => t.leader_uid);
+
+        if (uidsToRefund.length > 0) {
+            for (const uid of uidsToRefund) {
+                const userRef = doc(db, "profile", uid);
+                await updateDoc(userRef, {
+                    balance: increment(match.fee),
+                    recentNotifications: arrayUnion({
+                        title: "ম্যাচ বাতিল/রিফান্ড",
+                        body: `${match.title} ম্যাচটি বাতিল হওয়ায় আপনার এন্ট্রি ফি ৳${match.fee} ফেরত দেওয়া হয়েছে।`,
+                        time: Date.now()
+                    })
+                });
+            }
+        }
+
+        const hubSnap = await getDoc(tournamentHubRef);
+        const filtered = hubSnap.data().active_matches.filter(m => m.tournament_id !== matchId);
+        await updateDoc(tournamentHubRef, { active_matches: filtered });
+
+        alert("Tournament Deleted & All players refunded!");
+        loadTournaments();
+        triggerKVSync('tournaments');
+    } catch (e) { alert(e.message); }
+};
+
+// ✅ ৪. FINISH MATCH (রিফান্ড ছাড়াই ম্যাচ ডিলিট করার জন্য)
+window.finishMatch = async (matchId) => {
+    if (!confirm(`ম্যাচটি শেষ করতে চান? কাউকে টাকা ফেরত দেওয়া হবে না।`)) return;
+    try {
+        const hubSnap = await getDoc(tournamentHubRef);
+        const filtered = hubSnap.data().active_matches.filter(m => m.tournament_id !== matchId);
+        await updateDoc(tournamentHubRef, { active_matches: filtered });
+        alert("Match Finished!");
+        loadTournaments();
+        triggerKVSync('tournaments');
+    } catch (e) { alert(e.message); }
+};
+       // --- SAFE SETTINGS & CONFIG ---
+        // --- SAFE SETTINGS & CONFIG (Supabase) ---
+async function loadAppSettings() {
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  if (error || !data) {
+    console.error("Settings load failed", error);
+    return;
+  }
+
+  const d = data;
+
+  const safeSet = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? "";
+  };
+
+  // 🔹 BASIC SETTINGS
+  safeSet('coin-price', d.niva_coin_price);
+  safeSet('payeer-rate', d.payeer_rate || 115);
+  safeSet('min-w', d.min_withdraw || 50);
+  safeSet('max-w', d.max_withdraw || 10000);
+
+  safeSet('tg-support-link', d.tg_support);
+  safeSet('tg-channel-link', d.tg_channel);
+  safeSet('tg-proof-link', d.tg_proof);
+
+  // 🔹 SOUND SETTINGS
+  safeSet('snd-active-theme', d.active_theme || "1");
+  safeSet('snd-theme-vol', d.theme_vol ?? 0.5);
+  safeSet('snd-effect-vol', d.effect_vol ?? 0.7);
+
+  // 🔹 THEME TOGGLE
+  const themeBtn = document.getElementById('btn-toggle-theme');
+  if (themeBtn) {
+    const on = d.theme_enabled !== false;
+    themeBtn.className = `switch-btn ${on ? 'switch-on' : 'switch-off'}`;
+    themeBtn.innerText = on ? 'ON' : 'OFF';
+  }
+
+  // 🔹 EFFECT TOGGLE
+  const effectBtn = document.getElementById('btn-toggle-effects');
+  if (effectBtn) {
+    const on = d.effects_enabled !== false;
+    effectBtn.className = `switch-btn ${on ? 'switch-on' : 'switch-off'}`;
+    effectBtn.innerText = on ? 'ON' : 'OFF';
+  }
+
+  // 🔹 METHOD TOGGLES
+  const methodArea = document.getElementById('method-toggles');
+  if (methodArea) {
+    const methods = [
+      ['Bkash', 'method_bkash'],
+      ['Nagad', 'method_nagad'],
+      ['Niva', 'method_niva'],
+      ['Payeer', 'method_payeer'],
+      ['SpinWheel', 'method_spinwheel']
+    ];
+
+    methodArea.innerHTML = methods.map(([label, key]) => {
+      const on = d[key] !== false;
+      return `
+        <div class="toggle-row">
+          <span>${label}</span>
+          <button class="switch-btn ${on ? 'switch-on' : 'switch-off'}"
+            onclick="toggleSetting('${key}', ${on})">
+            ${on ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+        // --- RESTORED SETTINGS LOGIC ---
+window.updateSettings = async () => {
+    try {
+        const v = (id) => document.getElementById(id)?.value ?? null;
+
+        // পুরানো লজিক অনুযায়ী ডাটা অবজেক্ট তৈরি
+        const settings = {
+            niva_coin_price: Number(v('coin-price')),
+            payeer_rate: Number(v('payeer-rate')),
+            min_withdraw: Number(v('min-w')),
+            max_withdraw: Number(v('max-w')),
+            tg_support: v('tg-support-link'),
+            tg_channel: v('tg-channel-link'),
+            tg_proof: v('tg-proof-link'),
+            // স্পিন হুইল স্ট্যাটাস গ্লোবাল ভেরিয়েবল থেকে নেওয়া (নিচে ২ নম্বর পয়েন্টে দেখুন)
+            method_spinwheel: window.currentSpinStatus !== false, 
+            updated_at: new Date().toISOString()
+        };
+
+        // সুপাবেস বাদ দিয়ে সরাসরি KV2 তে পাঠানো
+        const ok = await triggerKVSync('app_settings', settings);
+
+        if (ok) {
+            alert("✅ Settings Saved directly to KV2!");
+        } else {
+            throw new Error("Worker Sync Failed");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("❌ Failed to save settings");
+    }
+};
+
+
+
+// --- LOAD SETTINGS FROM SUPABASE (ONE-TIME FETCH) ---
+async function loadSettingsInputs() {
+    try {
+        // সুপাবেসের বদলে সরাসরি ওয়ার্কার থেকে GET রিকোয়েস্ট
+        const res = await fetch(METADATA_WORKER_URL + "app_settings");
+        const d = await res.json();
+
+        if (!d || Array.isArray(d)) return; // যদি ডাটা না থাকে বা ভুল ফরম্যাটে থাকে
+
+        // আপনার পুরানো setVal লজিক
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = (val !== undefined && val !== null) ? val : "";
+        };
+
+        // ইনপুট ফিল্ডে মান বসানো
+        setVal('coin-price', d.niva_coin_price);
+        setVal('payeer-rate', d.payeer_rate);
+        setVal('min-w', d.min_withdraw);
+        setVal('max-w', d.max_withdraw);
+        setVal('tg-support-link', d.tg_support);
+        setVal('tg-channel-link', d.tg_channel);
+        setVal('tg-proof-link', d.tg_proof);
+
+        // স্পিন হুইল টগল রেন্ডারিং (পুরানো লজিক বজায় রাখা হয়েছে)
+        const methodArea = document.getElementById('method-toggles');
+        if (methodArea) {
+            const isActive = d.method_spinwheel !== false;
+            window.currentSpinStatus = isActive; // স্টেট সেভ রাখা হলো
+
+            methodArea.innerHTML = `
+                <div class="toggle-row">
+                    <span>SpinWheel Feature</span>
+                    <button class="switch-btn ${isActive ? 'switch-on' : 'switch-off'}"
+                        onclick="toggleSetting('method_spinwheel', ${isActive})">
+                        ${isActive ? 'ON' : 'OFF'}
+                    </button>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error("Failed to load settings from KV2", e);
+    }
+}
+
+// 🔹 CALL IT ON PAGE LOAD
+loadSettingsInputs();
+        // --- WITHDRAWALS ---
+        // --- NEW DYNAMIC WITHDRAWAL SYSTEM ---
+let currentWithdrawFilter = 'All'; 
+
+// 1. Save New Method (When you click "Save Method")
+window.saveWithdrawMethod = async () => {
+    const name = document.getElementById('m-name').value.trim();
+    const logo = document.getElementById('m-logo').value.trim();
+    const label = document.getElementById('m-label').value.trim();
+    const min = Number(document.getElementById('m-min').value);
+    const max = Number(document.getElementById('m-max').value);
+    const rate = Number(document.getElementById('m-rate').value);
+
+    if (!name || !logo || !label) return alert("সবগুলো ঘর পূরণ করুন");
+
+    // নতুন মেথডটি অবজেক্ট হিসেবে তৈরি
+    const newMethod = { name, logo, label, min, max, rate, created_at: new Date().toISOString() };
+
+    // মেমোরিতে থাকা লিস্টে পুশ করা
+    if(!window.currentMethods) window.currentMethods = [];
+    window.currentMethods.push(newMethod);
+
+    // সরাসরি KV2 তে পাঠিয়ে দেওয়া
+    const ok = await triggerKVSync('withdraw_methods', window.currentMethods);
+
+    if (ok) {
+        alert("✅ Withdrawal Method Saved Successfully!");
+        // ইনপুট ফিল্ড খালি করা
+        document.getElementById('m-name').value = "";
+        document.getElementById('m-logo').value = "";
+        document.getElementById('m-label').value = "";
+        loadWithdrawMethods(); // লিস্ট রিফ্রেশ
+    } else {
+        alert("❌ Failed to Sync with KV2");
+    }
+};
+
+
+window.deleteWithdrawMethod = async (index) => {
+    if (!confirm("আপনি কি এই পেমেন্ট মেথডটি ডিলিট করতে চান?")) return;
+
+    // ১. মেমোরিতে থাকা লিস্ট থেকে ওই মেথডটি বাদ দেওয়া
+    window.currentMethods.splice(index, 1);
+
+    // ২. আপডেট করা পুরো লিস্টটি সরাসরি KV2 তে পাঠানো
+    const ok = await triggerKVSync('withdraw_methods', window.currentMethods);
+    
+    if (ok) {
+        alert("ডিলিট সফল হয়েছে!");
+        loadWithdrawMethods(); // লিস্ট রিফ্রেশ করা
+    }
+};
+// 2. Filter & Method List Listener
+async function loadWithdrawMethods() {
+    try {
+        const res = await fetch(METADATA_WORKER_URL + "withdraw_methods");
+        const data = await res.json();
+        
+        // গ্লোবাল ভেরিয়েবল যাতে সেভ/ডিলিট করার সময় আমরা ডাটা ম্যানিপুলেট করতে পারি
+        window.currentMethods = Array.isArray(data) ? data : []; 
+        
+        const list = document.getElementById("admin-methods-list");
+        if (list) {
+            list.innerHTML = window.currentMethods.map((m, index) => `
+                <div class="status-badge badge-active" style="padding:8px; display:flex; align-items:center; gap:5px;">
+                    ${m.name} 
+                    <i class="fa fa-times-circle" style="cursor:pointer;color:red" 
+                       onclick="deleteWithdrawMethod(${index})"></i>
+                </div>
+            `).join("");
+        }
+        
+        // ফিল্টার বাটনগুলো আপডেট করার জন্য (যদি প্রয়োজন হয়)
+        renderFilterButtons(); 
+        
+    } catch (e) {
+        console.error("Failed to load methods:", e);
+    }
+}
+
+// 3. Set Filter Function
+window.setWFilter = (methodName) => {
+    currentWithdrawFilter = methodName;
+    // No need to refresh; the listener below will auto-trigger when any data changes
+};
+
+// --- LOAD PENDING WITHDRAWALS (SUPABASE) ---
+// ১-রিড গোল: হাব ডকুমেন্ট থেকে সব ডাটা একবারেই আনা
+async function loadPendingWithdrawals() {
+  const tableBody = document.getElementById('withdraw-table-body');
+  if (!tableBody) return;
+
+  try {
+    // সিঙ্গেল রিড: হাব ডকুমেন্ট থেকে সব রিকোয়েস্ট একসাথে আনা
+    const hubSnap = await getDoc(doc(db, "finance_hub", "withdraw_requests"));
+    
+    if (!hubSnap.exists()) {
+      tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:gray;padding:20px;">No pending requests.</td></tr>`;
+      return;
+    }
+
+    const data = hubSnap.data();
+    const allRequests = data.pending_list || [];
+
+    // সর্টিং: নতুন রিকোয়েস্ট উপরে দেখানোর জন্য (Old logic order by created_at)
+    allRequests.sort((a, b) => b.created_at - a.created_at);
+
+    // মেমোরিতে সেভ রাখা যাতে প্রসেস করার সময় পুরো অবজেক্ট পাওয়া যায়
+    window.allPendingWithdraws = allRequests;
+
+    // 🔹 Dynamic filter (same logic as before)
+    const filtered =
+      currentWithdrawFilter === 'All'
+        ? allRequests
+        : allRequests.filter(r => r.method === currentWithdrawFilter);
+
+    if (filtered.length === 0) {
+      tableBody.innerHTML =
+        `<tr>
+          <td colspan="5" style="text-align:center;color:gray;padding:20px;">
+            No pending ${currentWithdrawFilter} requests.
+          </td>
+        </tr>`;
+      return;
+    }
+
+    // টেবিল রেন্ডারিং (আপনার অরিজিনাল HTML structure বজায় রাখা হয়েছে)
+    tableBody.innerHTML = filtered.map((w, index) => `
+      <tr>
+        <td>
+          <b>${w.username || 'User'}</b><br>
+          <small>${w.user_custom_id}</small>
+        </td>
+        <td>
+          <span class="status-badge badge-paid">${w.method}</span>
+        </td>
+        <td>
+          <code style="background:#f1f5f9;padding:4px;border-radius:4px;">
+            ${w.details || ''}
+          </code>
+        </td>
+        <td><b>৳${w.amount}</b></td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-icon btn-success"
+              title="Approve"
+              onclick="processWithdraw(${index}, 'paid')">
+              <i class="fa fa-check"></i>
+            </button>
+            <button class="btn btn-icon btn-danger"
+              title="Reject"
+              onclick="processWithdraw(${index}, 'rejected')">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error("Firestore Hub Load Error:", err);
+    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red;padding:20px;">Failed to load withdrawals</td></tr>`;
+  }
+}
+
+// ইনিশিয়াল লোড
+loadPendingWithdrawals();
+// ৫. UNIFIED PROCESSOR (Firestore Hub Strategy - Refunds money and sends Push)
+window.processWithdraw = async (index, status) => {
+  // ১. মেমোরি থেকে রিকোয়েস্ট অবজেক্ট নেওয়া
+  const requestObj = window.allPendingWithdraws[index];
+  if (!requestObj) return;
+
+  const userId = requestObj.user_id;
+  const amount = requestObj.amount;
+  const requestId = requestObj.request_id; // এটি ইউজার অ্যাপে অ্যাড করা হয়েছে
+
+  // ১️⃣ Old Logic: Confirmation Message
+  const confirmMsg =
+    status === 'paid'
+      ? "Confirm as PAID?"
+      : "REJECT and refund money to user?";
+
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const hubRef = doc(db, "finance_hub", "withdraw_requests");
+    const userRef = doc(db, "profile", userId);
+
+    /* ============================================================
+       🚀 READ OPTIMIZATION: ইউজারের প্রোফাইল থেকে হিস্ট্রি রিড করা
+       ============================================================ */
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) throw new Error("User Profile not found!");
+
+    let userData = userSnap.data();
+    let wdHistory = userData.recentWithdrawals || [];
+
+    // মেমোরিতে থাকা অ্যারে থেকে নির্দিষ্ট রিকোয়েস্ট আইডি খুঁজে স্ট্যাটাস পরিবর্তন
+    wdHistory = wdHistory.map(item => {
+      if (item.id === requestId) {
+        return { ...item, status: status }; // status: 'paid' or 'rejected'
+      }
+      return item;
+    });
+
+    // ২️⃣ হাব ডকুমেন্ট থেকে এই রিকোয়েস্টটি রিমুভ করা (Cleanup Hub)
+    await updateDoc(hubRef, {
+      pending_list: arrayRemove(requestObj)
+    });
+
+    // ৩️⃣ Status অনুযায়ী লজিক প্রসেস করা
+    const title = getRandomTitle(status === 'paid' ? "WITHDRAW_PAID" : "WITHDRAW_REJECT");
+    const cleanTitle = title.split('\n')[0];
+
+    // ৪. প্রিপেয়ার আপডেট পে-লোড (সব লজিক ১টি রাইট কলে)
+    let updatePayload = {
+      recentWithdrawals: wdHistory, // স্ট্যাটাস আপডেট হওয়া লিস্ট
+      recentNotifications: arrayUnion({
+        title: cleanTitle,
+        body: status === 'paid' ? `৳${amount} withdrawal successful.` : `৳${amount} refunded to your balance.`,
+        time: Date.now()
+      }),
+      updatedAt: serverTimestamp()
+    };
+
+    if (status === "rejected") {
+      updatePayload.balance = increment(amount); // রিজেক্ট হলে ব্যালেন্স রিফান্ড (Old Logic)
+    }
+
+    /* ============================================================
+       🔥 ATOMIC WRITE: ১টি কলে ইউজারের পুরো প্রোফাইল ডাটা আপডেট
+       ============================================================ */
+    await updateDoc(userRef, updatePayload);
+
+    // ৫. পুশ নোটিফিকেশন পাঠানো (Old Logic)
+    await sendAutomatedPush(userId, title, status === 'paid' ? `৳${amount} paid` : `৳${amount} refunded`);
+
+    alert("Withdrawal processed and User History updated!");
+    loadPendingWithdrawals(); // লিস্ট রিফ্রেশ করা
+
+  } catch (e) {
+    console.error("Processing Error:", e);
+    alert("Error: " + e.message);
+  }
+};
+        // --- MEDIA SECTIONS ---
+        window.addVideo = async () => {
+  const title = document.getElementById('v-title')?.value.trim();
+  const link  = document.getElementById('v-link')?.value.trim();
+
+  if (!title || !link) {
+    alert("Title and link required");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("videos")
+    .insert([{
+      title,
+      link,
+      created_at: new Date().toISOString()
+    }]);
+
+  if (error) {
+    console.error(error);
+    alert("Failed to add video");
+    return;
+  }
+
+  alert("Video added!");
+  loadVideos();
+};
+async function loadVideos() {
+    const res = await fetch(METADATA_WORKER_URL + "videos");
+    const data = await res.json();
+    window.currentVideos = data || [];
+    document.getElementById("video-list").innerHTML = window.currentVideos.map((v, index) => `
+        <div class="list-item">
+            <span>${v.title}</span>
+            <button class="btn btn-sm btn-danger" onclick="deleteVideo(${index})">X</button>
+        </div>`).join("");
+}
+
+window.addVideo = async () => {
+    const title = document.getElementById('v-title').value.trim();
+    const link = document.getElementById('v-link').value.trim();
+    if (!title || !link) return alert("Fill all fields");
+    window.currentVideos.push({ title, link });
+    await triggerKVSync('videos', window.currentVideos);
+    loadVideos();
+};
+
+window.deleteVideo = async (index) => {
+    window.currentVideos.splice(index, 1);
+    await triggerKVSync('videos', window.currentVideos);
+    loadVideos();
+};
+// Admin Panel: Create Coupon in KV
+window.createCoupon = async () => {
+    const code = document.getElementById('c-code').value.trim();
+    const bonus = Number(document.getElementById('c-bonus').value);
+    const max = Number(document.getElementById('c-max').value);
+    const type = document.getElementById('c-type').value;
+
+    if (!code) return alert("Code required");
+
+    try {
+        const res = await fetch(KB_URL + "coupons");
+        let coupons = await res.json() || [];
+
+        const newCoupon = {
+            id: "cpn_" + Date.now(),
+            code, bonus, max, type,
+            used: 0, // Note: Global 'used' count is best handled via your Worker logic
+            created_at: Date.now()
+        };
+
+        coupons = [newCoupon, ...coupons];
+        const ok = await triggerKVSync('coupons', coupons, KB_URL);
+        
+        if (ok) {
+            alert("✅ Coupon saved to KV!");
+            loadCoupons();
+        }
+    } catch (e) { alert(e.message); }
+};
+// ✅ New Admin Logic: Load Coupons from Cloudflare KV
+async function loadCoupons() {
+    const list = document.getElementById("coupon-list");
+    if (!list) return;
+
+    try {
+        // Fetch the JSON array from KV via your Worker
+        const res = await fetch(KB_URL + "coupons");
+        const data = await res.json();
+        
+        // Save to a global variable for deletion logic
+        window.allCoupons = Array.isArray(data) ? data : [];
+
+        if (window.allCoupons.length === 0) {
+            list.innerHTML = "<p style='text-align:center; padding:10px; color:gray;'>No coupons found in KV.</p>";
+            return;
+        }
+
+        // Map through the array and use the Index for the delete button
+        list.innerHTML = window.allCoupons.map((c, index) => `
+            <div class="list-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                <span><b>${c.code}</b> — Bonus: ৳${c.bonus}</span>
+                <button class="btn btn-sm btn-danger" onclick="deleteCoupon(${index})">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </div>
+        `).join("");
+    } catch (e) {
+        console.error("Failed to load coupons from KV:", e);
+        list.innerHTML = "<p style='color:red;'>KV Load Error</p>";
+    }
+}
+        window.addSlider = async () => {
+  const url = document.getElementById('s-url')?.value.trim();
+  if (!url) return alert("Enter image URL");
+
+  const { error } = await supabase
+    .from("sliders")
+    .insert([{ 
+      url,
+      created_at: new Date().toISOString()
+    }]);
+
+  if (error) {
+    console.error(error);
+    alert("Failed to add slider");
+    return;
+  }
+
+  alert("Slider Added!");
+  document.getElementById('s-url').value = "";
+  loadSliders(); // refresh UI
+};
+// ১. স্লাইডার লোড করা (সরাসরি KV থেকে)
+async function loadSliders() {
+    const res = await fetch(METADATA_WORKER_URL + "sliders");
+    const data = await res.json();
+    window.currentSliders = data || []; // মেমোরিতে রাখা হলো এডিট/ডিলিটের জন্য
+    const l = document.getElementById("slider-list");
+    l.innerHTML = window.currentSliders.map((s, index) => `
+        <div style="display:inline-block; margin:5px; position:relative;">
+            <img src="${s.url}" style="width:50px; height:35px; object-fit:cover; border-radius:4px;">
+            <button class="btn btn-sm btn-danger" style="position:absolute; top:-5px; right:-5px; padding:2px 5px;"
+                onclick="deleteSlider(${index})">X</button>
+        </div>`).join("");
+}
+
+// ২. স্লাইডার অ্যাড করা
+window.addSlider = async () => {
+    const url = document.getElementById('s-url').value.trim();
+    if (!url) return alert("Enter image URL");
+    window.currentSliders.push({ url, created_at: new Date().toISOString() });
+    const ok = await triggerKVSync('sliders', window.currentSliders);
+    if(ok) { alert("Slider Added!"); loadSliders(); }
+};
+
+// ৩. স্লাইডার ডিলিট করা
+window.deleteSlider = async (index) => {
+    if (!confirm("Delete slider?")) return;
+    window.currentSliders.splice(index, 1); // অ্যারে থেকে সরানো
+    const ok = await triggerKVSync('sliders', window.currentSliders);
+    if(ok) loadSliders();
+};
+   
+    // --- DELETE LOGIC FUNCTIONS ---
+
+
+
+// ✅ New Admin Logic: Delete Coupon from KV
+// ✅ FIXED Admin Delete Coupon
+window.deleteCoupon = async (index) => {
+    if (!confirm("Delete this coupon from KV?")) return;
+
+    // ১. লোকাল মেমোরি থেকে ওই কুপনটি বাদ দেওয়া
+    window.allCoupons.splice(index, 1);
+
+    // ২. আপডেট করা পুরো অ্যারেটি পুনরায় KV-তে পাঠানো (অবশ্যই KB_URL সহ)
+    const ok = await triggerKVSync('coupons', window.allCoupons, KB_URL);
+    
+    if (ok) {
+        alert("Deleted from KV successfully!");
+        loadCoupons(); // লিস্ট রিফ্রেশ করা
+    } else {
+        alert("Failed to sync deletion with KV!");
+    }
+};
+
+
+
+
+
+window.deleteAndRefund = async (matchId) => {
+    // ১. মেমোরি থেকে ওই নির্দিষ্ট টুর্নামেন্টের ডাটা নেওয়া
+    const match = tournamentsMap[matchId];
+    if (!match) return alert("Match data not found in memory!");
+
+    // ২. আপনার পুরনো কনফার্মেশন মেসেজ
+    if (!confirm(`ম্যাচটি ডিলিট করতে চান?\nসাবধান: জয়েন করা সব প্লেয়ারকে ৳${match.fee} ফেরত দেওয়া হবে।`)) return;
+
+    try {
+        // ৩. রিফান্ড লিস্ট তৈরি করা (লজিক: সোলো হলে সবাই, টিম হলে শুধু লিডার)
+        let uidsToRefund = [];
+        if (match.type === 'Solo') {
+            uidsToRefund = (match.participants || []).map(p => p.app_uid);
+        } else {
+            // স্কোয়াড বা ডুও এর ক্ষেত্রে শুধুমাত্র লিডার (যিনি পেমেন্ট করেছিলেন) রিফান্ড পাবেন
+            uidsToRefund = (match.teams || []).map(t => t.leader_uid);
+        }
+
+        // ৪. একে একে সবার প্রোফাইলে টাকা ফেরত পাঠানো এবং নোটিফিকেশন দেওয়া
+        if (uidsToRefund.length > 0) {
+            console.log("Refunding to: ", uidsToRefund);
+            for (const uid of uidsToRefund) {
+                const userRef = doc(db, "profile", uid);
+                try {
+                    await updateDoc(userRef, {
+                        balance: increment(match.fee),
+                        recentNotifications: arrayUnion({
+                            title: "ম্যাচ রিফান্ড",
+                            body: `${match.title} ম্যাচটি বাতিল হওয়ায় আপনার এন্ট্রি ফি ৳${match.fee} ফেরত দেওয়া হয়েছে।`,
+                            time: Date.now()
+                        })
+                    });
+                } catch (userErr) {
+                    console.warn(`User ${uid} profile not found, skipping.`);
+                }
+            }
+        }
+
+        // ৫. ফায়ারস্টোর হাব (Single Doc) থেকে টুর্নামেন্টটি মুছে ফেলা
+        const hubSnap = await getDoc(tournamentHubRef);
+        if (hubSnap.exists()) {
+            const allMatches = hubSnap.data().active_matches || [];
+            const filteredMatches = allMatches.filter(m => m.tournament_id !== matchId);
+            await updateDoc(tournamentHubRef, { active_matches: filteredMatches });
+        }
+
+        // ৬. সাকসেস মেসেজ এবং রিফ্রেশ
+        alert("Tournament Deleted & All players refunded!");
+        loadTournaments();
+        triggerKVSync('tournaments');
+
+    } catch (e) {
+        console.error("Refund Error:", e);
+        alert("রিফান্ড করার সময় সমস্যা হয়েছে: " + e.message);
+    }
+};
+
+// --- INIT (আপনার সেই পুরনো টাইমার লজিক) ---
+setTimeout(() => { 
+    const logicSelect = document.getElementById('mc-target-logic');
+    if(logicSelect) logicSelect.addEventListener('change', window.toggleMCInput); 
+}, 1000);
+// --- SOUND & CONFIGURATION LOGIC ---
+
+// 1. Save Volume and Theme Settings
+window.updateSoundSettings = async () => {
+    try {
+        alert("Sound settings are now handled via Supabase");
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+// 2. Generic Toggle Function (Used for everything in config/settings)
+window.togM = async (key, currentValue) => {
+    try {
+        const { error } = await supabase
+            .from("app_settings")
+            .update({ [key]: !currentValue })
+            .eq("id", 1);
+
+        if (error) throw error;
+    } catch (e) {
+        console.error("Toggle Error:", e);
+    }
+};
+        
+
+// 3. Specific Sound Toggle (Handles UI logic before saving)
+window.toggleSoundConfig = async (key) => {
+  try {
+    // 1️⃣ Get current value from Supabase
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select(key)
+      .eq("id", 1)
+      .single();
+
+    if (error || !data) throw error;
+
+    const currentValue = data[key] !== false;
+
+    // 2️⃣ Flip and save
+    const { error: upErr } = await supabase
+      .from("app_settings")
+      .update({ [key]: !currentValue })
+      .eq("id", 1);
+
+    if (upErr) throw upErr;
+
+    // 3️⃣ Reload UI
+    loadSoundSettings();
+
+  } catch (e) {
+    console.error("Toggle failed:", e);
+    alert("Failed to toggle setting");
+  }
+};
+
+// 4. THE CONFIG LISTENER (Syncs UI with Database)
+// This part makes the buttons turn Green/Red and fills the sliders
+// --- LOAD SOUND & THEME SETTINGS (SUPABASE) ---
+async function loadSoundSettings() {
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select(
+      "active_theme, theme_vol, effect_vol, theme_enabled, effects_enabled"
+    )
+    .eq("id", 1)
+    .single();
+
+  if (error || !data) {
+    console.error("Failed to load sound settings", error);
+    return;
+  }
+
+  const d = data;
+
+  // ---- INPUTS & SELECTS ----
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = (val !== undefined && val !== null) ? val : "";
+  };
+
+  setVal('snd-active-theme', d.active_theme || "1");
+  setVal('snd-theme-vol', d.theme_vol ?? 0.5);
+  setVal('snd-effect-vol', d.effect_vol ?? 0.7);
+
+  // ---- THEME TOGGLE ----
+  const themeBtn = document.getElementById('btn-toggle-theme');
+  if (themeBtn) {
+    const isThemeOn = d.theme_enabled !== false;
+    themeBtn.className = `switch-btn ${isThemeOn ? 'switch-on' : 'switch-off'}`;
+    themeBtn.innerText = isThemeOn ? 'ON' : 'OFF';
+    themeBtn.onclick = () => window.toggleSoundConfig('theme_enabled');
+  }
+
+  // ---- EFFECTS TOGGLE ----
+  const effectBtn = document.getElementById('btn-toggle-effects');
+  if (effectBtn) {
+    const isEffectOn = d.effects_enabled !== false;
+    effectBtn.className = `switch-btn ${isEffectOn ? 'switch-on' : 'switch-off'}`;
+    effectBtn.innerText = isEffectOn ? 'ON' : 'OFF';
+    effectBtn.onclick = () => window.toggleSoundConfig('effects_enabled');
+  }
+}
+
+// 🔹 CALL ON PAGE LOAD
+loadUsers();            // এটি ইউজার লিস্ট আনবে
+loadMCHistory();        // এটি মেসেজ হিস্টোরি আনবে
+loadSettingsInputs();   // এটি সেটিংস ডাটা আনবে
+loadPendingWithdrawals(); // এটি উইথড্র রিকোয়েস্ট আনবে
+loadSoundSettings();    // এটি সাউন্ড কনফিগ আনবে
+loadShopRequests(); // এটি যোগ করুন যেন পেজ রিফ্রেশ দিলেও রিকোয়েস্ট লিস্ট লোড হয়
+// ✅ এই ৫টি লাইন নতুন যোগ করুন (সব ডাটা স্থায়ী করার জন্য)
+loadTournaments();      
+loadWithdrawMethods();  
+loadVideos();           
+loadCoupons();          
+loadSliders();
+  /* ==========================================
+   ADMIN: FREE SHOP MANAGER LOGIC
+   ========================================== */
+
+// ১. রিকোয়েস্ট লোড করা
+// ১-রিড গোল: হাব ডকুমেন্ট থেকে সব শপ রিকোয়েস্ট একসাথে আনা (Firestore Hub Strategy)
+async function loadShopRequests() {
+    const tableBody = document.getElementById('shop-table-body');
+    if(!tableBody) return;
+
+    try {
+        // সিঙ্গেল রিড: ফায়ারস্টোর হাব থেকে ডাটা আনা
+        const hubSnap = await getDoc(doc(db, "finance_hub", "shop_requests"));
+        
+        // যদি ডকুমেন্ট না থাকে বা লিস্ট খালি থাকে
+        if (!hubSnap.exists() || !hubSnap.data().pending_list || hubSnap.data().pending_list.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:gray;">No pending requests found.</td></tr>`;
+            return;
+        }
+
+        const allOrders = hubSnap.data().pending_list;
+
+        // সর্টিং: পুরনো লজিক অনুযায়ী (Ascending - oldest first)
+        allOrders.sort((a, b) => a.created_at - b.created_at);
+
+        // মেমোরিতে সেভ রাখা যাতে প্রসেস করার সময় ইনডেক্স ব্যবহার করা যায়
+        window.allPendingOrders = allOrders;
+
+        // আপনার অরিজাল HTML স্ট্রাকচার বজায় রাখা হয়েছে
+        tableBody.innerHTML = allOrders.map((r, index) => `
+            <tr>
+                <td>
+                    <b>${r.username || 'User'}</b><br>
+                    <small class="text-monospace">ID: ${r.user_custom_id}</small>
+                </td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <b style="color:var(--primary); font-size:16px;">${r.player_uid}</b>
+                        <button class="btn btn-icon btn-sm btn-dark" onclick="copyToClipboard('${r.player_uid}')" title="Copy UID">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td><span class="status-badge badge-paid">${r.diamond_amount}</span></td>
+                <td><b>${r.tokens_used} TKNS</b></td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn btn-sm btn-success" onclick="processShopRequest(${index}, 'completed')">
+                            <i class="fa fa-check"></i> Mark Paid
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="processShopRequest(${index}, 'rejected')">
+                            <i class="fa fa-times"></i> Reject
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (e) {
+        console.error("Shop fetch error:", e);
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Error loading from Firestore</td></tr>`;
+    }
+}
+
+// ২. এপ্রুভ বা রিজেক্ট প্রসেস করা
+// ২. শপ রিকোয়েস্ট প্রসেসর (Firestore Hub Strategy - Optimized)
+
+window.processShopRequest = async (index, status) => {
+    // ১. মেমোরি থেকে রিকোয়েস্ট অবজেক্ট নেওয়া (Old Logic)
+    const orderObj = window.allPendingOrders[index];
+    if (!orderObj) return;
+
+    // ডাটা এক্সট্রাকশন (RequestId এখন মাস্ট, যা ইউজার অ্যাপে অ্যাড করা হয়েছে)
+    const uid = orderObj.user_id;
+    const pkgName = orderObj.diamond_amount;
+    const refundTokens = orderObj.tokens_used;
+    const requestId = orderObj.request_id; 
+
+    // ১️⃣ Old Logic: Confirmation Message
+    const actionText = status === 'completed' ? "Mark as Paid?" : "Reject and Refund Tokens?";
+    if(!confirm(`Are you sure you want to ${actionText}`)) return;
+
+    try {
+        const hubRef = doc(db, "finance_hub", "shop_requests");
+        const userRef = doc(db, "profile", uid);
+
+        /* ============================================================
+           🚀 READ OPTIMIZATION: ইউজারের প্রোফাইল থেকে হিস্ট্রি রিড করা
+           ============================================================ */
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) throw new Error("User Profile not found!");
+
+        let userData = userSnap.data();
+        let shopHistory = userData.recentRedemptions || [];
+
+        // মেমোরিতে থাকা অ্যারে থেকে নির্দিষ্ট রিকোয়েস্ট আইডি খুঁজে স্ট্যাটাস পরিবর্তন
+        shopHistory = shopHistory.map(item => {
+            if (item.id === requestId) {
+                return { ...item, status: status }; // status: 'completed' or 'rejected'
+            }
+            return item;
+        });
+
+        // ২️⃣ হাব ডকুমেন্ট থেকে এই রিকোয়েস্টটি রিমুভ করা (Cleanup Hub)
+        await updateDoc(hubRef, {
+            pending_list: arrayRemove(orderObj)
+        });
+
+        let notifyTitle = "";
+        let notifyMsg = "";
+
+        // ৩️⃣ Status অনুযায়ী লজিক প্রসেস করা (Old Logic Text & Refund)
+        if(status === 'completed') {
+            notifyTitle = "ডায়মন্ড ডেলিভারি!";
+            notifyMsg = `আপনার ${pkgName} রিকোয়েস্টটি সফল হয়েছে। গেমে ডায়মন্ড চেক করুন।`;
+        } else {
+            notifyTitle = "রিকোয়েস্ট বাতিল";
+            notifyMsg = `আপনার ${pkgName} রিকোয়েস্টটি বাতিল করা হয়েছে এবং টোকেন ফেরত দেওয়া হয়েছে।`;
+        }
+
+        // ৪️⃣ ইউজার প্রোফাইল আপডেট (সব লজিক ১টি রাইট কলে)
+        let updatePayload = {
+            recentRedemptions: shopHistory, // আপডেট হওয়া স্ট্যাটাসসহ পুরো হিস্ট্রি
+            recentNotifications: arrayUnion({
+                title: notifyTitle,
+                body: notifyMsg,
+                time: Date.now()
+            }),
+            updatedAt: serverTimestamp()
+        };
+
+        // যদি রিজেক্ট হয়, তবে টোকেন ফেরত দেওয়া (increment ব্যবহার করে - Old Logic)
+        if(status !== 'completed') {
+            updatePayload.shopTokens = increment(refundTokens);
+        }
+
+        /* ============================================================
+           🔥 ATOMIC WRITE: ১টি কলে ইউজারের পুরো প্রোফাইল ডাটা আপডেট
+           ============================================================ */
+        await updateDoc(userRef, updatePayload);
+
+        // ৫️⃣ পুশ নোটিফিকেশন পাঠানো (Old Logic)
+        await sendAutomatedPush(uid, status === 'completed' ? "ডায়মন্ড ডেলিভারি!" : "শপ রিকোয়েস্ট আপডেট", notifyMsg);
+
+        alert("Operation Successful! User History Updated.");
+        loadShopRequests(); // অ্যাডমিন লিস্ট রিফ্রেশ
+
+    } catch (e) {
+        console.error("Shop Processing Error:", e);
+        alert("Error: " + e.message);
+    }
+}
+// হেল্পার: কপি টু ক্লিপবোর্ড
+window.copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => alert("UID Copied: " + text));
+}
+
+function renderFilterButtons() {
+    const bar = document.getElementById('dynamic-filter-bar');
+    if (!bar) return;
+    
+    let html = `<button class="btn btn-sm ${currentWithdrawFilter === 'All' ? 'btn-primary' : 'btn-dark'}" onclick="setWFilter('All')">All</button>`;
+    
+    window.currentMethods.forEach(m => {
+        html += `<button class="btn btn-sm ${currentWithdrawFilter === m.name ? 'btn-primary' : 'btn-dark'}" onclick="setWFilter('${m.name}')">${m.name}</button>`;
+    });
+    
+    bar.innerHTML = html;
+}
+
+window.setWFilter = (methodName) => {
+    currentWithdrawFilter = methodName;
+    renderFilterButtons();
+    loadPendingWithdrawals(); // ফিল্টার অনুযায়ী ডাটা লোড
+};
+
+  </script>
+</body>
+</html>

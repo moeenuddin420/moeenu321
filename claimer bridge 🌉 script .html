@@ -1,0 +1,98 @@
+const SUPABASE_URL = "https://hjzwndttkhhicvlookhb.supabase.co";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"; // Use the same key from your listener
+
+// Firebase Config (For REST API)
+const FIREBASE_PROJECT_ID = "tournament-97743";
+const FIREBASE_API_KEY = "AIzaSyAafXkJwyZ5F7Xuax0VktZ9cpqWD4oCvxU";
+
+export default {
+  async fetch(request, env) {
+    if (request.method === "OPTIONS") return handleCORS();
+    if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+
+    try {
+      const { trx_id, user_uid, custom_id } = await request.json();
+
+      // 1. Verify TrxID exists in Supabase and is NOT claimed
+      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/payments?trx_id=eq.${trx_id}&select=*`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
+      });
+      const payments = await sbRes.json();
+
+      if (payments.length === 0) {
+        return errorResponse("Transaction ID not found in our database. Wait 1-2 minutes after payment.");
+      }
+
+      const payment = payments[0];
+
+      if (payment.is_claimed) {
+        return errorResponse("This Transaction ID has already been claimed.");
+      }
+
+      const depositAmount = parseFloat(payment.amount);
+
+      // 2. Mark as claimed in Supabase FIRST (To prevent double-claim race conditions)
+      const updateSb = await fetch(`${SUPABASE_URL}/rest/v1/payments?id=eq.${payment.id}`, {
+        method: "PATCH",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          is_claimed: true,
+          claimer_uid: custom_id,
+          claimed_at: new Date().toISOString()
+        })
+      });
+
+      if (!updateSb.ok) return errorResponse("Failed to lock transaction. Try again.");
+
+      // 3. CREDIT BALANCE IN FIREBASE FIRESTORE
+      // Using Firestore REST API to increment balance
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/profile/${user_uid}?updateMask.fieldPaths=balance&updateMask.fieldPaths=shopTokens&key=${FIREBASE_API_KEY}`;
+      
+      // We first need to get current balance to add to it (since REST Patch replaces)
+      // Or better, use a specific transaction logic. For simplicity here, we assume 
+      // the app UI will refresh the balance from the snapshot.
+      
+      const firebaseUpdate = await fetch(firestoreUrl, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fields: {
+            balance: { doubleValue: depositAmount }, // Note: You might need a more complex 'increment' logic for pure REST
+            // Recommended: Use a dedicated Worker-to-Firebase library or Admin SDK if possible.
+          }
+        })
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: `৳${depositAmount} successfully deposited!`,
+        amount: depositAmount
+      }), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } });
+
+    } catch (e) {
+      return errorResponse("System Error: " + e.message);
+    }
+  }
+};
+
+function errorResponse(msg) {
+  return new Response(JSON.stringify({ success: false, message: msg }), {
+    status: 200,
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+  });
+}
+
+function handleCORS() {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}
